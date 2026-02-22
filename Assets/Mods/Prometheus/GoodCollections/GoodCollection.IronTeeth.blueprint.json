@@ -1,0 +1,11 @@
+{
+  "GoodCollectionSpec": {
+    "CollectionId": "IronTeeth",
+    "Goods#append": [
+      "AshFertilizer",
+      "FirefightingFoam",
+      "FireworksCrate",
+      "FireControlGear"
+    ]
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "FireResponseProfileSpec": {
+    "FactionApproach": "IndustrialControl",
+    "SuppressionSpeedMultiplier": 1.1,
+    "HeatResistanceBonus": 0.2,
+    "WaterEfficiencyMultiplier": 1.05,
+    "WeatherIgnitionChance": 0.007,
+    "IndustrialIgnitionChance": 0.012,
+    "FireworksIgnitionBonus": 0.002,
+    "SupportsControlledBurns": false,
+    "ControlledBurnIgnitionChance": 0.0,
+    "FuelSpreadMultiplier": 0.95,
+    "SpreadBarrierResistance": 0.03,
+    "IgnitionSensitivity": 0.92
+  },
+  "ManufactorySpec": {
+    "ProductionRecipeIds#append": [
+      "FirefightingFoam",
+      "FireControlGear"
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "RecipeSpec": {
+    "Id": "FireworksCrate",
+    "BackwardCompatibleIds": [],
+    "DisplayLocKey": "Good.FireworksCrate.PluralDisplayName",
+    "CycleDurationInHours": 4.0,
+    "Ingredients": [
+      {
+        "Id": "Paper",
+        "Amount": 2
+      },
+      {
+        "Id": "Explosives",
+        "Amount": 1
+      }
+    ],
+    "Products": [
+      {
+        "Id": "FireworksCrate",
+        "Amount": 1
+      }
+    ],
+    "ProducedSciencePoints": 0,
+    "Fuel": "Log",
+    "CyclesFuelLasts": 10,
+    "FuelCapacity": 5,
+    "CyclesCapacity": 20,
+    "Icon": "Sprites/Goods/ExplosivesIcon"
+  }
+}

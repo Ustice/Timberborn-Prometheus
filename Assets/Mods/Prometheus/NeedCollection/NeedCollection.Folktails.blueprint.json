@@ -1,0 +1,9 @@
+{
+  "NeedCollectionSpec": {
+    "CollectionId": "Folktails",
+    "Needs#append": [
+      "BerryBun",
+      "HeatStress"
+    ]
+  }
+}

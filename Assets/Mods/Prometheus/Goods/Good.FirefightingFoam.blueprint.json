@@ -1,0 +1,25 @@
+{
+  "GoodSpec": {
+    "Id": "FirefightingFoam",
+    "BackwardCompatibleIds": [],
+    "ConsumptionEffects": [],
+    "GoodType": "Liquid",
+    "StockpileVisualization": "Liquid",
+    "VisibleContainer": "Barrel",
+    "ContainerColor": {
+      "r": 0.870588243,
+      "g": 0.8901961,
+      "b": 0.905882359,
+      "a": 1.0
+    },
+    "ContainerMaterial": "Materials/Goods/Water",
+    "CarryingAnimation": "CarryInHands",
+    "Weight": 1,
+    "GoodGroupId": "Materials",
+    "GoodOrder": 8070,
+    "Icon": "Sprites/Goods/ExtractIcon",
+    "ForceImport": true,
+    "DisplayNameLocKey": "Good.FirefightingFoam.DisplayName",
+    "PluralDisplayNameLocKey": "Good.FirefightingFoam.PluralDisplayName"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "GoodSpec": {
+    "Id": "FireControlGear",
+    "BackwardCompatibleIds": [],
+    "ConsumptionEffects": [],
+    "GoodType": "Box",
+    "StockpileVisualization": "Box",
+    "VisibleContainer": "Box",
+    "ContainerColor": {
+      "r": 0.545098066,
+      "g": 0.356862754,
+      "b": 0.203921571,
+      "a": 1.0
+    },
+    "ContainerMaterial": "",
+    "CarryingAnimation": "CarryInHands",
+    "Weight": 2,
+    "GoodGroupId": "Materials",
+    "GoodOrder": 8100,
+    "Icon": "Sprites/Goods/TreatedPlankIcon",
+    "ForceImport": true,
+    "DisplayNameLocKey": "Good.FireControlGear.DisplayName",
+    "PluralDisplayNameLocKey": "Good.FireControlGear.PluralDisplayName"
+  }
+}

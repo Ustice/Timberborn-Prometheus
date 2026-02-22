@@ -1,0 +1,9 @@
+{
+  "Name": "Prometheus",
+  "Version": "0.2",
+  "Id": "ExampleBuilding.Prometheus",
+  "MinimumGameVersion": "1.0.0.0",
+  "Description": "Brings fire-themed industry, hazards, and recovery systems to Timberborn.",
+  "RequiredMods": [],
+  "OptionalMods": []
+}

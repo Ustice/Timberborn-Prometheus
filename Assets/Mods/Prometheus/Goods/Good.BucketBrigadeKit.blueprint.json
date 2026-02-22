@@ -1,0 +1,25 @@
+{
+  "GoodSpec": {
+    "Id": "BucketBrigadeKit",
+    "BackwardCompatibleIds": [],
+    "ConsumptionEffects": [],
+    "GoodType": "Box",
+    "StockpileVisualization": "Box",
+    "VisibleContainer": "Box",
+    "ContainerColor": {
+      "r": 0.278431386,
+      "g": 0.482352942,
+      "b": 0.698039234,
+      "a": 1.0
+    },
+    "ContainerMaterial": "",
+    "CarryingAnimation": "CarryInHands",
+    "Weight": 2,
+    "GoodGroupId": "Materials",
+    "GoodOrder": 8090,
+    "Icon": "Sprites/Goods/WaterIcon",
+    "ForceImport": true,
+    "DisplayNameLocKey": "Good.BucketBrigadeKit.DisplayName",
+    "PluralDisplayNameLocKey": "Good.BucketBrigadeKit.PluralDisplayName"
+  }
+}

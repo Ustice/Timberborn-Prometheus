@@ -1,0 +1,13 @@
+{
+  "GoodCollectionSpec": {
+    "CollectionId": "Folktails",
+    "Goods#append": [
+      "BerryJam",
+      "BerryBun",
+      "AshFertilizer",
+      "FirefightingFoam",
+      "FireworksCrate",
+      "BucketBrigadeKit"
+    ]
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "RecipeSpec": {
+    "Id": "BucketBrigadeKit",
+    "BackwardCompatibleIds": [],
+    "DisplayLocKey": "Good.BucketBrigadeKit.PluralDisplayName",
+    "CycleDurationInHours": 3.0,
+    "Ingredients": [
+      {
+        "Id": "Plank",
+        "Amount": 2
+      },
+      {
+        "Id": "Paper",
+        "Amount": 1
+      },
+      {
+        "Id": "Water",
+        "Amount": 1
+      }
+    ],
+    "Products": [
+      {
+        "Id": "BucketBrigadeKit",
+        "Amount": 1
+      }
+    ],
+    "ProducedSciencePoints": 0,
+    "Fuel": "Log",
+    "CyclesFuelLasts": 10,
+    "FuelCapacity": 5,
+    "CyclesCapacity": 20,
+    "Icon": "Sprites/Goods/WaterIcon"
+  }
+}
