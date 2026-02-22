@@ -12,14 +12,19 @@ WAIT_FOR_BUILD_TIMEOUT_SECONDS=10
 WAIT_FOR_BUILD_POLL_SECONDS=2
 WAIT_FOR_BUILD_STABLE_POLLS=2
 DEFAULT_TIMBERBORN_APP_ID="1062090"
+BUILD_CONFIGURATION="${PROMETHEUS_BUILD_CONFIGURATION:-Debug}"
 DEFAULT_BUILD_PROJECT_DIR="$ROOT_DIR"
 if [[ -d "$ROOT_DIR/../timberborn-modding" ]]; then
   DEFAULT_BUILD_PROJECT_DIR="$(cd "$ROOT_DIR/../timberborn-modding" && pwd)"
 fi
 BUILD_PROJECT_DIR="${PROMETHEUS_BUILD_PROJECT_DIR:-$DEFAULT_BUILD_PROJECT_DIR}"
 SRC_MOD_DIR="$ROOT_DIR/Assets/Mods/$MOD_NAME"
+PROJECT_CSPROJ="$BUILD_PROJECT_DIR/Timberborn.ModExamples.Prometheus.csproj"
 SRC_DLL="$BUILD_PROJECT_DIR/Library/ScriptAssemblies/Timberborn.ModExamples.Prometheus.dll"
 SRC_PDB="$BUILD_PROJECT_DIR/Library/ScriptAssemblies/Timberborn.ModExamples.Prometheus.pdb"
+DOTNET_OUTPUT_DIR="$BUILD_PROJECT_DIR/Temp/bin/$BUILD_CONFIGURATION"
+DOTNET_DLL="$DOTNET_OUTPUT_DIR/Timberborn.ModExamples.Prometheus.dll"
+DOTNET_PDB="$DOTNET_OUTPUT_DIR/Timberborn.ModExamples.Prometheus.pdb"
 DST_MOD_DIR="$HOME/Documents/Timberborn/Mods/$MOD_NAME"
 DST_SCRIPTS_DIR="$DST_MOD_DIR/Scripts"
 BACKUP_ROOT_DIR="$ROOT_DIR/.backups"
@@ -44,7 +49,50 @@ Deployment model:
   The deployed mod directory is recreated as symlinks on each run:
   - Non-Scripts content links to $ROOT_DIR/Assets/Mods/Prometheus/*
   - Scripts/Timberborn.ModExamples.Prometheus.(dll|pdb) link to build output
+
+Compilation model:
+  - If $BUILD_PROJECT_DIR/Timberborn.ModExamples.Prometheus.csproj exists,
+    deploy runs 'dotnet build' and promotes output into Library/ScriptAssemblies.
+  - If the project file is missing, deploy falls back to existing Unity DLL checks.
 USAGE
+}
+
+compile_prometheus_if_possible() {
+  if [[ "${PROMETHEUS_DEPLOY_SKIP_COMPILE:-0}" == "1" ]]; then
+    echo "[deploy-prometheus] Skipping compile (PROMETHEUS_DEPLOY_SKIP_COMPILE=1)."
+    return 0
+  fi
+
+  if [[ ! -f "$PROJECT_CSPROJ" ]]; then
+    echo "[deploy-prometheus] Build project file not found at $PROJECT_CSPROJ; using existing DLL workflow."
+    return 0
+  fi
+
+  if ! command -v dotnet >/dev/null 2>&1; then
+    echo "[deploy-prometheus] .NET SDK not found ('dotnet' missing)." >&2
+    echo "[deploy-prometheus] Install .NET SDK or set PROMETHEUS_DEPLOY_SKIP_COMPILE=1 to use existing DLL workflow." >&2
+    return 1
+  fi
+
+  echo "[deploy-prometheus] Compiling Prometheus project with dotnet build ($BUILD_CONFIGURATION)..."
+  if ! dotnet build "$PROJECT_CSPROJ" -c "$BUILD_CONFIGURATION" >/tmp/prometheus-dotnet-build.log 2>&1; then
+    echo "[deploy-prometheus] dotnet build failed. Tail of build output:" >&2
+    tail -n 40 /tmp/prometheus-dotnet-build.log >&2 || true
+    return 1
+  fi
+
+  if [[ ! -f "$DOTNET_DLL" ]]; then
+    echo "[deploy-prometheus] dotnet build succeeded but output DLL missing: $DOTNET_DLL" >&2
+    return 1
+  fi
+
+  mkdir -p "$(dirname "$SRC_DLL")"
+  cp "$DOTNET_DLL" "$SRC_DLL"
+  if [[ -f "$DOTNET_PDB" ]]; then
+    cp "$DOTNET_PDB" "$SRC_PDB"
+  fi
+
+  echo "[deploy-prometheus] Compile complete; refreshed $SRC_DLL"
 }
 
 rebuild_symlinked_mod_directory() {
@@ -393,6 +441,10 @@ echo "[deploy-prometheus] Build DLL source: $SRC_DLL"
 if [[ "$TEST_ONLY" == "true" ]]; then
   echo "[deploy-prometheus] Test-only mode complete. Skipping deployment."
   exit 0
+fi
+
+if ! compile_prometheus_if_possible; then
+  exit 1
 fi
 
 stop_running_timberborn_if_requested

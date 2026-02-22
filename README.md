@@ -4,11 +4,12 @@ This repository contains the standalone Prometheus mod assets and local deploy t
 
 ## Quick commands
 
-* `bash scripts/deploy_prometheus.sh` — test + deploy
+* `bash scripts/deploy_prometheus.sh` — test + compile + deploy
 * `bash scripts/deploy_prometheus.sh --test-only` — tests only
-* `bash scripts/deploy_prometheus.sh --launch` — test + stop running Timberborn + wait for fresh/stable build + deploy + launch
+* `bash scripts/deploy_prometheus.sh --launch` — test + compile + stop running Timberborn + wait for fresh/stable build + deploy + launch
 
-The deploy script blocks stale builds (when source `Assets/Mods/Prometheus/Scripts/*.cs` files are newer than `Library/ScriptAssemblies/Timberborn.ModExamples.Prometheus.dll`). When `--launch` is used, it waits for DLL freshness plus stability across polling before continuing.
+The deploy script now compiles `Timberborn.ModExamples.Prometheus.csproj` via `dotnet build` (if present) and promotes the generated DLL/PDB into `Library/ScriptAssemblies` before deployment.
+It still blocks stale builds (when source `Assets/Mods/Prometheus/Scripts/*.cs` files are newer than `Library/ScriptAssemblies/Timberborn.ModExamples.Prometheus.dll`) as a safety net. When `--launch` is used, it waits for DLL freshness plus stability across polling before continuing.
 When `--launch` is used, the script waits 5 seconds before launching.
 
 ## Notes

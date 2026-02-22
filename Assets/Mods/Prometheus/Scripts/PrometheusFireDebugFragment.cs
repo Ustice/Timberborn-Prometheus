@@ -320,6 +320,7 @@ namespace Mods.Prometheus.Scripts {
       stringBuilder.AppendLine($"- Ignition/fireworks x{tuning.FireworksIgnitionMultiplier:0.00}");
       stringBuilder.AppendLine($"- Ignition/controlled burn x{tuning.ControlledBurnIgnitionMultiplier:0.00}");
       stringBuilder.AppendLine($"- Ignition/neighbor x{tuning.NeighborIgnitionMultiplier:0.00}");
+      stringBuilder.AppendLine($"- Ignition/explosion x{tuning.ExplosionIgnitionMultiplier:0.00} ({tuning.ExplosionIgnitionMode})");
       stringBuilder.AppendLine($"- Spread/dryness x{tuning.DrynessSpreadMultiplier:0.00}");
       stringBuilder.AppendLine($"- Spread/fuel x{tuning.FuelSpreadMultiplier:0.00}");
       stringBuilder.AppendLine($"- Spread/barrier x{tuning.BarrierResistanceMultiplier:0.00}");
@@ -355,6 +356,7 @@ namespace Mods.Prometheus.Scripts {
         stringBuilder.AppendLine($"- Ignition/industrial: {simulation.IndustrialIgnitionContribution:0.000}");
         stringBuilder.AppendLine($"- Ignition/fireworks: {simulation.FireworksIgnitionContribution:0.000}");
         stringBuilder.AppendLine($"- Ignition/controlled burn: {simulation.ControlledBurnIgnitionContribution:0.000}");
+        stringBuilder.AppendLine($"- Ignition/explosion: {simulation.ExplosionIgnitionContribution:0.000}");
         stringBuilder.AppendLine($"- Heat exposure: {simulation.HeatExposure:0.000}");
         stringBuilder.AppendLine($"- Quenching: {simulation.QuenchingPower:0.000}");
         stringBuilder.AppendLine($"- Spread pressure: {simulation.SpreadPressure:0.000}");

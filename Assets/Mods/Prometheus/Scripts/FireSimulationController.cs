@@ -34,6 +34,8 @@ namespace Mods.Prometheus.Scripts {
     private TextMesh _fireMarkerText;
     private float _fireMarkerBaseHeight = 2.25f;
     private float _fireMarkerPulseTime;
+    private bool _explosionDetonatedDuringCurrentBurn;
+    private float _explosionSuppressionDisruptionSecondsRemaining;
 
     [Inject]
     public void InjectDependencies(
@@ -71,6 +73,7 @@ namespace Mods.Prometheus.Scripts {
       _responseNotificationCooldownRemainingSeconds = Mathf.Max(0f, _responseNotificationCooldownRemainingSeconds - UpdateIntervalInSeconds);
       _dispatchAssignmentLockRemainingSeconds = Mathf.Max(0f, _dispatchAssignmentLockRemainingSeconds - UpdateIntervalInSeconds);
       _burningTelemetryLogCooldownRemainingSeconds = Mathf.Max(0f, _burningTelemetryLogCooldownRemainingSeconds - UpdateIntervalInSeconds);
+      _explosionSuppressionDisruptionSecondsRemaining = Mathf.Max(0f, _explosionSuppressionDisruptionSecondsRemaining - UpdateIntervalInSeconds);
 
       if (!_fireSuppressionRuntimeState.TryGetSnapshot(entityId, out var suppressionSnapshot)) {
         return;
@@ -127,6 +130,7 @@ namespace Mods.Prometheus.Scripts {
         : 0f;
 
       var neighborSpreadIgnition = neighborSpreadPressure * 0.35f * tuning.NeighborIgnitionMultiplier;
+      var explosionIgnition = 0f;
 
       var ignitionChance = weatherIgnition + industrialIgnition + fireworksIgnition + controlledBurnIgnition + neighborSpreadIgnition;
       ignitionChance *= (1f - (localWaterExposure * 0.5f));
@@ -138,10 +142,12 @@ namespace Mods.Prometheus.Scripts {
       var spreadIgnitionTriggered = false;
       var spreadIgnitionSourceEntityId = 0;
       var spreadIgnitionPropagationChance = 0f;
+      var spreadIgnitionSourceKind = PropagationIgnitionSourceKind.Spread;
       if (_fireSimulationRuntimeState.ConsumeSpreadIgnitionRequest(entityId, out var spreadIgnitionRequest)) {
         spreadIgnitionTriggered = true;
         spreadIgnitionSourceEntityId = spreadIgnitionRequest.SourceEntityId;
         spreadIgnitionPropagationChance = spreadIgnitionRequest.PropagationChance;
+        spreadIgnitionSourceKind = spreadIgnitionRequest.SourceKind;
       }
 
       if (forcedIgnition) {
@@ -152,6 +158,9 @@ namespace Mods.Prometheus.Scripts {
       if (spreadIgnitionTriggered && _currentIntensity <= 0f) {
         shouldIgnite = true;
         ignitionChance = Mathf.Max(ignitionChance, spreadIgnitionPropagationChance);
+        if (spreadIgnitionSourceKind == PropagationIgnitionSourceKind.Explosion) {
+          explosionIgnition = Mathf.Max(explosionIgnition, spreadIgnitionPropagationChance);
+        }
       }
 
       if (shouldIgnite) {
@@ -167,7 +176,9 @@ namespace Mods.Prometheus.Scripts {
         }
 
         if (spreadIgnitionTriggered) {
-          Debug.Log($"[Prometheus/Fire] event=spread_ignite_applied entity={GameObject.name} id={entityId} sourceId={spreadIgnitionSourceEntityId} chance={spreadIgnitionPropagationChance:0.000} intensity={_currentIntensity:0.000}");
+          var spreadSourceKindText = spreadIgnitionSourceKind == PropagationIgnitionSourceKind.Explosion ? "Explosion" : "Spread";
+          var igniteEvent = spreadIgnitionSourceKind == PropagationIgnitionSourceKind.Explosion ? "explosion_ignite_applied" : "spread_ignite_applied";
+          Debug.Log($"[Prometheus/Fire] event={igniteEvent} entity={GameObject.name} id={entityId} sourceId={spreadIgnitionSourceEntityId} sourceKind={spreadSourceKindText} chance={spreadIgnitionPropagationChance:0.000} intensity={_currentIntensity:0.000}");
         }
       }
 
@@ -195,12 +206,66 @@ namespace Mods.Prometheus.Scripts {
 
       quenchingPower *= tuning.QuenchingMultiplier;
 
+      if (_explosionSuppressionDisruptionSecondsRemaining > 0f) {
+        quenchingPower *= 0.65f;
+      }
+
       if (burning) {
         _currentIntensity = Mathf.Clamp01(_currentIntensity + spreadPressure - quenchingPower);
       }
 
       if (_currentIntensity < 0.02f) {
         _currentIntensity = 0f;
+      }
+
+      if (!_wasBurning && _currentIntensity > 0f) {
+        _explosionDetonatedDuringCurrentBurn = false;
+      }
+
+      var explosionDetonated = false;
+      if (_currentIntensity > 0f
+          && !_explosionDetonatedDuringCurrentBurn
+          && IsExplosionIgnitionEnabled(tuning)
+          && IsExplosiveHazardEntity()) {
+        var explosionSeverity = ComputeExplosionSeverityFromEntityName();
+        var moistureMitigation = 1f - Mathf.Clamp01((localWaterExposure * 0.65f) + localSpreadReduction);
+        var detonationChance = Mathf.Clamp01(
+          (((_currentIntensity * 0.45f) + (drynessFactor * 0.35f) + (explosionSeverity * 0.2f))
+           * tuning.ExplosionIgnitionMultiplier)
+          * moistureMitigation);
+
+        explosionIgnition = Mathf.Max(explosionIgnition, detonationChance);
+
+        if (detonationChance > 0.05f && Random.value < detonationChance) {
+          _explosionDetonatedDuringCurrentBurn = true;
+          _explosionSuppressionDisruptionSecondsRemaining = Mathf.Max(_explosionSuppressionDisruptionSecondsRemaining, 8f + (explosionSeverity * 4f));
+          _currentIntensity = Mathf.Clamp01(_currentIntensity + (0.1f * explosionSeverity));
+          explosionDetonated = true;
+
+          var explosionRadius = Mathf.Lerp(10f, 16f, explosionSeverity);
+          if (_fireEntityRegistryRuntimeState.TryGetNearestSpreadTarget(entityId, GameObject.transform.position, explosionRadius, out var explosionTargetEntityId, out var explosionTargetDistanceNormalized)) {
+            var explosionProximity = 1f - explosionTargetDistanceNormalized;
+            var explosionPropagationChance = Mathf.Clamp01(
+              (((0.42f * explosionSeverity) + (0.38f * _currentIntensity) + (0.2f * explosionProximity))
+               * tuning.ExplosionIgnitionMultiplier)
+              * moistureMitigation);
+
+            if (explosionPropagationChance > 0.04f) {
+              _fireSimulationRuntimeState.RequestSpreadIgnition(
+                explosionTargetEntityId,
+                entityId,
+                explosionPropagationChance,
+                PropagationIgnitionSourceKind.Explosion);
+              Debug.Log($"[Prometheus/Fire] event=explosion_ignition_request source={GameObject.name} sourceId={entityId} targetId={explosionTargetEntityId} chance={explosionPropagationChance:0.000} severity={explosionSeverity:0.000} mode={tuning.ExplosionIgnitionMode}");
+            }
+          }
+
+          Debug.Log($"[Prometheus/Fire] event=explosion_detonated entity={GameObject.name} id={entityId} severity={explosionSeverity:0.000} chance={detonationChance:0.000} mode={tuning.ExplosionIgnitionMode}");
+        }
+      }
+
+      if (_currentIntensity <= 0f) {
+        _explosionDetonatedDuringCurrentBurn = false;
       }
 
       if (_currentIntensity > 0f) {
@@ -223,12 +288,14 @@ namespace Mods.Prometheus.Scripts {
       var heatExposure = _currentIntensity * (1f - heatMitigation);
 
       var dominantIgnitionSource = "None";
-      if (spreadIgnitionTriggered) {
+      if (spreadIgnitionTriggered && spreadIgnitionSourceKind == PropagationIgnitionSourceKind.Explosion) {
+        dominantIgnitionSource = "Explosion";
+      } else if (spreadIgnitionTriggered) {
         dominantIgnitionSource = "NeighborSpread";
       } else if (ignitionChance > 0f) {
         var dominantContribution = Mathf.Max(
           Mathf.Max(weatherIgnition, industrialIgnition),
-          Mathf.Max(Mathf.Max(fireworksIgnition, controlledBurnIgnition), neighborSpreadIgnition));
+          Mathf.Max(Mathf.Max(fireworksIgnition, controlledBurnIgnition), Mathf.Max(neighborSpreadIgnition, explosionIgnition)));
 
         if (dominantContribution == weatherIgnition) {
           dominantIgnitionSource = "Weather";
@@ -238,6 +305,8 @@ namespace Mods.Prometheus.Scripts {
           dominantIgnitionSource = "Fireworks";
         } else if (dominantContribution == controlledBurnIgnition) {
           dominantIgnitionSource = "ControlledBurn";
+        } else if (dominantContribution == explosionIgnition) {
+          dominantIgnitionSource = "Explosion";
         } else {
           dominantIgnitionSource = "NeighborSpread";
         }
@@ -256,6 +325,7 @@ namespace Mods.Prometheus.Scripts {
         industrialIgnition,
         fireworksIgnition,
         controlledBurnIgnition,
+        explosionIgnition,
         drynessFactor,
         fuelFactor,
         barrierFactor);
@@ -395,6 +465,9 @@ namespace Mods.Prometheus.Scripts {
       if (simulationSnapshot.Burning && !_wasBurning) {
         _quickNotificationService.SendNotification($"🔥 Prometheus: fire ignited at {GameObject.name}.");
         Debug.Log($"[Prometheus/Fire] event=ignited entity={GameObject.name} id={entityId} source={dominantIgnitionSource} ignitionChance={ignitionChance:0.000} intensity={_currentIntensity:0.000}");
+        if (explosionDetonated) {
+          _quickNotificationService.SendNotification($"💥 Prometheus: explosion risk triggered at {GameObject.name}.");
+        }
       } else if (!simulationSnapshot.Burning && _wasBurning) {
         _quickNotificationService.SendNotification($"✅ Prometheus: fire extinguished at {GameObject.name}.");
         Debug.Log($"[Prometheus/Fire] event=extinguished entity={GameObject.name} id={entityId}");
@@ -406,6 +479,48 @@ namespace Mods.Prometheus.Scripts {
       }
 
       _wasBurning = simulationSnapshot.Burning;
+    }
+
+    private bool IsExplosionIgnitionEnabled(FireTuningSnapshot tuning) {
+      return tuning.ExplosionIgnitionMode switch {
+        ExplosionIgnitionMode.Always => true,
+        ExplosionIgnitionMode.HighOnly => tuning.Profile == FireTuningProfile.High,
+        _ => false,
+      };
+    }
+
+    private bool IsExplosiveHazardEntity() {
+      var entityName = GameObject.name;
+      if (string.IsNullOrEmpty(entityName)) {
+        return false;
+      }
+
+      var normalizedName = entityName.ToLowerInvariant();
+      return normalizedName.Contains("explosive")
+             || normalizedName.Contains("dynamite")
+             || normalizedName.Contains("blast")
+             || normalizedName.Contains("powder")
+             || normalizedName.Contains("charge")
+             || normalizedName.Contains("tnt")
+             || normalizedName.Contains("warehouse");
+    }
+
+    private float ComputeExplosionSeverityFromEntityName() {
+      var normalizedName = (GameObject.name ?? string.Empty).ToLowerInvariant();
+
+      if (normalizedName.Contains("factory")) {
+        return 1f;
+      }
+
+      if (normalizedName.Contains("warehouse") || normalizedName.Contains("storage")) {
+        return 0.78f;
+      }
+
+      if (normalizedName.Contains("crate") || normalizedName.Contains("charge") || normalizedName.Contains("dynamite")) {
+        return 0.56f;
+      }
+
+      return 0.45f;
     }
 
     private void UpdateFireMarker(bool burning, float intensity) {

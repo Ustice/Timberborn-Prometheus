@@ -1,0 +1,22 @@
+{
+  "FireResponseProfileSpec": {
+    "FactionApproach": "IndustrialControl",
+    "SuppressionSpeedMultiplier": 1.08,
+    "HeatResistanceBonus": 0.22,
+    "WaterEfficiencyMultiplier": 1.02,
+    "WeatherIgnitionChance": 0.005,
+    "IndustrialIgnitionChance": 0.026,
+    "FireworksIgnitionBonus": 0.001,
+    "SupportsControlledBurns": false,
+    "ControlledBurnIgnitionChance": 0.0,
+    "FuelSpreadMultiplier": 1.05,
+    "SpreadBarrierResistance": 0.03,
+    "IgnitionSensitivity": 1.12,
+    "DispatchSeverityWeight": 0.48,
+    "DispatchAssetRiskWeight": 0.36,
+    "DispatchTravelCostWeight": 0.13,
+    "DispatchContainmentLeverageWeight": 0.23,
+    "DispatchAssignmentLockDurationInSeconds": 7.5,
+    "DispatchRetargetHysteresisThreshold": 0.10
+  }
+}

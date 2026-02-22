@@ -1,14 +1,21 @@
 using System.Collections.Generic;
 
 namespace Mods.Prometheus.Scripts {
+  internal enum PropagationIgnitionSourceKind {
+    Spread,
+    Explosion,
+  }
+
   internal readonly struct SpreadIgnitionRequest {
 
     public int SourceEntityId { get; }
     public float PropagationChance { get; }
+    public PropagationIgnitionSourceKind SourceKind { get; }
 
-    public SpreadIgnitionRequest(int sourceEntityId, float propagationChance) {
+    public SpreadIgnitionRequest(int sourceEntityId, float propagationChance, PropagationIgnitionSourceKind sourceKind) {
       SourceEntityId = sourceEntityId;
       PropagationChance = propagationChance;
+      SourceKind = sourceKind;
     }
 
   }
@@ -27,6 +34,7 @@ namespace Mods.Prometheus.Scripts {
     public float IndustrialIgnitionContribution { get; }
     public float FireworksIgnitionContribution { get; }
     public float ControlledBurnIgnitionContribution { get; }
+    public float ExplosionIgnitionContribution { get; }
     public float DrynessFactor { get; }
     public float FuelFactor { get; }
     public float BarrierFactor { get; }
@@ -44,6 +52,7 @@ namespace Mods.Prometheus.Scripts {
       float industrialIgnitionContribution,
       float fireworksIgnitionContribution,
       float controlledBurnIgnitionContribution,
+      float explosionIgnitionContribution,
       float drynessFactor,
       float fuelFactor,
       float barrierFactor) {
@@ -59,6 +68,7 @@ namespace Mods.Prometheus.Scripts {
       IndustrialIgnitionContribution = industrialIgnitionContribution;
       FireworksIgnitionContribution = fireworksIgnitionContribution;
       ControlledBurnIgnitionContribution = controlledBurnIgnitionContribution;
+      ExplosionIgnitionContribution = explosionIgnitionContribution;
       DrynessFactor = drynessFactor;
       FuelFactor = fuelFactor;
       BarrierFactor = barrierFactor;
@@ -92,7 +102,7 @@ namespace Mods.Prometheus.Scripts {
       return _forcedIgnitionEntityIds.Remove(entityId);
     }
 
-    public void RequestSpreadIgnition(int targetEntityId, int sourceEntityId, float propagationChance) {
+    public void RequestSpreadIgnition(int targetEntityId, int sourceEntityId, float propagationChance, PropagationIgnitionSourceKind sourceKind = PropagationIgnitionSourceKind.Spread) {
       if (targetEntityId == 0 || sourceEntityId == 0 || targetEntityId == sourceEntityId) {
         return;
       }
@@ -104,7 +114,7 @@ namespace Mods.Prometheus.Scripts {
         }
       }
 
-      _spreadIgnitionRequestsByEntityId[targetEntityId] = new SpreadIgnitionRequest(sourceEntityId, clampedPropagationChance);
+      _spreadIgnitionRequestsByEntityId[targetEntityId] = new SpreadIgnitionRequest(sourceEntityId, clampedPropagationChance, sourceKind);
     }
 
     public bool ConsumeSpreadIgnitionRequest(int entityId, out SpreadIgnitionRequest request) {

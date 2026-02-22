@@ -42,17 +42,13 @@ We added debug controls and logs to accelerate testing, then fixed runtime stabi
 
 - Fixed multiple null-reference crashes caused by missing DI attributes.
 - Added first-tick snapshot behavior (suppression/simulation no longer strictly gated on waiting 1 second after first attach).
+- Added baseline explosion ignition policy support (`Off`/`HighOnly`/`Always`) with moisture-mitigated ignition checks and temporary suppression disruption after detonation.
 
 ### Logging / observability
 
 - Added structured fire event logs in `Player.log` with tag:
   - `[Prometheus/Fire]`
-- Confirmed event stream includes:
-  - `debug_ignite_request`
-  - `debug_ignite_applied`
-  - `ignited`
-  - `burning_tick`
-  - `response_state`
+- Confirmed event stream includes: `debug_ignite_request`, `debug_ignite_applied`, `ignited`, `burning_tick`, `response_state`, `explosion_detonated`, `explosion_ignition_request`, `explosion_ignite_applied`.
 - Latest sampled `Player.log` currently shows sparse recent telemetry only (mainly `response_state` lines), so a fresh controlled capture is still required.
 
 ### Behavioral signal from captured runs
