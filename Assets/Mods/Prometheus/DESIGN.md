@@ -70,10 +70,25 @@ Create a coherent fire ecosystem where players can:
 
 Potential fire sources:
 
-- Lightning/weather events (especially during drought-like conditions)
-- Industrial accidents (high-heat buildings)
-- Fireworks mishaps (small chance, tunable)
-- Player-triggered controlled burns (late phase)
+
+### Building ignition risk profile (initial)
+
+To keep fire readable and fair, building ignition risk should be data-driven and grouped by operational hazard profile.
+
+- **Low risk** (early-game, normally supervised):
+  - Campfire
+- **Medium risk** (routine heat + fuel handling):
+  - Grill
+- **High risk** (industrial heat / combustion pressure):
+  - Smelter
+  - Ironteeth Engine
+- **General rule:** wood-consuming industrial buildings should receive elevated ignition risk compared to non-combustion utility buildings.
+
+Design constraints:
+
+- Early-game essentials should remain mostly safe (avoid early frustration spikes).
+- High-risk industry should reward safety investment (distance, suppression, alarm coverage).
+- Risk values should be tuneable per difficulty profile (`Low` / `Standard` / `High`).
 
 ### 2) Spread
 
@@ -130,6 +145,26 @@ Fire spread should be influenced by:
   - Pressurized Suppressant Station,
   - Protective equipment production chain.
 
+## Emberpelts (Future extension)
+
+- Focus: heat-adapted containment + post-fire resource conversion.
+- Intended identity:
+  - resilient near high-heat fronts,
+  - effective at hotspot cleanup and re-ignition prevention,
+  - strongest post-fire conversion from destruction into usable fuel.
+- Candidate mechanics:
+  - passive heat resistance bonus for responders,
+  - close-range suppression action (e.g., tail-stamp extinguish animation/ability),
+  - salvage charcoal from burnt trees/buildings (`Charred` state harvest),
+  - optional ash-soil synergy from rapid Emberpelt salvage operations.
+- Faction constraints to respect from source mod behavior:
+  - wet-fur conditions hinder Emberpelt breeding,
+  - avoid mechanics that force frequent water exposure without compensating tools.
+- Balance intent:
+  - lower raw front-wide suppression than Ironteeth,
+  - less mass emergency manpower than Folktails,
+  - superior stabilization and recovery value after contained fire events.
+
 ---
 
 ## Fireworks Design
@@ -142,6 +177,58 @@ Fireworks are a positive social feature with strategic caution:
   - increased ignition chance if local fire safety is weak.
 
 Design intent: fireworks are mostly celebratory, but they naturally connect to the fire system instead of being isolated flavor.
+
+---
+
+## Explosive Hazard Model
+
+Explosive production/storage introduces a distinct hazard layer separate from baseline fire spread.
+
+### Candidate explosive hazards
+
+- Explosives Factory
+- Explosives Warehouse / storage of explosive crates
+- Placed/laid explosives (world objects)
+
+### Explosion behavior (design intent)
+
+- Buildings containing explosives can **detonate when burning**.
+- Explosive crates should behave like localized explosive payloads (conceptually similar to a dynamite stick per affected tile/stack segment).
+- Placed explosives that catch fire should detonate.
+
+### Fire interaction policy
+
+Default rule: **explosions do not create new fires**.
+
+Rationale:
+
+- Timberborn settlements commonly place explosives-adjacent infrastructure; auto-ignition from blasts may create excessive chain-frustration.
+- Prevents accidental terrain-risk amplification in dense settlements where players use explosives as standard tools.
+- Keeps explosion consequences strong but readable (blast damage and disruption) without runaway ignition cascades.
+
+Optional advanced tuning (future): allow a small explosion-to-ignition chance only in `High Fire Activity` profile if additional challenge is desired.
+
+### Explosion ignition difficulty setting
+
+Add a dedicated setting to control whether explosions can start fires:
+
+- `ExplosionIgnitionMode = Off` (default)
+- `ExplosionIgnitionMode = HighOnly` (enabled only under `High Fire Activity`)
+- `ExplosionIgnitionMode = Always` (hardcore/custom)
+
+When enabled, explosion ignition checks should:
+
+- use low/moderate base chance,
+- scale by explosive severity/source (e.g., crate < warehouse < factory/placed charge),
+- be reduced by local moisture/flooding context.
+
+Design intent: preserve settlement readability by default while allowing opt-in chain-reaction challenge for players who want higher risk.
+
+### Blast consequence profile (first pass)
+
+- Primary effect: local structural/health damage and suppression disruption.
+- Secondary effect: temporary panic/load spike for response systems.
+- No default terrain deformation from incidental building explosions unless explicitly tied to placed explosive entities.
 
 ---
 
@@ -577,6 +664,7 @@ Active/planned entries only. Full historical log moved to `DESIGN_CHANGELOG_ARCH
 
 | Date | Phase | Update | Status |
 | --- | --- | --- | --- |
+| 2026-02-22 | Phase 2/3 | Added Emberpelts future extension concept (heat-adapted response, tail-stamp suppression style, charcoal salvage + ash-soil synergy, wet-fur breeding constraint awareness) | Planned |
 | 2026-02-21 | Phase 2/5 | Added quick-fill dual-front playtest result template and next sprint execution plan (validation, tuning sequence, and exit gates) | Planned |
 | 2026-02-21 | Phase 2/5 | Added detailed next-sprint Phase 2 delivery plan (faction logistics depth, dispatch scoring, hysteresis, telemetry, acceptance gates) and explicit sprint checklist | Planned |
 
