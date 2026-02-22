@@ -17,9 +17,9 @@ We added debug controls and logs to accelerate testing, then fixed runtime stabi
 
 ## What we are actively working on
 
-1. Validate single-front behavior using deterministic debug ignition.
-2. Gather log-backed telemetry (`[Prometheus/Fire]`) to evaluate spread/quench/response-state transitions over time.
-3. Use captured evidence to tune suppression vs spread and damage progression.
+1. Implement remaining interacting systems from `DESIGN.md` before additional balance passes.
+2. Ensure interactions are wired end-to-end (ignition sources, spread/suppression, recovery, and festival risk coupling).
+3. Expand validation from single-front tuning checks to system-integration scenario checks.
 
 ## Confirmed results so far
 
@@ -61,6 +61,7 @@ We added debug controls and logs to accelerate testing, then fixed runtime stabi
 - In tested Standard/Bakery scenario, spread can exceed quench and trend to `Overwhelmed`.
 - This is now a **tuning/balance** issue, not a wiring/visibility/crash issue.
 - Captured clean single-ignite telemetry sequence in latest run window (`debug_ignite_request` -> `debug_ignite_applied` -> `ignited` -> `burning_tick`) with `spread=0.097`, `quench=0.075`, and rising intensity (`0.371 -> 0.478`).
+- Confirmed active spread propagation is functioning in live gameplay (secondary target ignition occurred quickly); defer range/rate tuning until broader system interactions are implemented.
 
 ## Open issues / hypotheses
 
@@ -75,13 +76,23 @@ We added debug controls and logs to accelerate testing, then fixed runtime stabi
 
 ## Next steps (priority order)
 
-1. Ensure Unity compile completes in this repo, then run deploy with polling:
-   - `bash scripts/deploy_prometheus.sh --launch`
-2. Execute post-tuning comparison pass (same scenario, single `Ignite` press).
-3. Capture panel snapshot + matching `[Prometheus/Fire]` lines for the tuned window.
-4. Compare baseline vs tuned metrics (`spread`, `quench`, intensity slope, response state evolution).
-5. If behavior improves but remains too harsh, apply one additional micro-adjustment only.
-6. Record accepted defaults and rationale in design docs.
+1. Lock strategy to **implementation-first, tuning-second** (pause non-critical micro-tuning until interaction systems are in place).
+2. Implement **explosive hazard model** baseline:
+   - add explosion ignition policy setting (`Off`/`HighOnly`/`Always`),
+   - wire first-pass ignition checks with moisture/safety modifiers,
+   - keep default behavior at `Off` for readability.
+3. Implement **Phase 3 recovery + controlled-burn envelope** end-to-end:
+   - controlled-burn eligibility gates,
+   - ashen-soil lifecycle values exposed in runtime/debug,
+   - reward differentiation between managed vs catastrophic burns.
+4. Implement **Phase 4 fireworks risk coupling** baseline:
+   - high-intensity fireworks mode with explicit risk multiplier,
+   - safety/readiness modulation shared with suppression/water context.
+5. Add integration-first validation scenarios (not tuning-heavy):
+   - explosion-adjacent burn,
+   - planned controlled burn near farms,
+   - fireworks event under weak vs strong safety prep.
+6. After all systems interact correctly, run one consolidated tuning pass across `Low`/`Standard`/`High`.
 
 ## How to quickly resume
 

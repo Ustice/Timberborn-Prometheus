@@ -135,17 +135,39 @@ namespace Mods.Prometheus.Scripts {
       var shouldIgnite = _currentIntensity <= 0f && Random.value < ignitionChance;
 
       var forcedIgnition = _fireSimulationRuntimeState.ConsumeForcedIgnitionRequest(entityId);
+      var spreadIgnitionTriggered = false;
+      var spreadIgnitionSourceEntityId = 0;
+      var spreadIgnitionPropagationChance = 0f;
+      if (_fireSimulationRuntimeState.ConsumeSpreadIgnitionRequest(entityId, out var spreadIgnitionRequest)) {
+        spreadIgnitionTriggered = true;
+        spreadIgnitionSourceEntityId = spreadIgnitionRequest.SourceEntityId;
+        spreadIgnitionPropagationChance = spreadIgnitionRequest.PropagationChance;
+      }
+
       if (forcedIgnition) {
         shouldIgnite = true;
         Debug.Log($"[Prometheus/Fire] event=debug_ignite_request entity={GameObject.name} id={entityId}");
       }
 
+      if (spreadIgnitionTriggered && _currentIntensity <= 0f) {
+        shouldIgnite = true;
+        ignitionChance = Mathf.Max(ignitionChance, spreadIgnitionPropagationChance);
+      }
+
       if (shouldIgnite) {
-        _currentIntensity = forcedIgnition ? Mathf.Max(_currentIntensity, 0.35f) : 0.2f;
+        _currentIntensity = forcedIgnition
+          ? Mathf.Max(_currentIntensity, 0.35f)
+          : spreadIgnitionTriggered
+            ? Mathf.Max(_currentIntensity, 0.24f)
+            : 0.2f;
 
         if (forcedIgnition) {
           _quickNotificationService.SendNotification($"Prometheus: debug ignition triggered at {GameObject.name}.");
           Debug.Log($"[Prometheus/Fire] event=debug_ignite_applied entity={GameObject.name} id={entityId} intensity={_currentIntensity:0.000}");
+        }
+
+        if (spreadIgnitionTriggered) {
+          Debug.Log($"[Prometheus/Fire] event=spread_ignite_applied entity={GameObject.name} id={entityId} sourceId={spreadIgnitionSourceEntityId} chance={spreadIgnitionPropagationChance:0.000} intensity={_currentIntensity:0.000}");
         }
       }
 
@@ -181,10 +203,29 @@ namespace Mods.Prometheus.Scripts {
         _currentIntensity = 0f;
       }
 
+      if (_currentIntensity > 0f) {
+        var spreadRadius = Mathf.Lerp(8f, 14f, Mathf.Clamp01(_currentIntensity));
+        if (_fireEntityRegistryRuntimeState.TryGetNearestSpreadTarget(entityId, GameObject.transform.position, spreadRadius, out var spreadTargetEntityId, out var spreadTargetDistanceNormalized)) {
+          var spreadProximity = 1f - spreadTargetDistanceNormalized;
+          var spreadPropagationChance = Mathf.Clamp01(
+            ((spreadPressure * 2.2f)
+             + (_currentIntensity * 0.45f)
+             + (spreadProximity * 0.4f))
+            * tuning.NeighborIgnitionMultiplier);
+
+          if (spreadPropagationChance > 0.025f && Random.value < spreadPropagationChance) {
+            _fireSimulationRuntimeState.RequestSpreadIgnition(spreadTargetEntityId, entityId, spreadPropagationChance);
+            Debug.Log($"[Prometheus/Fire] event=spread_propagation source={GameObject.name} sourceId={entityId} targetId={spreadTargetEntityId} chance={spreadPropagationChance:0.000} proximity={spreadProximity:0.000}");
+          }
+        }
+      }
+
       var heatExposure = _currentIntensity * (1f - heatMitigation);
 
       var dominantIgnitionSource = "None";
-      if (ignitionChance > 0f) {
+      if (spreadIgnitionTriggered) {
+        dominantIgnitionSource = "NeighborSpread";
+      } else if (ignitionChance > 0f) {
         var dominantContribution = Mathf.Max(
           Mathf.Max(weatherIgnition, industrialIgnition),
           Mathf.Max(Mathf.Max(fireworksIgnition, controlledBurnIgnition), neighborSpreadIgnition));

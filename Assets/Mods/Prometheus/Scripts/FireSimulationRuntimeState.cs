@@ -1,6 +1,18 @@
 using System.Collections.Generic;
 
 namespace Mods.Prometheus.Scripts {
+  internal readonly struct SpreadIgnitionRequest {
+
+    public int SourceEntityId { get; }
+    public float PropagationChance { get; }
+
+    public SpreadIgnitionRequest(int sourceEntityId, float propagationChance) {
+      SourceEntityId = sourceEntityId;
+      PropagationChance = propagationChance;
+    }
+
+  }
+
   internal readonly struct FireSimulationSnapshot {
 
     public bool Burning { get; }
@@ -58,6 +70,7 @@ namespace Mods.Prometheus.Scripts {
 
     private readonly Dictionary<int, FireSimulationSnapshot> _snapshotsByEntityId = new();
     private readonly HashSet<int> _forcedIgnitionEntityIds = new();
+    private readonly Dictionary<int, SpreadIgnitionRequest> _spreadIgnitionRequestsByEntityId = new();
 
     public void SetSnapshot(int entityId, FireSimulationSnapshot snapshot) {
       _snapshotsByEntityId[entityId] = snapshot;
@@ -77,6 +90,31 @@ namespace Mods.Prometheus.Scripts {
 
     public bool ConsumeForcedIgnitionRequest(int entityId) {
       return _forcedIgnitionEntityIds.Remove(entityId);
+    }
+
+    public void RequestSpreadIgnition(int targetEntityId, int sourceEntityId, float propagationChance) {
+      if (targetEntityId == 0 || sourceEntityId == 0 || targetEntityId == sourceEntityId) {
+        return;
+      }
+
+      var clampedPropagationChance = propagationChance < 0f ? 0f : propagationChance;
+      if (_spreadIgnitionRequestsByEntityId.TryGetValue(targetEntityId, out var existingRequest)) {
+        if (existingRequest.PropagationChance >= clampedPropagationChance) {
+          return;
+        }
+      }
+
+      _spreadIgnitionRequestsByEntityId[targetEntityId] = new SpreadIgnitionRequest(sourceEntityId, clampedPropagationChance);
+    }
+
+    public bool ConsumeSpreadIgnitionRequest(int entityId, out SpreadIgnitionRequest request) {
+      if (_spreadIgnitionRequestsByEntityId.TryGetValue(entityId, out request)) {
+        _spreadIgnitionRequestsByEntityId.Remove(entityId);
+        return true;
+      }
+
+      request = default;
+      return false;
     }
 
   }

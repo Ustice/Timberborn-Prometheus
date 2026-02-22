@@ -59,5 +59,43 @@ namespace Mods.Prometheus.Scripts {
       return Mathf.Clamp(accumulatedPressure, 0f, 0.12f);
     }
 
+    public bool TryGetNearestSpreadTarget(int sourceEntityId, Vector3 sourcePosition, float radius, out int targetEntityId, out float normalizedDistance) {
+      var radiusSquared = radius * radius;
+      var bestDistanceSquared = float.MaxValue;
+      var bestTargetEntityId = 0;
+
+      foreach (var pair in _snapshotsByEntityId) {
+        if (pair.Key == sourceEntityId) {
+          continue;
+        }
+
+        var snapshot = pair.Value;
+        if (snapshot.Burning) {
+          continue;
+        }
+
+        var offset = snapshot.Position - sourcePosition;
+        var distanceSquared = offset.sqrMagnitude;
+        if (distanceSquared > radiusSquared) {
+          continue;
+        }
+
+        if (distanceSquared < bestDistanceSquared) {
+          bestDistanceSquared = distanceSquared;
+          bestTargetEntityId = pair.Key;
+        }
+      }
+
+      if (bestTargetEntityId == 0) {
+        targetEntityId = 0;
+        normalizedDistance = 1f;
+        return false;
+      }
+
+      targetEntityId = bestTargetEntityId;
+      normalizedDistance = Mathf.Clamp01(Mathf.Sqrt(bestDistanceSquared) / radius);
+      return true;
+    }
+
   }
 }
