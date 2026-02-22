@@ -8,7 +8,7 @@ RUN_TESTS_BEFORE_DEPLOY=true
 TEST_ONLY=false
 STOP_RUNNING_BEFORE_DEPLOY=false
 WAIT_FOR_BUILD=false
-WAIT_FOR_BUILD_TIMEOUT_SECONDS=180
+WAIT_FOR_BUILD_TIMEOUT_SECONDS=10
 WAIT_FOR_BUILD_POLL_SECONDS=2
 WAIT_FOR_BUILD_STABLE_POLLS=2
 DEFAULT_TIMBERBORN_APP_ID="1062090"
@@ -108,6 +108,32 @@ get_dll_signature() {
   stat -f '%m:%z' "$SRC_DLL" 2>/dev/null || true
 }
 
+unity_build_errors_detected_since() {
+  local start_line="${1:-0}"
+  local editor_log_path="${UNITY_EDITOR_LOG_PATH:-$HOME/Library/Logs/Unity/Editor.log}"
+
+  if [[ ! -f "$editor_log_path" ]]; then
+    return 1
+  fi
+
+  local from_line=$(( start_line + 1 ))
+  local log_delta
+  log_delta="$(tail -n +"$from_line" "$editor_log_path" 2>/dev/null || true)"
+  if [[ -z "$log_delta" ]]; then
+    return 1
+  fi
+
+  local error_pattern='error CS[0-9]+|Script Compilation Error|build failed|Asset import failed|ReflectionTypeLoadException|Could not load type'
+  if ! echo "$log_delta" | grep -Eiq "$error_pattern"; then
+    return 1
+  fi
+
+  echo "[deploy-prometheus] Unity reported build/import errors while waiting for fresh DLL." >&2
+  echo "[deploy-prometheus] Recent Unity errors:" >&2
+  echo "$log_delta" | grep -Ein "$error_pattern" | tail -n 12 >&2 || true
+  return 0
+}
+
 wait_for_fresh_build_if_requested() {
   if [[ "$WAIT_FOR_BUILD" != "true" ]]; then
     return 0
@@ -124,6 +150,12 @@ wait_for_fresh_build_if_requested() {
 
   local start_epoch
   start_epoch="$(date +%s)"
+
+  local editor_log_path="${UNITY_EDITOR_LOG_PATH:-$HOME/Library/Logs/Unity/Editor.log}"
+  local editor_log_line_cursor=0
+  if [[ -f "$editor_log_path" ]]; then
+    editor_log_line_cursor="$(wc -l < "$editor_log_path" | tr -d '[:space:]')"
+  fi
 
   echo "[deploy-prometheus] Waiting for Unity build output to become fresh..."
   echo "[deploy-prometheus] Newest source: $newest_source_file"
@@ -154,6 +186,18 @@ wait_for_fresh_build_if_requested() {
       else
         stable_poll_count=0
         last_signature=""
+      fi
+    fi
+
+    if [[ -f "$editor_log_path" ]]; then
+      local current_editor_log_line_count
+      current_editor_log_line_count="$(wc -l < "$editor_log_path" | tr -d '[:space:]')"
+      if (( current_editor_log_line_count > editor_log_line_cursor )); then
+        if unity_build_errors_detected_since "$editor_log_line_cursor"; then
+          return 1
+        fi
+
+        editor_log_line_cursor="$current_editor_log_line_count"
       fi
     fi
 
@@ -233,6 +277,27 @@ stop_running_timberborn_if_requested() {
   echo "[deploy-prometheus] Timberborn stopped."
 }
 
+is_timberborn_running() {
+  pgrep -f '/Timberborn\.app/|\bTimberborn\b' >/dev/null 2>&1
+}
+
+wait_for_timberborn_launch() {
+  local timeout_seconds="${1:-20}"
+  local poll_seconds=1
+  local waited=0
+
+  while (( waited < timeout_seconds )); do
+    if is_timberborn_running; then
+      return 0
+    fi
+
+    sleep "$poll_seconds"
+    waited=$(( waited + poll_seconds ))
+  done
+
+  return 1
+}
+
 determine_timberborn_app_id() {
   if [[ -n "${TIMBERBORN_APP_ID:-}" ]]; then
     echo "$TIMBERBORN_APP_ID"
@@ -269,6 +334,21 @@ launch_timberborn() {
 
   open "$steam_url"
   echo "[deploy-prometheus] Launch requested: $steam_url"
+
+  if wait_for_timberborn_launch 20; then
+    local launch_pid
+    launch_pid="$(pgrep -f '/Timberborn\.app/|\bTimberborn\b' | head -n 1 || true)"
+    if [[ -n "$launch_pid" ]]; then
+      echo "[deploy-prometheus] Timberborn process detected (pid: $launch_pid)."
+    else
+      echo "[deploy-prometheus] Timberborn process detected."
+    fi
+    return 0
+  fi
+
+  echo "[deploy-prometheus] Launch URL opened, but Timberborn process was not detected within 20s." >&2
+  echo "[deploy-prometheus] If Steam is not focused, try opening this URL manually: $steam_url" >&2
+  return 1
 }
 
 while [[ $# -gt 0 ]]; do

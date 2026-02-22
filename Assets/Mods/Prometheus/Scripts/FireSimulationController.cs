@@ -30,6 +30,10 @@ namespace Mods.Prometheus.Scripts {
     private string _responseState = "Idle";
     private float _responseNotificationCooldownRemainingSeconds;
     private float _burningTelemetryLogCooldownRemainingSeconds;
+    private GameObject _fireMarkerObject;
+    private TextMesh _fireMarkerText;
+    private float _fireMarkerBaseHeight = 2.25f;
+    private float _fireMarkerPulseTime;
 
     [Inject]
     public void InjectDependencies(
@@ -338,6 +342,7 @@ namespace Mods.Prometheus.Scripts {
       _fireDispatchScoringRuntimeState.SetSnapshot(entityId, dispatchScoringSnapshot);
 
       _fireSimulationRuntimeState.SetSnapshot(entityId, simulationSnapshot);
+      UpdateFireMarker(simulationSnapshot.Burning, simulationSnapshot.Intensity);
 
       var registrySnapshot = new FireEntityRegistrySnapshot(
         GameObject.transform.position,
@@ -347,10 +352,10 @@ namespace Mods.Prometheus.Scripts {
       _fireEntityRegistryRuntimeState.SetSnapshot(entityId, registrySnapshot);
 
       if (simulationSnapshot.Burning && !_wasBurning) {
-        _quickNotificationService.SendNotification($"Prometheus: fire ignited at {GameObject.name}.");
+        _quickNotificationService.SendNotification($"🔥 Prometheus: fire ignited at {GameObject.name}.");
         Debug.Log($"[Prometheus/Fire] event=ignited entity={GameObject.name} id={entityId} source={dominantIgnitionSource} ignitionChance={ignitionChance:0.000} intensity={_currentIntensity:0.000}");
       } else if (!simulationSnapshot.Burning && _wasBurning) {
-        _quickNotificationService.SendNotification($"Prometheus: fire extinguished at {GameObject.name}.");
+        _quickNotificationService.SendNotification($"✅ Prometheus: fire extinguished at {GameObject.name}.");
         Debug.Log($"[Prometheus/Fire] event=extinguished entity={GameObject.name} id={entityId}");
       }
 
@@ -360,6 +365,82 @@ namespace Mods.Prometheus.Scripts {
       }
 
       _wasBurning = simulationSnapshot.Burning;
+    }
+
+    private void UpdateFireMarker(bool burning, float intensity) {
+      if (!burning) {
+        if (_fireMarkerObject != null) {
+          _fireMarkerObject.SetActive(false);
+        }
+
+        return;
+      }
+
+      EnsureFireMarkerCreated();
+      if (_fireMarkerObject == null || _fireMarkerText == null) {
+        return;
+      }
+
+      if (!_fireMarkerObject.activeSelf) {
+        _fireMarkerObject.SetActive(true);
+      }
+
+      _fireMarkerPulseTime += Time.deltaTime;
+      var pulse = 0.85f + (Mathf.Sin(_fireMarkerPulseTime * 6f) * 0.15f);
+      var scale = Mathf.Lerp(0.8f, 1.35f, Mathf.Clamp01(intensity)) * pulse;
+
+      _fireMarkerObject.transform.localPosition = new Vector3(0f, _fireMarkerBaseHeight, 0f);
+      _fireMarkerObject.transform.localScale = new Vector3(scale, scale, scale);
+
+      var intensity01 = Mathf.Clamp01(intensity);
+      _fireMarkerText.color = Color.Lerp(new Color(1f, 0.82f, 0.28f, 1f), new Color(1f, 0.24f, 0.12f, 1f), intensity01);
+
+      var mainCamera = Camera.main;
+      if (mainCamera != null) {
+        var direction = _fireMarkerObject.transform.position - mainCamera.transform.position;
+        if (direction.sqrMagnitude > 0.0001f) {
+          _fireMarkerObject.transform.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
+        }
+      }
+    }
+
+    private void EnsureFireMarkerCreated() {
+      if (_fireMarkerObject != null && _fireMarkerText != null) {
+        return;
+      }
+
+      var renderers = GameObject.GetComponentsInChildren<Renderer>();
+      if (renderers.Length > 0) {
+        var maxY = float.MinValue;
+        for (var i = 0; i < renderers.Length; i++) {
+          if (renderers[i] == null) {
+            continue;
+          }
+
+          maxY = Mathf.Max(maxY, renderers[i].bounds.max.y);
+        }
+
+        if (maxY > float.MinValue) {
+          var localOffset = maxY - GameObject.transform.position.y;
+          _fireMarkerBaseHeight = Mathf.Clamp(localOffset + 0.9f, 1.8f, 8f);
+        }
+      }
+
+      _fireMarkerObject = new GameObject("PrometheusFireMarker");
+      _fireMarkerObject.transform.SetParent(GameObject.transform, false);
+      _fireMarkerObject.transform.localPosition = new Vector3(0f, _fireMarkerBaseHeight, 0f);
+      _fireMarkerObject.transform.localRotation = Quaternion.identity;
+      _fireMarkerObject.transform.localScale = Vector3.one;
+
+      _fireMarkerText = _fireMarkerObject.AddComponent<TextMesh>();
+      _fireMarkerText.text = "FIRE!";
+      _fireMarkerText.anchor = TextAnchor.MiddleCenter;
+      _fireMarkerText.alignment = TextAlignment.Center;
+      _fireMarkerText.fontSize = 64;
+      _fireMarkerText.characterSize = 0.12f;
+      _fireMarkerText.color = new Color(1f, 0.4f, 0.18f, 1f);
+
+      _fireMarkerObject.SetActive(false);
     }
 
   }

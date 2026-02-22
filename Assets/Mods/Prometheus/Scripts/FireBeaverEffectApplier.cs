@@ -113,7 +113,9 @@ namespace Mods.Prometheus.Scripts {
 
       if (_addPointsMethod is null && !_loggedMissingNeedManagerApi) {
         _loggedMissingNeedManagerApi = true;
-        _quickNotificationService.SendNotification("Prometheus: NeedManager AddPoints API not found; beaver fire effects disabled.");
+        const string warning = "Prometheus: NeedManager AddPoints API not found; beaver fire effects disabled.";
+        _quickNotificationService.SendNotification(warning);
+        Debug.LogWarning($"[Prometheus/Fire] event=beaver_effect_api_missing message=\"{warning}\"");
       }
     }
 

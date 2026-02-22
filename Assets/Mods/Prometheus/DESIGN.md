@@ -70,7 +70,6 @@ Create a coherent fire ecosystem where players can:
 
 Potential fire sources:
 
-
 ### Building ignition risk profile (initial)
 
 To keep fire readable and fair, building ignition risk should be data-driven and grouped by operational hazard profile.
