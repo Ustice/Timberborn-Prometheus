@@ -4,12 +4,23 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MOD_NAME="Prometheus"
 LAUNCH_AFTER_DEPLOY=false
+LAUNCH_DELAY_SECONDS=5
 RUN_TESTS_BEFORE_DEPLOY=false
 TEST_ONLY=false
+STOP_RUNNING_BEFORE_DEPLOY=false
+WAIT_FOR_BUILD=false
+WAIT_FOR_BUILD_TIMEOUT_SECONDS=180
+WAIT_FOR_BUILD_POLL_SECONDS=2
+WAIT_FOR_BUILD_STABLE_POLLS=2
 DEFAULT_TIMBERBORN_APP_ID="1062090"
+DEFAULT_BUILD_PROJECT_DIR="$ROOT_DIR"
+if [[ -d "$ROOT_DIR/../timberborn-modding" ]]; then
+  DEFAULT_BUILD_PROJECT_DIR="$(cd "$ROOT_DIR/../timberborn-modding" && pwd)"
+fi
+BUILD_PROJECT_DIR="${PROMETHEUS_BUILD_PROJECT_DIR:-$DEFAULT_BUILD_PROJECT_DIR}"
 SRC_MOD_DIR="$ROOT_DIR/Assets/Mods/$MOD_NAME"
-SRC_DLL="$ROOT_DIR/Library/ScriptAssemblies/Timberborn.ModExamples.Prometheus.dll"
-SRC_PDB="$ROOT_DIR/Library/ScriptAssemblies/Timberborn.ModExamples.Prometheus.pdb"
+SRC_DLL="$BUILD_PROJECT_DIR/Library/ScriptAssemblies/Timberborn.ModExamples.Prometheus.dll"
+SRC_PDB="$BUILD_PROJECT_DIR/Library/ScriptAssemblies/Timberborn.ModExamples.Prometheus.pdb"
 DST_MOD_DIR="$HOME/Documents/Timberborn/Mods/$MOD_NAME"
 DST_SCRIPTS_DIR="$DST_MOD_DIR/Scripts"
 BACKUP_ROOT_DIR="$ROOT_DIR/.backups"
@@ -17,13 +28,25 @@ BACKUP_DIR="$BACKUP_ROOT_DIR/$MOD_NAME"
 
 usage() {
   cat <<'USAGE'
-Usage: bash scripts/deploy_prometheus.sh [--test] [--test-only] [--launch] [--no-launch]
+Usage: bash scripts/deploy_prometheus.sh [--test] [--test-only] [--launch] [--no-launch] [--launch-delay <seconds>] [--stop-running] [--no-stop-running] [--wait-for-build] [--wait-for-build-timeout <seconds>]
 
 Options:
   --test        Run automated deploy tests before deployment.
   --test-only   Run automated deploy tests and exit without deploying.
   --launch      Launch Timberborn via Steam after a successful deploy.
   --no-launch   Do not launch Timberborn after deploy (default).
+  --launch-delay <seconds>
+                Seconds to wait after deploy before launching Timberborn (default: 5, use 0 for immediate launch).
+  --stop-running    Stop a running Timberborn process before deploying.
+  --no-stop-running Do not stop running Timberborn before deploying (default).
+  --wait-for-build  Wait for Unity to produce a fresh and stable DLL if source scripts are newer.
+  --wait-for-build-timeout <seconds>
+                Max time to wait for a fresh DLL (default: 180).
+
+Environment:
+  PROMETHEUS_BUILD_PROJECT_DIR
+                Path to the Unity project that produces ScriptAssemblies.
+                Defaults to ../timberborn-modding when present, else this repo.
 
 Common combos:
   bash scripts/deploy_prometheus.sh                 # deploy only
@@ -31,7 +54,200 @@ Common combos:
   bash scripts/deploy_prometheus.sh --test          # test + deploy
   bash scripts/deploy_prometheus.sh --launch        # deploy + launch
   bash scripts/deploy_prometheus.sh --test --launch # test + deploy + launch
+  bash scripts/deploy_prometheus.sh --stop-running --launch # stop running game + deploy + launch
+  bash scripts/deploy_prometheus.sh --wait-for-build --test --launch # wait for Unity build, then test + deploy + launch
+
+Deployment model:
+  The deployed mod directory is recreated as symlinks on each run:
+  - Non-Scripts content links to $ROOT_DIR/Assets/Mods/Prometheus/*
+  - Scripts/Timberborn.ModExamples.Prometheus.(dll|pdb) link to build output
 USAGE
+}
+
+rebuild_symlinked_mod_directory() {
+  rm -rf "$DST_MOD_DIR"
+  mkdir -p "$DST_MOD_DIR"
+
+  local src_item
+  for src_item in "$SRC_MOD_DIR"/*; do
+    local item_name
+    item_name="$(basename "$src_item")"
+
+    if [[ "$item_name" == "Scripts" ]]; then
+      continue
+    fi
+
+    if [[ "$item_name" == ".DS_Store" ]] || [[ "$item_name" == *.meta ]]; then
+      continue
+    fi
+
+    ln -s "$src_item" "$DST_MOD_DIR/$item_name"
+  done
+
+  mkdir -p "$DST_SCRIPTS_DIR"
+  ln -s "$SRC_DLL" "$DST_SCRIPTS_DIR/Timberborn.ModExamples.Prometheus.dll"
+  if [[ -f "$SRC_PDB" ]]; then
+    ln -s "$SRC_PDB" "$DST_SCRIPTS_DIR/Timberborn.ModExamples.Prometheus.pdb"
+  fi
+}
+
+get_newest_source_epoch() {
+  local src_script_dir="$SRC_MOD_DIR/Scripts"
+  if [[ ! -d "$src_script_dir" ]]; then
+    echo ""
+    return 0
+  fi
+
+  find "$src_script_dir" -type f -name '*.cs' -exec stat -f '%m' {} + | sort -nr | head -n 1 || true
+}
+
+get_newest_source_file() {
+  local src_script_dir="$SRC_MOD_DIR/Scripts"
+  if [[ ! -d "$src_script_dir" ]]; then
+    echo "(unknown source file)"
+    return 0
+  fi
+
+  local newest_source_file
+  newest_source_file="$(find "$src_script_dir" -type f -name '*.cs' -print0 | xargs -0 stat -f '%m %N' | sort -nr | head -n 1 | cut -d' ' -f2- || true)"
+  if [[ -z "$newest_source_file" ]]; then
+    newest_source_file="(unknown source file)"
+  fi
+  echo "$newest_source_file"
+}
+
+get_dll_signature() {
+  if [[ ! -f "$SRC_DLL" ]]; then
+    echo ""
+    return 0
+  fi
+
+  stat -f '%m:%z' "$SRC_DLL" 2>/dev/null || true
+}
+
+wait_for_fresh_build_if_requested() {
+  if [[ "$WAIT_FOR_BUILD" != "true" ]]; then
+    return 0
+  fi
+
+  local newest_source_epoch
+  newest_source_epoch="$(get_newest_source_epoch)"
+  if [[ -z "$newest_source_epoch" ]]; then
+    return 0
+  fi
+
+  local newest_source_file
+  newest_source_file="$(get_newest_source_file)"
+
+  local start_epoch
+  start_epoch="$(date +%s)"
+
+  echo "[deploy-prometheus] Waiting for Unity build output to become fresh..."
+  echo "[deploy-prometheus] Newest source: $newest_source_file"
+  echo "[deploy-prometheus] Timeout: ${WAIT_FOR_BUILD_TIMEOUT_SECONDS}s (poll ${WAIT_FOR_BUILD_POLL_SECONDS}s)"
+
+  local last_signature=""
+  local stable_poll_count=0
+
+  while true; do
+    if [[ -f "$SRC_DLL" ]]; then
+      local dll_epoch
+      dll_epoch="$(stat -f '%m' "$SRC_DLL")"
+      if [[ "$newest_source_epoch" -le "$dll_epoch" ]]; then
+        local current_signature
+        current_signature="$(get_dll_signature)"
+
+        if [[ -n "$current_signature" ]] && [[ "$current_signature" == "$last_signature" ]]; then
+          stable_poll_count=$((stable_poll_count + 1))
+        else
+          stable_poll_count=1
+          last_signature="$current_signature"
+        fi
+
+        if (( stable_poll_count >= WAIT_FOR_BUILD_STABLE_POLLS )); then
+          echo "[deploy-prometheus] Fresh and stable DLL detected. Continuing deployment."
+          return 0
+        fi
+      else
+        stable_poll_count=0
+        last_signature=""
+      fi
+    fi
+
+    local now_epoch
+    now_epoch="$(date +%s)"
+    local elapsed=$(( now_epoch - start_epoch ))
+    if (( elapsed >= WAIT_FOR_BUILD_TIMEOUT_SECONDS )); then
+      echo "[deploy-prometheus] Timed out after ${WAIT_FOR_BUILD_TIMEOUT_SECONDS}s waiting for fresh DLL." >&2
+      return 1
+    fi
+
+    sleep "$WAIT_FOR_BUILD_POLL_SECONDS"
+  done
+}
+
+ensure_build_not_stale() {
+  local newest_source_epoch
+  newest_source_epoch="$(get_newest_source_epoch)"
+  if [[ -z "$newest_source_epoch" ]]; then
+    return 0
+  fi
+
+  local dll_epoch
+  dll_epoch="$(stat -f '%m' "$SRC_DLL")"
+  if [[ "$newest_source_epoch" -le "$dll_epoch" ]]; then
+    return 0
+  fi
+
+  local newest_source_file
+  newest_source_file="$(get_newest_source_file)"
+
+  echo "[deploy-prometheus] Stale build detected: source scripts are newer than DLL." >&2
+  echo "[deploy-prometheus] Newest source: $newest_source_file" >&2
+  echo "[deploy-prometheus] Rebuild scripts in Unity first, then run deploy again." >&2
+  exit 1
+}
+
+stop_running_timberborn_if_requested() {
+  if [[ "$STOP_RUNNING_BEFORE_DEPLOY" != "true" ]]; then
+    return 0
+  fi
+
+  if ! command -v pgrep >/dev/null 2>&1 || ! command -v kill >/dev/null 2>&1; then
+    echo "[deploy-prometheus] --stop-running requested, but required process tools are unavailable." >&2
+    return 1
+  fi
+
+  local pids
+  pids="$(pgrep -f '/Timberborn\.app/|\bTimberborn\b' || true)"
+  if [[ -z "$pids" ]]; then
+    echo "[deploy-prometheus] No running Timberborn process detected."
+    return 0
+  fi
+
+  echo "[deploy-prometheus] Stopping running Timberborn process(es): $pids"
+  kill $pids || true
+
+  for _ in {1..20}; do
+    if ! pgrep -f '/Timberborn\.app/|\bTimberborn\b' >/dev/null 2>&1; then
+      echo "[deploy-prometheus] Timberborn stopped."
+      return 0
+    fi
+    sleep 0.25
+  done
+
+  pids="$(pgrep -f '/Timberborn\.app/|\bTimberborn\b' || true)"
+  if [[ -n "$pids" ]]; then
+    echo "[deploy-prometheus] Timberborn is still running after graceful stop; forcing termination: $pids"
+    kill -9 $pids || true
+  fi
+
+  if pgrep -f '/Timberborn\.app/|\bTimberborn\b' >/dev/null 2>&1; then
+    echo "[deploy-prometheus] Unable to stop Timberborn. Please close it manually and rerun deploy." >&2
+    return 1
+  fi
+
+  echo "[deploy-prometheus] Timberborn stopped."
 }
 
 determine_timberborn_app_id() {
@@ -91,6 +307,51 @@ while [[ $# -gt 0 ]]; do
       LAUNCH_AFTER_DEPLOY=false
       shift
       ;;
+    --launch-delay)
+      if [[ $# -lt 2 ]]; then
+        echo "[deploy-prometheus] Missing value for --launch-delay." >&2
+        usage >&2
+        exit 1
+      fi
+
+      if [[ ! "$2" =~ ^[0-9]+$ ]]; then
+        echo "[deploy-prometheus] Invalid launch delay value: $2" >&2
+        usage >&2
+        exit 1
+      fi
+
+      LAUNCH_DELAY_SECONDS="$2"
+      shift 2
+      ;;
+    --stop-running)
+      STOP_RUNNING_BEFORE_DEPLOY=true
+      shift
+      ;;
+    --no-stop-running)
+      STOP_RUNNING_BEFORE_DEPLOY=false
+      shift
+      ;;
+    --wait-for-build)
+      WAIT_FOR_BUILD=true
+      shift
+      ;;
+    --wait-for-build-timeout)
+      if [[ $# -lt 2 ]]; then
+        echo "[deploy-prometheus] Missing value for --wait-for-build-timeout." >&2
+        usage >&2
+        exit 1
+      fi
+
+      if [[ ! "$2" =~ ^[0-9]+$ ]]; then
+        echo "[deploy-prometheus] Invalid timeout value: $2" >&2
+        usage >&2
+        exit 1
+      fi
+
+      WAIT_FOR_BUILD=true
+      WAIT_FOR_BUILD_TIMEOUT_SECONDS="$2"
+      shift 2
+      ;;
     -h|--help)
       usage
       exit 0
@@ -108,10 +369,15 @@ if [[ "$RUN_TESTS_BEFORE_DEPLOY" == "true" ]]; then
   bash "$ROOT_DIR/scripts/test_deploy_prometheus.sh"
 fi
 
+echo "[deploy-prometheus] Build project: $BUILD_PROJECT_DIR"
+echo "[deploy-prometheus] Build DLL source: $SRC_DLL"
+
 if [[ "$TEST_ONLY" == "true" ]]; then
   echo "[deploy-prometheus] Test-only mode complete. Skipping deployment."
   exit 0
 fi
+
+stop_running_timberborn_if_requested
 
 if [[ ! -d "$SRC_MOD_DIR" ]]; then
   echo "[deploy-prometheus] Missing source mod directory: $SRC_MOD_DIR" >&2
@@ -119,10 +385,24 @@ if [[ ! -d "$SRC_MOD_DIR" ]]; then
 fi
 
 if [[ ! -f "$SRC_DLL" ]]; then
-  echo "[deploy-prometheus] Missing built DLL: $SRC_DLL" >&2
-  echo "[deploy-prometheus] Build scripts in Unity first, then run this deploy script again." >&2
+  if [[ "$WAIT_FOR_BUILD" == "true" ]]; then
+    if ! wait_for_fresh_build_if_requested; then
+      exit 1
+    fi
+  fi
+
+  if [[ ! -f "$SRC_DLL" ]]; then
+    echo "[deploy-prometheus] Missing built DLL: $SRC_DLL" >&2
+    echo "[deploy-prometheus] Build scripts in Unity first, then run this deploy script again." >&2
+    exit 1
+  fi
+fi
+
+if ! wait_for_fresh_build_if_requested; then
   exit 1
 fi
+
+ensure_build_not_stale
 
 if [[ -d "$DST_MOD_DIR" ]]; then
   mkdir -p "$BACKUP_ROOT_DIR"
@@ -133,21 +413,19 @@ if [[ -d "$DST_MOD_DIR" ]]; then
 fi
 
 mkdir -p "$DST_MOD_DIR"
-rsync -a --delete --exclude '*.meta' --exclude '.DS_Store' "$SRC_MOD_DIR/" "$DST_MOD_DIR/"
+rebuild_symlinked_mod_directory
 
-mkdir -p "$DST_SCRIPTS_DIR"
-cp "$SRC_DLL" "$DST_SCRIPTS_DIR/"
-if [[ -f "$SRC_PDB" ]]; then
-  cp "$SRC_PDB" "$DST_SCRIPTS_DIR/"
-fi
-
-echo "[deploy-prometheus] Deployment complete."
+echo "[deploy-prometheus] Deployment complete (symlinked content + runtime links)."
 echo "[deploy-prometheus] Manifest:"
 grep -n '"Version"\|"Id"' "$DST_MOD_DIR/manifest.json" || true
 
 echo "[deploy-prometheus] Runtime payload:"
-ls -1 "$DST_SCRIPTS_DIR" | grep -E 'Timberborn\.ModExamples\.Prometheus\.(dll|pdb)' || true
+ls -l "$DST_SCRIPTS_DIR" | grep -E 'Timberborn\.ModExamples\.Prometheus\.(dll|pdb)' || true
 
 if [[ "$LAUNCH_AFTER_DEPLOY" == "true" ]]; then
+  if (( LAUNCH_DELAY_SECONDS > 0 )); then
+    echo "[deploy-prometheus] Waiting ${LAUNCH_DELAY_SECONDS}s before launch..."
+    sleep "$LAUNCH_DELAY_SECONDS"
+  fi
   launch_timberborn
 fi

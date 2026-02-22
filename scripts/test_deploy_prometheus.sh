@@ -55,6 +55,25 @@ assert_contains() {
 	fi
 }
 
+assert_symlink_target() {
+	local path="$1"
+	local expected_target="$2"
+	local label="$3"
+
+	if [[ ! -L "$path" ]]; then
+		fail "$label (not a symlink: $path)"
+		return
+	fi
+
+	local actual_target
+	actual_target="$(readlink "$path")"
+	if [[ "$actual_target" == "$expected_target" ]]; then
+		pass "$label"
+	else
+		fail "$label (expected target: $expected_target, actual: $actual_target)"
+	fi
+}
+
 create_temp_repo() {
 	local tmp_root
 	tmp_root="$(mktemp -d)"
@@ -66,7 +85,7 @@ create_temp_repo() {
 }
 
 test_successful_deploy_creates_latest_backup() {
-	echo "\n[test] successful deploy copies payload and saves latest backup in project .backups"
+	echo "\n[test] successful deploy symlinks payload and saves latest backup in project .backups"
 	local tmp_root
 	tmp_root="$(create_temp_repo)"
 	local repo="$tmp_root/repo"
@@ -106,6 +125,10 @@ JSON
 	assert_not_exists "$home/Documents/Timberborn/Mods/Prometheus/ignore.meta" "meta files excluded"
 	assert_file_exists "$home/Documents/Timberborn/Mods/Prometheus/Scripts/Timberborn.ModExamples.Prometheus.dll" "dll deployed"
 	assert_file_exists "$home/Documents/Timberborn/Mods/Prometheus/Scripts/Timberborn.ModExamples.Prometheus.pdb" "pdb deployed"
+	assert_symlink_target "$home/Documents/Timberborn/Mods/Prometheus/manifest.json" "$repo/Assets/Mods/Prometheus/manifest.json" "manifest is symlinked"
+	assert_symlink_target "$home/Documents/Timberborn/Mods/Prometheus/content.txt" "$repo/Assets/Mods/Prometheus/content.txt" "content is symlinked"
+	assert_symlink_target "$home/Documents/Timberborn/Mods/Prometheus/Scripts/Timberborn.ModExamples.Prometheus.dll" "$repo/Library/ScriptAssemblies/Timberborn.ModExamples.Prometheus.dll" "dll is symlinked"
+	assert_symlink_target "$home/Documents/Timberborn/Mods/Prometheus/Scripts/Timberborn.ModExamples.Prometheus.pdb" "$repo/Library/ScriptAssemblies/Timberborn.ModExamples.Prometheus.pdb" "pdb is symlinked"
 
 	assert_file_exists "$repo/.backups/Prometheus/old.txt" "latest backup captured previous destination state"
 	assert_not_exists "$repo/.backups/Prometheus/.DS_Store" "backup DS_Store removed"
@@ -117,7 +140,7 @@ JSON
 		pass "no legacy home backup folders created"
 	fi
 
-	assert_contains "$log" "Deployment complete" "success output includes completion message"
+	assert_contains "$log" "Deployment complete (symlinked content + runtime links)" "success output includes symlink deployment message"
 
 	rm -rf "$tmp_root"
 }
@@ -156,9 +179,99 @@ JSON
 	rm -rf "$tmp_root"
 }
 
+test_allow_stale_flag_is_rejected() {
+	echo "\n[test] removed --allow-stale-build flag is rejected"
+	local tmp_root
+	tmp_root="$(create_temp_repo)"
+	local repo="$tmp_root/repo"
+	local home="$tmp_root/home"
+	local log="$tmp_root/run.log"
+
+	set +e
+	HOME="$home" bash "$repo/scripts/deploy_prometheus.sh" --allow-stale-build >"$log" 2>&1
+	local status=$?
+	set -e
+
+	if [[ "$status" -ne 0 ]]; then
+		pass "deploy script rejects removed --allow-stale-build argument"
+	else
+		fail "deploy script should reject removed --allow-stale-build argument"
+	fi
+
+	assert_contains "$log" "Unknown argument: --allow-stale-build" "error output reports removed argument"
+
+	rm -rf "$tmp_root"
+}
+
+test_wait_for_build_timeout_fails_when_dll_stays_stale() {
+	echo "\n[test] wait-for-build timeout fails when dll does not become fresh"
+	local tmp_root
+	tmp_root="$(create_temp_repo)"
+	local repo="$tmp_root/repo"
+	local home="$tmp_root/home"
+	local log="$tmp_root/run.log"
+
+	mkdir -p "$repo/Assets/Mods/Prometheus/Scripts"
+	mkdir -p "$repo/Library/ScriptAssemblies"
+
+	cat > "$repo/Assets/Mods/Prometheus/manifest.json" <<'JSON'
+{
+	"Name": "Prometheus",
+	"Version": "9.9.9",
+	"Id": "ExampleBuilding.Prometheus"
+}
+JSON
+
+	echo "dll-bytes" > "$repo/Library/ScriptAssemblies/Timberborn.ModExamples.Prometheus.dll"
+	sleep 1
+	echo "// newer source" > "$repo/Assets/Mods/Prometheus/Scripts/NewerScript.cs"
+
+	set +e
+	HOME="$home" bash "$repo/scripts/deploy_prometheus.sh" --wait-for-build --wait-for-build-timeout 1 >"$log" 2>&1
+	local status=$?
+	set -e
+
+	if [[ "$status" -ne 0 ]]; then
+		pass "deploy script fails when wait-for-build times out on stale dll"
+	else
+		fail "deploy script should fail when wait-for-build times out on stale dll"
+	fi
+
+	assert_contains "$log" "Timed out after 1s waiting for fresh DLL" "timeout message is reported"
+
+	rm -rf "$tmp_root"
+}
+
+test_invalid_launch_delay_is_rejected() {
+	echo "\n[test] invalid launch-delay argument is rejected"
+	local tmp_root
+	tmp_root="$(create_temp_repo)"
+	local repo="$tmp_root/repo"
+	local home="$tmp_root/home"
+	local log="$tmp_root/run.log"
+
+	set +e
+	HOME="$home" bash "$repo/scripts/deploy_prometheus.sh" --launch-delay nope >"$log" 2>&1
+	local status=$?
+	set -e
+
+	if [[ "$status" -ne 0 ]]; then
+		pass "deploy script rejects non-numeric launch delay"
+	else
+		fail "deploy script should reject non-numeric launch delay"
+	fi
+
+	assert_contains "$log" "Invalid launch delay value" "error output reports invalid launch delay"
+
+	rm -rf "$tmp_root"
+}
+
 echo "[test-deploy-prometheus] Running deploy script tests..."
 test_successful_deploy_creates_latest_backup
 test_missing_dll_fails
+test_allow_stale_flag_is_rejected
+test_wait_for_build_timeout_fails_when_dll_stays_stale
+test_invalid_launch_delay_is_rejected
 
 echo "\n[test-deploy-prometheus] Completed: $PASS_COUNT passed, $FAIL_COUNT failed"
 if [[ "$FAIL_COUNT" -gt 0 ]]; then
