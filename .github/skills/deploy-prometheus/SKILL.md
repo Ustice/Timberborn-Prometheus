@@ -17,9 +17,8 @@ Follow the preconditions from `../_shared/prometheus-deploy-checklist.md`.
 
 1. Run the deployment script from the repository root:
 	- `bash scripts/deploy_prometheus.sh`
-	- Optional run tests first: `bash scripts/deploy_prometheus.sh --test`
 	- Optional launch to main menu/startup: `bash scripts/deploy_prometheus.sh --launch`
-	- Optional test+launch in one command: `bash scripts/deploy_prometheus.sh --test --launch`
+	- Optional tests-only check: `bash scripts/deploy_prometheus.sh --test-only`
 2. If deployment fails because the DLL is missing, stop and tell the user to build scripts in Unity first.
 3. If deployment succeeds, summarize:
 	- backup location (`.backups/Prometheus`)
@@ -35,7 +34,7 @@ The script should:
 - Sync mod files (excluding `*.meta` and `.DS_Store`).
 - Copy `Timberborn.ModExamples.Prometheus.dll` and optional `.pdb`.
 - Print manifest and runtime payload summary.
-- Run automated tests first when `--test` is provided.
+- Run automated tests before deploy by default.
 - Launch Timberborn via Steam when `--launch` is provided.
 
 ## Error handling

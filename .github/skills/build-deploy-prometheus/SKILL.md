@@ -16,8 +16,8 @@ Use the shared checklist in `../_shared/prometheus-deploy-checklist.md` for cano
 2. If tests pass, run deployment:
 	- `bash scripts/deploy_prometheus.sh`
 3. Preferred one-command path:
-	- `bash scripts/deploy_prometheus.sh --test`
-   - Optional launch after deploy: `bash scripts/deploy_prometheus.sh --test --launch`
+	- `bash scripts/deploy_prometheus.sh`
+   - Optional launch after deploy: `bash scripts/deploy_prometheus.sh --launch`
 4. Validate deployment output:
 	- Confirm script reported completion.
 	- Confirm latest backup path is `.backups/Prometheus`.

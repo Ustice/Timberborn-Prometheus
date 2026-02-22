@@ -22,11 +22,10 @@ Use this shared checklist from Prometheus-related skills.
 ## Deployment execution
 
 1. Run from repository root: `bash scripts/deploy_prometheus.sh`
-2. Optional safe gated flow: `bash scripts/deploy_prometheus.sh --test`
-3. Optional test-only check: `bash scripts/deploy_prometheus.sh --test-only`
-4. Optional launch after deploy: add `--launch`
-5. If destination exists, save latest backup snapshot to `.backups/Prometheus`.
-6. Ensure deployment reports completion.
+2. Optional test-only check: `bash scripts/deploy_prometheus.sh --test-only`
+3. Optional launch after deploy: `bash scripts/deploy_prometheus.sh --launch`
+4. If destination exists, save latest backup snapshot to `.backups/Prometheus`.
+5. Ensure deployment reports completion.
 
 ## Post-deploy verification
 

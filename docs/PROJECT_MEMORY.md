@@ -11,18 +11,19 @@ Purpose: durable, human-readable memory for stable project conventions and decis
 
 ## Build and deploy workflow
 
-- Build source of truth for deploy: `Library/ScriptAssemblies/Timberborn.ModExamples.Prometheus.dll` in selected build project (`PROMETHEUS_BUILD_PROJECT_DIR`, default `../timberborn-modding` when present).
+- Build source of truth for deploy: `Library/ScriptAssemblies/Timberborn.ModExamples.Prometheus.dll`.
 - Deploy is symlink-first by default:
   - non-`Scripts` mod content in `~/Documents/Timberborn/Mods/Prometheus` is symlinked to `Assets/Mods/Prometheus/*`
   - runtime `Scripts/Timberborn.ModExamples.Prometheus.(dll|pdb)` are symlinked to build output
 - Standard gated deploy command:
-  - `bash scripts/deploy_prometheus.sh --test`
+  - `bash scripts/deploy_prometheus.sh`
 - Launch-safe command for playtests:
-  - `bash scripts/deploy_prometheus.sh --wait-for-build --test --stop-running --launch`
+  - `bash scripts/deploy_prometheus.sh --launch`
 - Launch timing guard:
-  - `--launch` waits 5s before opening Timberborn by default; override with `--launch-delay <seconds>`.
+  - `--launch` waits 5s before opening Timberborn.
+- Tests run by default on deploy; `--test-only` runs tests and exits without deploying.
 - Deploy script enforces stale-build protection (source `.cs` newer than DLL blocks deploy; no bypass flag).
-- `--wait-for-build` now requires DLL freshness and stability across polls before deploy/launch continues, reducing Unity compile race risk.
+- `--launch` now includes build wait behavior and requires DLL freshness and stability across polls before deploy/launch continues, reducing Unity compile race risk.
 
 ## Runtime telemetry conventions
 
