@@ -1,4 +1,5 @@
 using System.Reflection;
+using Bindito.Core;
 using Timberborn.BaseComponentSystem;
 
 namespace Mods.Prometheus.Scripts {
@@ -27,6 +28,7 @@ namespace Mods.Prometheus.Scripts {
     private PropertyInfo _isDyingProperty;
     private PropertyInfo _isDeadProperty;
 
+    [Inject]
     public void InjectDependencies(FireDamageStateRuntimeState fireDamageStateRuntimeState) {
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
     }

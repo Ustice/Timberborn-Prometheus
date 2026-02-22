@@ -1,3 +1,4 @@
+using Bindito.Core;
 using Timberborn.BaseComponentSystem;
 using UnityEngine;
 
@@ -18,6 +19,7 @@ namespace Mods.Prometheus.Scripts {
     private float _tickProgress;
     private int _damageTicksApplied;
 
+    [Inject]
     public void InjectDependencies(
       FireImpactRuntimeState fireImpactRuntimeState,
       FireDamageStateRuntimeState fireDamageStateRuntimeState,

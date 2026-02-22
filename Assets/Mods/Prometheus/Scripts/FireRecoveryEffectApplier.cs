@@ -1,4 +1,5 @@
 using System.Reflection;
+using Bindito.Core;
 using Timberborn.BaseComponentSystem;
 
 namespace Mods.Prometheus.Scripts {
@@ -16,6 +17,7 @@ namespace Mods.Prometheus.Scripts {
     private float _baseGrowthTimeInDays;
     private bool _hasModifiedGrowthTime;
 
+    [Inject]
     public void InjectDependencies(FireRecoveryRuntimeState fireRecoveryRuntimeState) {
       _fireRecoveryRuntimeState = fireRecoveryRuntimeState;
     }

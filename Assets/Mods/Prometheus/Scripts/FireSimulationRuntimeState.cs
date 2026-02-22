@@ -57,6 +57,7 @@ namespace Mods.Prometheus.Scripts {
   internal class FireSimulationRuntimeState {
 
     private readonly Dictionary<int, FireSimulationSnapshot> _snapshotsByEntityId = new();
+    private readonly HashSet<int> _forcedIgnitionEntityIds = new();
 
     public void SetSnapshot(int entityId, FireSimulationSnapshot snapshot) {
       _snapshotsByEntityId[entityId] = snapshot;
@@ -64,6 +65,18 @@ namespace Mods.Prometheus.Scripts {
 
     public bool TryGetSnapshot(int entityId, out FireSimulationSnapshot snapshot) {
       return _snapshotsByEntityId.TryGetValue(entityId, out snapshot);
+    }
+
+    public void RequestForcedIgnition(int entityId) {
+      if (entityId == 0) {
+        return;
+      }
+
+      _forcedIgnitionEntityIds.Add(entityId);
+    }
+
+    public bool ConsumeForcedIgnitionRequest(int entityId) {
+      return _forcedIgnitionEntityIds.Remove(entityId);
     }
 
   }

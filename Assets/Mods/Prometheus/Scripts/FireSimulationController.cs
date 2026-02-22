@@ -9,6 +9,7 @@ namespace Mods.Prometheus.Scripts {
 
     private const float UpdateIntervalInSeconds = 1f;
     private const float ResponseNotificationCooldownInSeconds = 9f;
+    private const float BurningTelemetryLogIntervalInSeconds = 5f;
 
     private FireSuppressionRuntimeState _fireSuppressionRuntimeState;
     private FireTuningRuntimeState _fireTuningRuntimeState;
@@ -28,6 +29,7 @@ namespace Mods.Prometheus.Scripts {
     private float _dispatchAssignmentLockRemainingSeconds;
     private string _responseState = "Idle";
     private float _responseNotificationCooldownRemainingSeconds;
+    private float _burningTelemetryLogCooldownRemainingSeconds;
 
     [Inject]
     public void InjectDependencies(
@@ -52,8 +54,11 @@ namespace Mods.Prometheus.Scripts {
     }
 
     public void Update() {
+      var entityId = GameObject.GetInstanceID();
+      var hasExistingSnapshot = _fireSimulationRuntimeState.TryGetSnapshot(entityId, out _);
+
       _timeSinceLastUpdate += Time.deltaTime;
-      if (_timeSinceLastUpdate < UpdateIntervalInSeconds) {
+      if (hasExistingSnapshot && _timeSinceLastUpdate < UpdateIntervalInSeconds) {
         return;
       }
 
@@ -61,8 +66,9 @@ namespace Mods.Prometheus.Scripts {
 
       _responseNotificationCooldownRemainingSeconds = Mathf.Max(0f, _responseNotificationCooldownRemainingSeconds - UpdateIntervalInSeconds);
       _dispatchAssignmentLockRemainingSeconds = Mathf.Max(0f, _dispatchAssignmentLockRemainingSeconds - UpdateIntervalInSeconds);
+      _burningTelemetryLogCooldownRemainingSeconds = Mathf.Max(0f, _burningTelemetryLogCooldownRemainingSeconds - UpdateIntervalInSeconds);
 
-      if (!_fireSuppressionRuntimeState.TryGetSnapshot(GameObject.GetInstanceID(), out var suppressionSnapshot)) {
+      if (!_fireSuppressionRuntimeState.TryGetSnapshot(entityId, out var suppressionSnapshot)) {
         return;
       }
 
@@ -78,19 +84,19 @@ namespace Mods.Prometheus.Scripts {
       var localWaterExposure = 0f;
       var localQuenchingBonus = 0f;
       var localSpreadReduction = 0f;
-      if (_fireWaterContextRuntimeState.TryGetSnapshot(GameObject.GetInstanceID(), out var waterContextSnapshot)) {
+      if (_fireWaterContextRuntimeState.TryGetSnapshot(entityId, out var waterContextSnapshot)) {
         localWaterExposure = Mathf.Clamp01(waterContextSnapshot.LocalWaterExposure);
         localQuenchingBonus = Mathf.Max(0f, waterContextSnapshot.QuenchingBonus);
         localSpreadReduction = Mathf.Max(0f, waterContextSnapshot.SpreadReduction);
       }
 
       var festivalRiskBonus = 0f;
-      if (_fireFestivalRuntimeState.TryGetSnapshot(GameObject.GetInstanceID(), out var festivalSnapshot)) {
+      if (_fireFestivalRuntimeState.TryGetSnapshot(entityId, out var festivalSnapshot)) {
         festivalRiskBonus = festivalSnapshot.FestivalRiskBonus;
       }
 
       var neighborSpreadPressure = _fireEntityRegistryRuntimeState.ComputeNeighborSpreadPressure(
-        GameObject.GetInstanceID(),
+        entityId,
         GameObject.transform.position,
         14f);
 
@@ -124,8 +130,19 @@ namespace Mods.Prometheus.Scripts {
       ignitionChance = Mathf.Clamp01(ignitionChance);
       var shouldIgnite = _currentIntensity <= 0f && Random.value < ignitionChance;
 
+      var forcedIgnition = _fireSimulationRuntimeState.ConsumeForcedIgnitionRequest(entityId);
+      if (forcedIgnition) {
+        shouldIgnite = true;
+        Debug.Log($"[Prometheus/Fire] event=debug_ignite_request entity={GameObject.name} id={entityId}");
+      }
+
       if (shouldIgnite) {
-        _currentIntensity = 0.2f;
+        _currentIntensity = forcedIgnition ? Mathf.Max(_currentIntensity, 0.35f) : 0.2f;
+
+        if (forcedIgnition) {
+          _quickNotificationService.SendNotification($"Prometheus: debug ignition triggered at {GameObject.name}.");
+          Debug.Log($"[Prometheus/Fire] event=debug_ignite_applied entity={GameObject.name} id={entityId} intensity={_currentIntensity:0.000}");
+        }
       }
 
       var burning = _currentIntensity > 0f;
@@ -199,7 +216,7 @@ namespace Mods.Prometheus.Scripts {
         barrierFactor);
 
       var impactPressure = 0f;
-      if (_fireImpactRuntimeState.TryGetSnapshot(GameObject.GetInstanceID(), out var impactSnapshot)) {
+      if (_fireImpactRuntimeState.TryGetSnapshot(entityId, out var impactSnapshot)) {
         impactPressure = Mathf.Clamp01(
           impactSnapshot.CropDamagePressure
           + impactSnapshot.TreeDamagePressure
@@ -282,6 +299,10 @@ namespace Mods.Prometheus.Scripts {
         _responseNotificationCooldownRemainingSeconds = ResponseNotificationCooldownInSeconds;
       }
 
+      if (responseState != _responseState) {
+        Debug.Log($"[Prometheus/Fire] event=response_state entity={GameObject.name} id={entityId} state={responseState} intensity={_currentIntensity:0.000} spread={spreadPressure:0.000} quench={quenchingPower:0.000}");
+      }
+
       _responseState = responseState;
 
       var topDispatchFactor = "Severity";
@@ -314,21 +335,28 @@ namespace Mods.Prometheus.Scripts {
         responseState,
         topDispatchFactor);
 
-      _fireDispatchScoringRuntimeState.SetSnapshot(GameObject.GetInstanceID(), dispatchScoringSnapshot);
+      _fireDispatchScoringRuntimeState.SetSnapshot(entityId, dispatchScoringSnapshot);
 
-      _fireSimulationRuntimeState.SetSnapshot(GameObject.GetInstanceID(), simulationSnapshot);
+      _fireSimulationRuntimeState.SetSnapshot(entityId, simulationSnapshot);
 
       var registrySnapshot = new FireEntityRegistrySnapshot(
         GameObject.transform.position,
         simulationSnapshot.Burning,
         simulationSnapshot.Intensity,
         simulationSnapshot.SpreadPressure);
-      _fireEntityRegistryRuntimeState.SetSnapshot(GameObject.GetInstanceID(), registrySnapshot);
+      _fireEntityRegistryRuntimeState.SetSnapshot(entityId, registrySnapshot);
 
       if (simulationSnapshot.Burning && !_wasBurning) {
         _quickNotificationService.SendNotification($"Prometheus: fire ignited at {GameObject.name}.");
+        Debug.Log($"[Prometheus/Fire] event=ignited entity={GameObject.name} id={entityId} source={dominantIgnitionSource} ignitionChance={ignitionChance:0.000} intensity={_currentIntensity:0.000}");
       } else if (!simulationSnapshot.Burning && _wasBurning) {
         _quickNotificationService.SendNotification($"Prometheus: fire extinguished at {GameObject.name}.");
+        Debug.Log($"[Prometheus/Fire] event=extinguished entity={GameObject.name} id={entityId}");
+      }
+
+      if (simulationSnapshot.Burning && _burningTelemetryLogCooldownRemainingSeconds <= 0f) {
+        Debug.Log($"[Prometheus/Fire] event=burning_tick entity={GameObject.name} id={entityId} intensity={simulationSnapshot.Intensity:0.000} spread={simulationSnapshot.SpreadPressure:0.000} quench={simulationSnapshot.QuenchingPower:0.000} heat={simulationSnapshot.HeatExposure:0.000} response={responseState}");
+        _burningTelemetryLogCooldownRemainingSeconds = BurningTelemetryLogIntervalInSeconds;
       }
 
       _wasBurning = simulationSnapshot.Burning;

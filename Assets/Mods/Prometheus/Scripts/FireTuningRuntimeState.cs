@@ -81,7 +81,7 @@ namespace Mods.Prometheus.Scripts {
       FireTuningProfile.Standard,
       1f,
       1f,
-      1f,
+      1.15f,
       1f,
       1f,
       1f,

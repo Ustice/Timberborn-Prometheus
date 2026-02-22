@@ -1,3 +1,4 @@
+using Bindito.Core;
 using Timberborn.BaseComponentSystem;
 using UnityEngine;
 
@@ -19,6 +20,7 @@ namespace Mods.Prometheus.Scripts {
     private float _recoveryHoursRemaining;
     private bool _lastControlledBurn;
 
+    [Inject]
     public void InjectDependencies(
       FireSimulationRuntimeState fireSimulationRuntimeState,
       FireWaterContextRuntimeState fireWaterContextRuntimeState,

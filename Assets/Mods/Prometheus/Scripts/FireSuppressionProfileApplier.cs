@@ -23,12 +23,16 @@ namespace Mods.Prometheus.Scripts {
     }
 
     public void Update() {
+      _fireResponseProfile ??= GetComponent<FireResponseProfile>();
       if (_fireResponseProfile == null) {
         return;
       }
 
+      var entityId = GameObject.GetInstanceID();
+      var hasExistingSnapshot = _fireSuppressionRuntimeState.TryGetSnapshot(entityId, out _);
+
       _timeSinceLastUpdate += Time.deltaTime;
-      if (_timeSinceLastUpdate < UpdateIntervalInSeconds) {
+      if (hasExistingSnapshot && _timeSinceLastUpdate < UpdateIntervalInSeconds) {
         return;
       }
 
@@ -46,7 +50,7 @@ namespace Mods.Prometheus.Scripts {
         _fireResponseProfile.DispatchAssignmentLockDurationInSeconds,
         _fireResponseProfile.DispatchRetargetHysteresisThreshold);
 
-      _fireSuppressionRuntimeState.SetSnapshot(GameObject.GetInstanceID(), snapshot);
+      _fireSuppressionRuntimeState.SetSnapshot(entityId, snapshot);
     }
 
   }

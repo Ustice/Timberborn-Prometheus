@@ -10,6 +10,9 @@
 # Local deployment backups
 /.backups/
 
+# Local handoff history (not committed)
+/handoffs/
+
 # Local-only launch/test config
 steam_appid.txt
 
