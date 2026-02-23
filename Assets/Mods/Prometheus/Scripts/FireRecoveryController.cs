@@ -14,7 +14,6 @@ namespace Mods.Prometheus.Scripts {
     private FireRecoveryRuntimeState _fireRecoveryRuntimeState;
 
     private float _timeSinceLastUpdate;
-    private bool _wasBurning;
     private bool _sawBurnPhase;
     private float _peakIntensityDuringBurn;
     private float _recoveryHoursRemaining;
@@ -31,20 +30,16 @@ namespace Mods.Prometheus.Scripts {
     }
 
     public void Update() {
-      _timeSinceLastUpdate += Time.deltaTime;
-      if (_timeSinceLastUpdate < UpdateIntervalInSeconds) {
+      if (!TickGate.ShouldRun(ref _timeSinceLastUpdate, UpdateIntervalInSeconds)) {
         return;
       }
-
-      _timeSinceLastUpdate = 0f;
 
       var entityId = GameObject.GetInstanceID();
       if (!_fireSimulationRuntimeState.TryGetSnapshot(entityId, out var simulationSnapshot)) {
         return;
       }
 
-      _wasBurning = simulationSnapshot.Burning;
-      if (_wasBurning) {
+      if (simulationSnapshot.Burning) {
         _sawBurnPhase = true;
         _peakIntensityDuringBurn = Mathf.Max(_peakIntensityDuringBurn, simulationSnapshot.Intensity);
       }

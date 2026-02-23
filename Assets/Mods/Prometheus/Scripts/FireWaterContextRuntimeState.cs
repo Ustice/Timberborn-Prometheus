@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Mods.Prometheus.Scripts {
   internal readonly struct FireWaterContextSnapshot {
 
@@ -27,17 +25,6 @@ namespace Mods.Prometheus.Scripts {
 
   }
 
-  internal class FireWaterContextRuntimeState {
-
-    private readonly Dictionary<int, FireWaterContextSnapshot> _snapshotsByEntityId = new();
-
-    public void SetSnapshot(int entityId, FireWaterContextSnapshot snapshot) {
-      _snapshotsByEntityId[entityId] = snapshot;
-    }
-
-    public bool TryGetSnapshot(int entityId, out FireWaterContextSnapshot snapshot) {
-      return _snapshotsByEntityId.TryGetValue(entityId, out snapshot);
-    }
-
+  internal class FireWaterContextRuntimeState : EntitySnapshotStore<FireWaterContextSnapshot> {
   }
 }

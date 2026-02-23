@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Mods.Prometheus.Scripts {
   internal readonly struct FireFestivalSnapshot {
 
@@ -24,17 +22,6 @@ namespace Mods.Prometheus.Scripts {
 
   }
 
-  internal class FireFestivalRuntimeState {
-
-    private readonly Dictionary<int, FireFestivalSnapshot> _snapshotsByEntityId = new();
-
-    public void SetSnapshot(int entityId, FireFestivalSnapshot snapshot) {
-      _snapshotsByEntityId[entityId] = snapshot;
-    }
-
-    public bool TryGetSnapshot(int entityId, out FireFestivalSnapshot snapshot) {
-      return _snapshotsByEntityId.TryGetValue(entityId, out snapshot);
-    }
-
+  internal class FireFestivalRuntimeState : EntitySnapshotStore<FireFestivalSnapshot> {
   }
 }

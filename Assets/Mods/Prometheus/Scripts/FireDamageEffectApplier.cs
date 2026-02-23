@@ -44,12 +44,9 @@ namespace Mods.Prometheus.Scripts {
         return;
       }
 
-      _timeSinceLastUpdate += UnityEngine.Time.deltaTime;
-      if (_timeSinceLastUpdate < UpdateIntervalInSeconds) {
+      if (!TickGate.ShouldRun(ref _timeSinceLastUpdate, UpdateIntervalInSeconds)) {
         return;
       }
-
-      _timeSinceLastUpdate = 0f;
 
       var entityId = GameObject.GetInstanceID();
       if (!_fireDamageStateRuntimeState.TryGetSnapshot(entityId, out var snapshot)) {
@@ -72,9 +69,6 @@ namespace Mods.Prometheus.Scripts {
           SetBoolIfAvailable(_isDyingProperty, _livingNaturalResourceComponent, false);
           break;
         case FireDamageState.Scorched:
-          InvokeIfAvailable(_pauseGrowingMethod, _growableComponent);
-          SetBoolIfAvailable(_isDyingProperty, _livingNaturalResourceComponent, true);
-          break;
         case FireDamageState.Burning:
           InvokeIfAvailable(_pauseGrowingMethod, _growableComponent);
           SetBoolIfAvailable(_isDyingProperty, _livingNaturalResourceComponent, true);

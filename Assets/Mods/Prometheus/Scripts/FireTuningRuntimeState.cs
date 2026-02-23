@@ -146,7 +146,21 @@ namespace Mods.Prometheus.Scripts {
         return;
       }
 
-      _currentSnapshot = new FireTuningSnapshot(
+      _currentSnapshot = WithExplosionIgnitionMode(baseSnapshot, _explosionIgnitionModeOverride.Value);
+    }
+
+    public void SetExplosionIgnitionMode(ExplosionIgnitionMode mode) {
+      _explosionIgnitionModeOverride = mode;
+      SetProfile(_currentSnapshot.Profile);
+    }
+
+    public void ClearExplosionIgnitionModeOverride() {
+      _explosionIgnitionModeOverride = null;
+      SetProfile(_currentSnapshot.Profile);
+    }
+
+    private static FireTuningSnapshot WithExplosionIgnitionMode(FireTuningSnapshot baseSnapshot, ExplosionIgnitionMode explosionIgnitionMode) {
+      return new FireTuningSnapshot(
         baseSnapshot.Profile,
         baseSnapshot.IgnitionMultiplier,
         baseSnapshot.SpreadMultiplier,
@@ -160,20 +174,10 @@ namespace Mods.Prometheus.Scripts {
         baseSnapshot.ControlledBurnIgnitionMultiplier,
         baseSnapshot.NeighborIgnitionMultiplier,
         baseSnapshot.ExplosionIgnitionMultiplier,
-        _explosionIgnitionModeOverride.Value,
+        explosionIgnitionMode,
         baseSnapshot.DrynessSpreadMultiplier,
         baseSnapshot.FuelSpreadMultiplier,
         baseSnapshot.BarrierResistanceMultiplier);
-    }
-
-    public void SetExplosionIgnitionMode(ExplosionIgnitionMode mode) {
-      _explosionIgnitionModeOverride = mode;
-      SetProfile(_currentSnapshot.Profile);
-    }
-
-    public void ClearExplosionIgnitionModeOverride() {
-      _explosionIgnitionModeOverride = null;
-      SetProfile(_currentSnapshot.Profile);
     }
 
   }

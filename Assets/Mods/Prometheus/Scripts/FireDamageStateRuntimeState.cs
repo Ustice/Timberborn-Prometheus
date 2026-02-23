@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Mods.Prometheus.Scripts {
   internal enum FireDamageCategory {
     Unknown,
@@ -38,17 +36,6 @@ namespace Mods.Prometheus.Scripts {
 
   }
 
-  internal class FireDamageStateRuntimeState {
-
-    private readonly Dictionary<int, FireDamageStateSnapshot> _snapshotsByEntityId = new();
-
-    public void SetSnapshot(int entityId, FireDamageStateSnapshot snapshot) {
-      _snapshotsByEntityId[entityId] = snapshot;
-    }
-
-    public bool TryGetSnapshot(int entityId, out FireDamageStateSnapshot snapshot) {
-      return _snapshotsByEntityId.TryGetValue(entityId, out snapshot);
-    }
-
+  internal class FireDamageStateRuntimeState : EntitySnapshotStore<FireDamageStateSnapshot> {
   }
 }

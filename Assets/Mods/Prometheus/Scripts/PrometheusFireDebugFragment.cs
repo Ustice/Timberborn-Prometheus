@@ -1,3 +1,4 @@
+using System;
 using System.Text;
 using Timberborn.BaseComponentSystem;
 using Timberborn.EntityPanelSystem;
@@ -328,142 +329,128 @@ namespace Mods.Prometheus.Scripts {
       stringBuilder.AppendLine();
 
       if (_fireSuppressionRuntimeState.TryGetSnapshot(_selectedEntityId, out var suppression)) {
-        stringBuilder.AppendLine("Suppression");
-        stringBuilder.AppendLine($"- Approach: {suppression.FactionApproach}");
-        stringBuilder.AppendLine($"- Power: {suppression.SuppressionPower:0.000}");
-        stringBuilder.AppendLine($"- Heat mitigation: {suppression.HeatMitigation:0.000}");
-        stringBuilder.AppendLine($"- Water efficiency: {suppression.WaterEfficiency:0.000}");
-        stringBuilder.AppendLine($"- Dispatch lock (s): {suppression.AssignmentLockDurationInSeconds:0.0}");
-        stringBuilder.AppendLine($"- Dispatch hysteresis: {suppression.RetargetHysteresisThreshold:0.000}");
+        AppendSnapshotSection(stringBuilder, "Suppression", suppression, static (builder, snapshot) => {
+          builder.AppendLine($"- Approach: {snapshot.FactionApproach}");
+          builder.AppendLine($"- Power: {snapshot.SuppressionPower:0.000}");
+          builder.AppendLine($"- Heat mitigation: {snapshot.HeatMitigation:0.000}");
+          builder.AppendLine($"- Water efficiency: {snapshot.WaterEfficiency:0.000}");
+          builder.AppendLine($"- Dispatch lock (s): {snapshot.AssignmentLockDurationInSeconds:0.0}");
+          builder.AppendLine($"- Dispatch hysteresis: {snapshot.RetargetHysteresisThreshold:0.000}");
+        });
       } else {
-        stringBuilder.AppendLine("Suppression");
-        if (!_selectedEntityHasSuppressionApplier) {
-          stringBuilder.AppendLine("- Snapshot unavailable (suppression applier not attached)");
-        } else {
-          stringBuilder.AppendLine("- Snapshot unavailable (waiting for first runtime tick; unpause for ~1s)");
-        }
+        AppendWarmupSnapshotUnavailableSection(
+          stringBuilder,
+          "Suppression",
+          _selectedEntityHasSuppressionApplier,
+          "- Snapshot unavailable (suppression applier not attached)");
       }
-
-      stringBuilder.AppendLine();
 
       if (_fireSimulationRuntimeState.TryGetSnapshot(_selectedEntityId, out var simulation)) {
-        stringBuilder.AppendLine("Simulation");
-        stringBuilder.AppendLine($"- Burning: {simulation.Burning}");
-        stringBuilder.AppendLine($"- Intensity: {simulation.Intensity:0.000}");
-        stringBuilder.AppendLine($"- Ignition chance: {simulation.IgnitionChance:0.000}");
-        stringBuilder.AppendLine($"- Dominant ignition source: {simulation.DominantIgnitionSource}");
-        stringBuilder.AppendLine($"- Ignition/weather: {simulation.WeatherIgnitionContribution:0.000}");
-        stringBuilder.AppendLine($"- Ignition/industrial: {simulation.IndustrialIgnitionContribution:0.000}");
-        stringBuilder.AppendLine($"- Ignition/fireworks: {simulation.FireworksIgnitionContribution:0.000}");
-        stringBuilder.AppendLine($"- Ignition/controlled burn: {simulation.ControlledBurnIgnitionContribution:0.000}");
-        stringBuilder.AppendLine($"- Ignition/explosion: {simulation.ExplosionIgnitionContribution:0.000}");
-        stringBuilder.AppendLine($"- Heat exposure: {simulation.HeatExposure:0.000}");
-        stringBuilder.AppendLine($"- Quenching: {simulation.QuenchingPower:0.000}");
-        stringBuilder.AppendLine($"- Spread pressure: {simulation.SpreadPressure:0.000}");
-        stringBuilder.AppendLine($"- Neighbor spread pressure: {simulation.NeighborSpreadPressure:0.000}");
-        stringBuilder.AppendLine($"- Spread dryness factor: {simulation.DrynessFactor:0.000}");
-        stringBuilder.AppendLine($"- Spread fuel factor: {simulation.FuelFactor:0.000}");
-        stringBuilder.AppendLine($"- Spread barrier factor: {simulation.BarrierFactor:0.000}");
+        AppendSnapshotSection(stringBuilder, "Simulation", simulation, static (builder, snapshot) => {
+          builder.AppendLine($"- Burning: {snapshot.Burning}");
+          builder.AppendLine($"- Intensity: {snapshot.Intensity:0.000}");
+          builder.AppendLine($"- Ignition chance: {snapshot.IgnitionChance:0.000}");
+          builder.AppendLine($"- Dominant ignition source: {snapshot.DominantIgnitionSource}");
+          builder.AppendLine($"- Ignition/weather: {snapshot.WeatherIgnitionContribution:0.000}");
+          builder.AppendLine($"- Ignition/industrial: {snapshot.IndustrialIgnitionContribution:0.000}");
+          builder.AppendLine($"- Ignition/fireworks: {snapshot.FireworksIgnitionContribution:0.000}");
+          builder.AppendLine($"- Ignition/controlled burn: {snapshot.ControlledBurnIgnitionContribution:0.000}");
+          builder.AppendLine($"- Ignition/explosion: {snapshot.ExplosionIgnitionContribution:0.000}");
+          builder.AppendLine($"- Heat exposure: {snapshot.HeatExposure:0.000}");
+          builder.AppendLine($"- Quenching: {snapshot.QuenchingPower:0.000}");
+          builder.AppendLine($"- Spread pressure: {snapshot.SpreadPressure:0.000}");
+          builder.AppendLine($"- Neighbor spread pressure: {snapshot.NeighborSpreadPressure:0.000}");
+          builder.AppendLine($"- Spread dryness factor: {snapshot.DrynessFactor:0.000}");
+          builder.AppendLine($"- Spread fuel factor: {snapshot.FuelFactor:0.000}");
+          builder.AppendLine($"- Spread barrier factor: {snapshot.BarrierFactor:0.000}");
+        });
       } else {
-        stringBuilder.AppendLine("Simulation");
-        if (!_selectedEntityHasSimulationController) {
-          stringBuilder.AppendLine("- Snapshot unavailable (simulation controller not attached)");
-        } else {
-          stringBuilder.AppendLine("- Snapshot unavailable (waiting for first runtime tick; unpause for ~1s)");
-        }
+        AppendWarmupSnapshotUnavailableSection(
+          stringBuilder,
+          "Simulation",
+          _selectedEntityHasSimulationController,
+          "- Snapshot unavailable (simulation controller not attached)");
       }
-
-      stringBuilder.AppendLine();
 
       if (_fireDispatchScoringRuntimeState.TryGetSnapshot(_selectedEntityId, out var dispatchScoring)) {
-        stringBuilder.AppendLine("Dispatch scoring");
-        stringBuilder.AppendLine($"- Candidate score: {dispatchScoring.CandidateScore:0.000}");
-        stringBuilder.AppendLine($"- Assigned score: {dispatchScoring.AssignedScore:0.000}");
-        stringBuilder.AppendLine($"- Severity factor: {dispatchScoring.SeverityFactor:0.000}");
-        stringBuilder.AppendLine($"- Asset risk factor: {dispatchScoring.AssetRiskFactor:0.000}");
-        stringBuilder.AppendLine($"- Travel cost factor: {dispatchScoring.TravelCostFactor:0.000}");
-        stringBuilder.AppendLine($"- Containment leverage factor: {dispatchScoring.ContainmentLeverageFactor:0.000}");
-        stringBuilder.AppendLine($"- Assignment locked: {dispatchScoring.AssignmentLocked}");
-        stringBuilder.AppendLine($"- Lock remaining (s): {dispatchScoring.AssignmentLockRemainingSeconds:0.0}");
-        stringBuilder.AppendLine($"- Hysteresis threshold: {dispatchScoring.HysteresisThreshold:0.000}");
-        stringBuilder.AppendLine($"- Retarget suppressed: {dispatchScoring.RetargetSuppressed}");
-        stringBuilder.AppendLine($"- Response state: {dispatchScoring.ResponseState}");
-        stringBuilder.AppendLine($"- Top factor: {dispatchScoring.TopFactor}");
+        AppendSnapshotSection(stringBuilder, "Dispatch scoring", dispatchScoring, static (builder, snapshot) => {
+          builder.AppendLine($"- Candidate score: {snapshot.CandidateScore:0.000}");
+          builder.AppendLine($"- Assigned score: {snapshot.AssignedScore:0.000}");
+          builder.AppendLine($"- Severity factor: {snapshot.SeverityFactor:0.000}");
+          builder.AppendLine($"- Asset risk factor: {snapshot.AssetRiskFactor:0.000}");
+          builder.AppendLine($"- Travel cost factor: {snapshot.TravelCostFactor:0.000}");
+          builder.AppendLine($"- Containment leverage factor: {snapshot.ContainmentLeverageFactor:0.000}");
+          builder.AppendLine($"- Assignment locked: {snapshot.AssignmentLocked}");
+          builder.AppendLine($"- Lock remaining (s): {snapshot.AssignmentLockRemainingSeconds:0.0}");
+          builder.AppendLine($"- Hysteresis threshold: {snapshot.HysteresisThreshold:0.000}");
+          builder.AppendLine($"- Retarget suppressed: {snapshot.RetargetSuppressed}");
+          builder.AppendLine($"- Response state: {snapshot.ResponseState}");
+          builder.AppendLine($"- Top factor: {snapshot.TopFactor}");
+        });
       } else {
-        stringBuilder.AppendLine("Dispatch scoring");
-        stringBuilder.AppendLine("- Snapshot unavailable");
+        AppendSnapshotUnavailableSection(stringBuilder, "Dispatch scoring");
       }
-
-      stringBuilder.AppendLine();
 
       if (_fireWaterContextRuntimeState.TryGetSnapshot(_selectedEntityId, out var waterContext)) {
-        stringBuilder.AppendLine("Water context");
-        stringBuilder.AppendLine($"- Flooded: {waterContext.IsFlooded}");
-        stringBuilder.AppendLine($"- Water above base: {waterContext.WaterAboveBase:0.000}");
-        stringBuilder.AppendLine($"- Water needs met: {waterContext.WaterNeedsMet}");
-        stringBuilder.AppendLine($"- Local exposure: {waterContext.LocalWaterExposure:0.000}");
-        stringBuilder.AppendLine($"- Quenching bonus: {waterContext.QuenchingBonus:0.000}");
-        stringBuilder.AppendLine($"- Spread reduction: {waterContext.SpreadReduction:0.000}");
+        AppendSnapshotSection(stringBuilder, "Water context", waterContext, static (builder, snapshot) => {
+          builder.AppendLine($"- Flooded: {snapshot.IsFlooded}");
+          builder.AppendLine($"- Water above base: {snapshot.WaterAboveBase:0.000}");
+          builder.AppendLine($"- Water needs met: {snapshot.WaterNeedsMet}");
+          builder.AppendLine($"- Local exposure: {snapshot.LocalWaterExposure:0.000}");
+          builder.AppendLine($"- Quenching bonus: {snapshot.QuenchingBonus:0.000}");
+          builder.AppendLine($"- Spread reduction: {snapshot.SpreadReduction:0.000}");
+        });
       } else {
-        stringBuilder.AppendLine("Water context");
-        stringBuilder.AppendLine("- Snapshot unavailable");
+        AppendSnapshotUnavailableSection(stringBuilder, "Water context");
       }
-
-      stringBuilder.AppendLine();
 
       if (_fireFestivalRuntimeState.TryGetSnapshot(_selectedEntityId, out var festival)) {
-        stringBuilder.AppendLine("Festival");
-        stringBuilder.AppendLine($"- Active: {festival.FestivalActive}");
-        stringBuilder.AppendLine($"- Risk bonus: {festival.FestivalRiskBonus:0.000}");
-        stringBuilder.AppendLine($"- Safety prep: {festival.SafetyPreparation:0.000}");
-        stringBuilder.AppendLine($"- Hours to start: {festival.HoursUntilFestivalStart:0.0}");
-        stringBuilder.AppendLine($"- Festival hours left: {festival.FestivalHoursRemaining:0.0}");
+        AppendSnapshotSection(stringBuilder, "Festival", festival, static (builder, snapshot) => {
+          builder.AppendLine($"- Active: {snapshot.FestivalActive}");
+          builder.AppendLine($"- Risk bonus: {snapshot.FestivalRiskBonus:0.000}");
+          builder.AppendLine($"- Safety prep: {snapshot.SafetyPreparation:0.000}");
+          builder.AppendLine($"- Hours to start: {snapshot.HoursUntilFestivalStart:0.0}");
+          builder.AppendLine($"- Festival hours left: {snapshot.FestivalHoursRemaining:0.0}");
+        });
       } else {
-        stringBuilder.AppendLine("Festival");
-        stringBuilder.AppendLine("- Snapshot unavailable");
+        AppendSnapshotUnavailableSection(stringBuilder, "Festival");
       }
-
-      stringBuilder.AppendLine();
 
       if (_fireImpactRuntimeState.TryGetSnapshot(_selectedEntityId, out var impact)) {
-        stringBuilder.AppendLine("Impact");
-        stringBuilder.AppendLine($"- Crop damage pressure: {impact.CropDamagePressure:0.000}");
-        stringBuilder.AppendLine($"- Tree damage pressure: {impact.TreeDamagePressure:0.000}");
-        stringBuilder.AppendLine($"- Building damage pressure: {impact.BuildingDamagePressure:0.000}");
-        stringBuilder.AppendLine($"- Dehydration pressure: {impact.DehydrationPressure:0.000}");
-        stringBuilder.AppendLine($"- Injury pressure: {impact.InjuryPressure:0.000}");
+        AppendSnapshotSection(stringBuilder, "Impact", impact, static (builder, snapshot) => {
+          builder.AppendLine($"- Crop damage pressure: {snapshot.CropDamagePressure:0.000}");
+          builder.AppendLine($"- Tree damage pressure: {snapshot.TreeDamagePressure:0.000}");
+          builder.AppendLine($"- Building damage pressure: {snapshot.BuildingDamagePressure:0.000}");
+          builder.AppendLine($"- Dehydration pressure: {snapshot.DehydrationPressure:0.000}");
+          builder.AppendLine($"- Injury pressure: {snapshot.InjuryPressure:0.000}");
+        });
       } else {
-        stringBuilder.AppendLine("Impact");
-        stringBuilder.AppendLine("- Snapshot unavailable");
+        AppendSnapshotUnavailableSection(stringBuilder, "Impact");
       }
-
-      stringBuilder.AppendLine();
 
       if (_fireDamageStateRuntimeState.TryGetSnapshot(_selectedEntityId, out var damageState)) {
-        stringBuilder.AppendLine("Damage state");
-        stringBuilder.AppendLine($"- Category: {damageState.Category}");
-        stringBuilder.AppendLine($"- State: {damageState.State}");
-        stringBuilder.AppendLine($"- Severity: {damageState.Severity:0.000}");
-        stringBuilder.AppendLine($"- Tick progress: {damageState.TickProgress:0.000}");
-        stringBuilder.AppendLine($"- Damage ticks applied: {damageState.DamageTicksApplied}");
+        AppendSnapshotSection(stringBuilder, "Damage state", damageState, static (builder, snapshot) => {
+          builder.AppendLine($"- Category: {snapshot.Category}");
+          builder.AppendLine($"- State: {snapshot.State}");
+          builder.AppendLine($"- Severity: {snapshot.Severity:0.000}");
+          builder.AppendLine($"- Tick progress: {snapshot.TickProgress:0.000}");
+          builder.AppendLine($"- Damage ticks applied: {snapshot.DamageTicksApplied}");
+        });
       } else {
-        stringBuilder.AppendLine("Damage state");
-        stringBuilder.AppendLine("- Snapshot unavailable");
+        AppendSnapshotUnavailableSection(stringBuilder, "Damage state");
       }
 
-      stringBuilder.AppendLine();
-
       if (_fireRecoveryRuntimeState.TryGetSnapshot(_selectedEntityId, out var recovery)) {
-        stringBuilder.AppendLine("Recovery");
-        stringBuilder.AppendLine($"- Controlled burn: {recovery.ControlledBurn}");
-        stringBuilder.AppendLine($"- Ash fertility active: {recovery.AshenFertilityActive}");
-        stringBuilder.AppendLine($"- Fertility boost: {recovery.FertilityBoost:0.000}");
-        stringBuilder.AppendLine($"- Growth speed bonus: {recovery.GrowthSpeedBonus:0.000}");
-        stringBuilder.AppendLine($"- Yield bonus: {recovery.YieldBonus:0.000}");
-        stringBuilder.AppendLine($"- Remaining hours: {recovery.RemainingHours:0.0}");
+        AppendSnapshotSection(stringBuilder, "Recovery", recovery, static (builder, snapshot) => {
+          builder.AppendLine($"- Controlled burn: {snapshot.ControlledBurn}");
+          builder.AppendLine($"- Ash fertility active: {snapshot.AshenFertilityActive}");
+          builder.AppendLine($"- Fertility boost: {snapshot.FertilityBoost:0.000}");
+          builder.AppendLine($"- Growth speed bonus: {snapshot.GrowthSpeedBonus:0.000}");
+          builder.AppendLine($"- Yield bonus: {snapshot.YieldBonus:0.000}");
+          builder.AppendLine($"- Remaining hours: {snapshot.RemainingHours:0.0}");
+        });
       } else {
-        stringBuilder.AppendLine("Recovery");
-        stringBuilder.AppendLine("- Snapshot unavailable");
+        AppendSnapshotUnavailableSection(stringBuilder, "Recovery");
       }
 
       _latestDebugText = stringBuilder.ToString();
@@ -472,6 +459,37 @@ namespace Mods.Prometheus.Scripts {
         _copyStatusLabel.text = string.Empty;
         SetCopyButtonVisuals("Copy", CopyButtonDefaultTint);
       }
+    }
+
+    private static void AppendSnapshotUnavailableSection(StringBuilder stringBuilder, string sectionTitle) {
+      stringBuilder.AppendLine(sectionTitle);
+      stringBuilder.AppendLine("- Snapshot unavailable");
+      stringBuilder.AppendLine();
+    }
+
+    private static void AppendWarmupSnapshotUnavailableSection(
+      StringBuilder stringBuilder,
+      string sectionTitle,
+      bool hasRequiredComponent,
+      string missingComponentMessage) {
+      stringBuilder.AppendLine(sectionTitle);
+      if (!hasRequiredComponent) {
+        stringBuilder.AppendLine(missingComponentMessage);
+      } else {
+        stringBuilder.AppendLine("- Snapshot unavailable (waiting for first runtime tick; unpause for ~1s)");
+      }
+
+      stringBuilder.AppendLine();
+    }
+
+    private static void AppendSnapshotSection<TSnapshot>(
+      StringBuilder stringBuilder,
+      string sectionTitle,
+      TSnapshot snapshot,
+      Action<StringBuilder, TSnapshot> appendSnapshotLines) {
+      stringBuilder.AppendLine(sectionTitle);
+      appendSnapshotLines(stringBuilder, snapshot);
+      stringBuilder.AppendLine();
     }
 
   }

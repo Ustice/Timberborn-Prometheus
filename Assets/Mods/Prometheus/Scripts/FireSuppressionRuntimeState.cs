@@ -1,6 +1,32 @@
-using System.Collections.Generic;
-
 namespace Mods.Prometheus.Scripts {
+  internal class EntitySnapshotStore<TSnapshot> {
+
+    private readonly System.Collections.Generic.Dictionary<int, TSnapshot> _snapshotsByEntityId = new();
+
+    public void SetSnapshot(int entityId, TSnapshot snapshot) {
+      _snapshotsByEntityId[entityId] = snapshot;
+    }
+
+    public bool TryGetSnapshot(int entityId, out TSnapshot snapshot) {
+      return _snapshotsByEntityId.TryGetValue(entityId, out snapshot);
+    }
+
+  }
+
+  internal static class TickGate {
+
+    public static bool ShouldRun(ref float elapsedSeconds, float intervalSeconds, bool shouldThrottle = true) {
+      elapsedSeconds += UnityEngine.Time.deltaTime;
+      if (shouldThrottle && elapsedSeconds < intervalSeconds) {
+        return false;
+      }
+
+      elapsedSeconds = 0f;
+      return true;
+    }
+
+  }
+
   internal readonly struct FireSuppressionSnapshot {
 
     public string FactionApproach { get; }
@@ -27,17 +53,6 @@ namespace Mods.Prometheus.Scripts {
 
   }
 
-  internal class FireSuppressionRuntimeState {
-
-    private readonly Dictionary<int, FireSuppressionSnapshot> _snapshotsByEntityId = new();
-
-    public void SetSnapshot(int entityId, FireSuppressionSnapshot snapshot) {
-      _snapshotsByEntityId[entityId] = snapshot;
-    }
-
-    public bool TryGetSnapshot(int entityId, out FireSuppressionSnapshot snapshot) {
-      return _snapshotsByEntityId.TryGetValue(entityId, out snapshot);
-    }
-
+  internal class FireSuppressionRuntimeState : EntitySnapshotStore<FireSuppressionSnapshot> {
   }
 }

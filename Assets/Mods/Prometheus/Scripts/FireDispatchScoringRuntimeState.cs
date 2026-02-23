@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Mods.Prometheus.Scripts {
   internal readonly struct FireDispatchScoringSnapshot {
 
@@ -45,17 +43,6 @@ namespace Mods.Prometheus.Scripts {
 
   }
 
-  internal class FireDispatchScoringRuntimeState {
-
-    private readonly Dictionary<int, FireDispatchScoringSnapshot> _snapshotsByEntityId = new();
-
-    public void SetSnapshot(int entityId, FireDispatchScoringSnapshot snapshot) {
-      _snapshotsByEntityId[entityId] = snapshot;
-    }
-
-    public bool TryGetSnapshot(int entityId, out FireDispatchScoringSnapshot snapshot) {
-      return _snapshotsByEntityId.TryGetValue(entityId, out snapshot);
-    }
-
+  internal class FireDispatchScoringRuntimeState : EntitySnapshotStore<FireDispatchScoringSnapshot> {
   }
 }
