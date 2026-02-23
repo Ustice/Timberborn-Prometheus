@@ -19,6 +19,7 @@ namespace Mods.Prometheus.Scripts {
     private FireFestivalRuntimeState _fireFestivalRuntimeState;
     private FireImpactRuntimeState _fireImpactRuntimeState;
     private FireDispatchScoringRuntimeState _fireDispatchScoringRuntimeState;
+    private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
     private QuickNotificationService _quickNotificationService;
     private FireResponseProfile _fireResponseProfile;
 
@@ -47,6 +48,7 @@ namespace Mods.Prometheus.Scripts {
       FireFestivalRuntimeState fireFestivalRuntimeState,
       FireImpactRuntimeState fireImpactRuntimeState,
       FireDispatchScoringRuntimeState fireDispatchScoringRuntimeState,
+      FireDamageStateRuntimeState fireDamageStateRuntimeState,
       QuickNotificationService quickNotificationService) {
       _fireSuppressionRuntimeState = fireSuppressionRuntimeState;
       _fireTuningRuntimeState = fireTuningRuntimeState;
@@ -56,6 +58,7 @@ namespace Mods.Prometheus.Scripts {
       _fireFestivalRuntimeState = fireFestivalRuntimeState;
       _fireImpactRuntimeState = fireImpactRuntimeState;
       _fireDispatchScoringRuntimeState = fireDispatchScoringRuntimeState;
+      _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
       _quickNotificationService = quickNotificationService;
     }
 
@@ -148,6 +151,10 @@ namespace Mods.Prometheus.Scripts {
         spreadIgnitionSourceEntityId = spreadIgnitionRequest.SourceEntityId;
         spreadIgnitionPropagationChance = spreadIgnitionRequest.PropagationChance;
         spreadIgnitionSourceKind = spreadIgnitionRequest.SourceKind;
+
+        var spreadSourceKindText = spreadIgnitionSourceKind == PropagationIgnitionSourceKind.Explosion ? "Explosion" : "Spread";
+        var consumeEvent = spreadIgnitionSourceKind == PropagationIgnitionSourceKind.Explosion ? "explosion_ignition_request_consumed" : "spread_ignition_request_consumed";
+        Debug.Log($"[Prometheus/Fire] event={consumeEvent} entity={GameObject.name} id={entityId} sourceId={spreadIgnitionSourceEntityId} sourceKind={spreadSourceKindText} chance={spreadIgnitionPropagationChance:0.000} burningBeforeConsume={(_currentIntensity > 0f)}");
       }
 
       if (forcedIgnition) {
@@ -161,6 +168,8 @@ namespace Mods.Prometheus.Scripts {
         if (spreadIgnitionSourceKind == PropagationIgnitionSourceKind.Explosion) {
           explosionIgnition = Mathf.Max(explosionIgnition, spreadIgnitionPropagationChance);
         }
+      } else if (spreadIgnitionTriggered && spreadIgnitionSourceKind == PropagationIgnitionSourceKind.Explosion) {
+        Debug.Log($"[Prometheus/Fire] event=explosion_ignite_not_applied entity={GameObject.name} id={entityId} sourceId={spreadIgnitionSourceEntityId} reason=already_burning intensity={_currentIntensity:0.000} chance={spreadIgnitionPropagationChance:0.000}");
       }
 
       if (shouldIgnite) {
@@ -222,11 +231,14 @@ namespace Mods.Prometheus.Scripts {
         _explosionDetonatedDuringCurrentBurn = false;
       }
 
-      var explosionDetonated = false;
+        var explosionDetonated = false;
+        var isExplosiveHazardEntity = IsExplosiveHazardEntity();
+        var explosionIgnitionEnabled = IsExplosionIgnitionEnabled(tuning);
+        var debugForceExplosionDetonation = forcedIgnition && isExplosiveHazardEntity;
       if (_currentIntensity > 0f
           && !_explosionDetonatedDuringCurrentBurn
-          && IsExplosionIgnitionEnabled(tuning)
-          && IsExplosiveHazardEntity()) {
+          && isExplosiveHazardEntity
+          && (explosionIgnitionEnabled || debugForceExplosionDetonation)) {
         var explosionSeverity = ComputeExplosionSeverityFromEntityName();
         var moistureMitigation = 1f - Mathf.Clamp01((localWaterExposure * 0.65f) + localSpreadReduction);
         var detonationChance = Mathf.Clamp01(
@@ -236,7 +248,7 @@ namespace Mods.Prometheus.Scripts {
 
         explosionIgnition = Mathf.Max(explosionIgnition, detonationChance);
 
-        if (detonationChance > 0.05f && Random.value < detonationChance) {
+        if (debugForceExplosionDetonation || (detonationChance > 0.05f && Random.value < detonationChance)) {
           _explosionDetonatedDuringCurrentBurn = true;
           _explosionSuppressionDisruptionSecondsRemaining = Mathf.Max(_explosionSuppressionDisruptionSecondsRemaining, 8f + (explosionSeverity * 4f));
           _currentIntensity = Mathf.Clamp01(_currentIntensity + (0.1f * explosionSeverity));
@@ -256,11 +268,11 @@ namespace Mods.Prometheus.Scripts {
                 entityId,
                 explosionPropagationChance,
                 PropagationIgnitionSourceKind.Explosion);
-              Debug.Log($"[Prometheus/Fire] event=explosion_ignition_request source={GameObject.name} sourceId={entityId} targetId={explosionTargetEntityId} chance={explosionPropagationChance:0.000} severity={explosionSeverity:0.000} mode={tuning.ExplosionIgnitionMode}");
+              Debug.Log($"[Prometheus/Fire] event=explosion_ignition_request source={GameObject.name} sourceId={entityId} targetId={explosionTargetEntityId} chance={explosionPropagationChance:0.000} severity={explosionSeverity:0.000} mode={tuning.ExplosionIgnitionMode} forced={debugForceExplosionDetonation}");
             }
           }
 
-          Debug.Log($"[Prometheus/Fire] event=explosion_detonated entity={GameObject.name} id={entityId} severity={explosionSeverity:0.000} chance={detonationChance:0.000} mode={tuning.ExplosionIgnitionMode}");
+          Debug.Log($"[Prometheus/Fire] event=explosion_detonated entity={GameObject.name} id={entityId} severity={explosionSeverity:0.000} chance={detonationChance:0.000} mode={tuning.ExplosionIgnitionMode} forced={debugForceExplosionDetonation}");
         }
       }
 
@@ -453,7 +465,9 @@ namespace Mods.Prometheus.Scripts {
       _fireDispatchScoringRuntimeState.SetSnapshot(entityId, dispatchScoringSnapshot);
 
       _fireSimulationRuntimeState.SetSnapshot(entityId, simulationSnapshot);
-      UpdateFireMarker(simulationSnapshot.Burning, simulationSnapshot.Intensity);
+      var isDead = _fireDamageStateRuntimeState.TryGetSnapshot(entityId, out var damageStateSnapshot)
+           && damageStateSnapshot.State == FireDamageState.Dead;
+      UpdateFireMarker(simulationSnapshot.Burning, simulationSnapshot.Intensity, isDead);
 
       var registrySnapshot = new FireEntityRegistrySnapshot(
         GameObject.transform.position,
@@ -523,8 +537,8 @@ namespace Mods.Prometheus.Scripts {
       return 0.45f;
     }
 
-    private void UpdateFireMarker(bool burning, float intensity) {
-      if (!burning) {
+    private void UpdateFireMarker(bool burning, float intensity, bool dead) {
+      if (!burning && !dead) {
         if (_fireMarkerObject != null) {
           _fireMarkerObject.SetActive(false);
         }
@@ -541,15 +555,23 @@ namespace Mods.Prometheus.Scripts {
         _fireMarkerObject.SetActive(true);
       }
 
-      _fireMarkerPulseTime += Time.deltaTime;
-      var pulse = 0.85f + (Mathf.Sin(_fireMarkerPulseTime * 6f) * 0.15f);
-      var scale = Mathf.Lerp(0.8f, 1.35f, Mathf.Clamp01(intensity)) * pulse;
+      float scale;
+      if (dead) {
+        _fireMarkerText.text = "DEAD";
+        _fireMarkerText.color = new Color(0.68f, 0.63f, 0.62f, 1f);
+        scale = 1.05f;
+      } else {
+        _fireMarkerText.text = "FIRE!";
+        _fireMarkerPulseTime += Time.deltaTime;
+        var pulse = 0.85f + (Mathf.Sin(_fireMarkerPulseTime * 6f) * 0.15f);
+        scale = Mathf.Lerp(0.8f, 1.35f, Mathf.Clamp01(intensity)) * pulse;
+
+        var intensity01 = Mathf.Clamp01(intensity);
+        _fireMarkerText.color = Color.Lerp(new Color(1f, 0.82f, 0.28f, 1f), new Color(1f, 0.24f, 0.12f, 1f), intensity01);
+      }
 
       _fireMarkerObject.transform.localPosition = new Vector3(0f, _fireMarkerBaseHeight, 0f);
       _fireMarkerObject.transform.localScale = new Vector3(scale, scale, scale);
-
-      var intensity01 = Mathf.Clamp01(intensity);
-      _fireMarkerText.color = Color.Lerp(new Color(1f, 0.82f, 0.28f, 1f), new Color(1f, 0.24f, 0.12f, 1f), intensity01);
 
       var mainCamera = Camera.main;
       if (mainCamera != null) {

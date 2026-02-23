@@ -50,6 +50,8 @@ namespace Mods.Prometheus.Scripts {
       var tickRate = GetTickRate(_category) * _fireTuningRuntimeState.Current.DamageTickMultiplier;
       var tickSeverityDelta = GetTickSeverityDelta(_category) * _fireTuningRuntimeState.Current.DamageTickMultiplier;
 
+      var previousState = DetermineState(_severity);
+
       if (pressure > 0.02f) {
         _tickProgress += pressure * tickRate;
 
@@ -59,8 +61,14 @@ namespace Mods.Prometheus.Scripts {
           _damageTicksApplied++;
         }
       } else {
-        _severity = Mathf.Clamp01(_severity - (0.05f * Mathf.Max(0.5f, _fireTuningRuntimeState.Current.QuenchingMultiplier)));
-        _tickProgress = Mathf.Clamp01(_tickProgress - 0.1f);
+        var canDecay = !(_category == FireDamageCategory.Building && previousState == FireDamageState.Dead);
+        if (canDecay) {
+          _severity = Mathf.Clamp01(_severity - (0.05f * Mathf.Max(0.5f, _fireTuningRuntimeState.Current.QuenchingMultiplier)));
+          _tickProgress = Mathf.Clamp01(_tickProgress - 0.1f);
+        } else {
+          _severity = 1f;
+          _tickProgress = 1f;
+        }
       }
 
       var state = DetermineState(_severity);

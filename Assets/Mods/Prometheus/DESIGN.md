@@ -497,7 +497,7 @@ Use this lightweight loop before each gameplay test session:
 
 - Recompile scripts in Unity (ensure `Library/ScriptAssemblies/Timberborn.ModExamples.Prometheus.dll` is up to date).
 
-- Deploy the mod payload and runtime DLL via `scripts/deploy_prometheus.sh`.
+- Build and deploy the mod payload and runtime DLL via `scripts/build.sh`.
 
 - Launch Timberborn and confirm mod load in `Player.log` (`- Prometheus (v0.2)` or later).
 

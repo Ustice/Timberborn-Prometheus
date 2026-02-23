@@ -15,7 +15,7 @@ Validate:
 
 - [ ] Unity scripts compile successfully.
 - [ ] `Library/ScriptAssemblies/Timberborn.ModExamples.Prometheus.dll` exists.
-- [ ] Deploy to game mod folder with `scripts/deploy_prometheus.sh`.
+- [ ] Build and deploy to game mod folder with `scripts/build.sh`.
 - [ ] `Player.log`/`Player-prev.log` are cleared before a fresh repro when debugging startup issues.
 - [ ] Timberborn launches with Prometheus enabled.
 

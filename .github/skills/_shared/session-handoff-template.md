@@ -1,4 +1,4 @@
-# Prometheus Session Handoff (Template)
+# Session Handoff (Template)
 
 ## Last updated
 
@@ -40,7 +40,6 @@ YYYY-MM-DD
 - `Assets/Mods/Prometheus/DESIGN.md`
 - `Assets/Mods/Prometheus/TEST_PLAN.md`
 - `Assets/Mods/Prometheus/SESSION_HANDOFF.md`
-- `scripts/deploy_prometheus.sh`
-- `scripts/test_deploy_prometheus.sh`
+- `scripts/build.sh`
 - `README.md`
 - `~/Library/Logs/Mechanistry/Timberborn/Player.log`

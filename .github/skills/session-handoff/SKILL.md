@@ -1,9 +1,9 @@
 ---
-name: session-handoff-prometheus
-description: Create or refresh a Prometheus session handoff note capturing current work, reasons, results, blockers, next steps, and key references when context is running low.
+name: session-handoff
+description: Create or refresh a session handoff note capturing current work, reasons, results, blockers, next steps, and key references when context is running low.
 ---
 
-# Prometheus Session Handoff skill
+# Session Handoff skill
 
 Use this skill when:
 
@@ -43,14 +43,13 @@ Always include these sections in the handoff note:
 7. **Important files / references**
    - markdown links to docs, scripts, key runtime files, log paths.
 
-## Prometheus-specific references to include
+## Required references to include
 
 At minimum, ensure links/paths include:
 
 - `Assets/Mods/Prometheus/DESIGN.md`
 - `Assets/Mods/Prometheus/TEST_PLAN.md`
-- `scripts/deploy_prometheus.sh`
-- `scripts/test_deploy_prometheus.sh`
+- `scripts/build.sh`
 - `README.md`
 - key runtime scripts currently being modified (e.g. simulation/debug/effect controllers)
 - log file path:

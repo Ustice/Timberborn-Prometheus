@@ -10,13 +10,17 @@ namespace Mods.Prometheus.Scripts {
     private const float UpdateIntervalInSeconds = 1f;
 
     private FireImpactRuntimeState _fireImpactRuntimeState;
+    private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
     private float _timeSinceLastUpdate;
     private object _workplaceBonuses;
     private PropertyInfo _workingSpeedMultiplierProperty;
 
     [Inject]
-    public void InjectDependencies(FireImpactRuntimeState fireImpactRuntimeState) {
+    public void InjectDependencies(
+      FireImpactRuntimeState fireImpactRuntimeState,
+      FireDamageStateRuntimeState fireDamageStateRuntimeState) {
       _fireImpactRuntimeState = fireImpactRuntimeState;
+      _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
     }
 
     public void Update() {
@@ -38,7 +42,21 @@ namespace Mods.Prometheus.Scripts {
       }
 
       var productivityPenalty = Mathf.Clamp01(impactSnapshot.BuildingDamagePressure * 0.75f);
-      var workingSpeedMultiplier = Mathf.Clamp(1f - productivityPenalty, 0.2f, 1f);
+      var baseWorkingSpeedMultiplier = Mathf.Clamp(1f - productivityPenalty, 0.2f, 1f);
+
+      var stateWorkingSpeedMultiplier = 1f;
+      if (_fireDamageStateRuntimeState.TryGetSnapshot(entityId, out var damageState)
+          && damageState.Category == FireDamageCategory.Building) {
+        stateWorkingSpeedMultiplier = damageState.State switch {
+          FireDamageState.Healthy => 1f,
+          FireDamageState.Scorched => Mathf.Clamp(1f - (damageState.Severity * 0.55f), 0.45f, 0.95f),
+          FireDamageState.Burning => Mathf.Clamp(1f - (damageState.Severity * 0.9f), 0.1f, 0.55f),
+          FireDamageState.Dead => 0f,
+          _ => 1f,
+        };
+      }
+
+      var workingSpeedMultiplier = Mathf.Min(baseWorkingSpeedMultiplier, stateWorkingSpeedMultiplier);
 
       _workingSpeedMultiplierProperty.SetValue(_workplaceBonuses, workingSpeedMultiplier);
     }
