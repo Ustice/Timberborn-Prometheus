@@ -34,12 +34,9 @@ namespace Mods.Prometheus.Scripts {
     }
 
     public void Update() {
-      _timeSinceLastUpdate += Time.deltaTime;
-      if (_timeSinceLastUpdate < UpdateIntervalInSeconds) {
+      if (!TickGate.ShouldRun(ref _timeSinceLastUpdate, UpdateIntervalInSeconds)) {
         return;
       }
-
-      _timeSinceLastUpdate = 0f;
 
       var entityId = GameObject.GetInstanceID();
       if (!_fireImpactRuntimeState.TryGetSnapshot(entityId, out var impactSnapshot)) {

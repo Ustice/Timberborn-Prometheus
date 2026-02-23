@@ -31,12 +31,9 @@ namespace Mods.Prometheus.Scripts {
       var entityId = GameObject.GetInstanceID();
       var hasExistingSnapshot = _fireSuppressionRuntimeState.TryGetSnapshot(entityId, out _);
 
-      _timeSinceLastUpdate += Time.deltaTime;
-      if (hasExistingSnapshot && _timeSinceLastUpdate < UpdateIntervalInSeconds) {
+      if (!TickGate.ShouldRun(ref _timeSinceLastUpdate, UpdateIntervalInSeconds, hasExistingSnapshot)) {
         return;
       }
-
-      _timeSinceLastUpdate = 0f;
 
       var suppressionPower = _fireResponseProfile.SuppressionSpeedMultiplier * _fireResponseProfile.WaterEfficiencyMultiplier;
       var heatMitigation = Mathf.Clamp01(_fireResponseProfile.HeatResistanceBonus);

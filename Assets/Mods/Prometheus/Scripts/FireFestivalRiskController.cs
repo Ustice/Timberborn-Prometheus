@@ -38,12 +38,9 @@ namespace Mods.Prometheus.Scripts {
     }
 
     public void Update() {
-      _timeSinceLastUpdate += Time.deltaTime;
-      if (_timeSinceLastUpdate < UpdateIntervalInSeconds) {
+      if (!TickGate.ShouldRun(ref _timeSinceLastUpdate, UpdateIntervalInSeconds)) {
         return;
       }
-
-      _timeSinceLastUpdate = 0f;
 
       if (_festivalHoursRemaining > 0f) {
         _festivalHoursRemaining = Mathf.Max(0f, _festivalHoursRemaining - SimHoursPerTick);

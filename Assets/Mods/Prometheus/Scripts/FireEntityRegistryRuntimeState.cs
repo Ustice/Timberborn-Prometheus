@@ -44,9 +44,7 @@ namespace Mods.Prometheus.Scripts {
           continue;
         }
 
-        var offset = snapshot.Position - position;
-        var distanceSquared = offset.sqrMagnitude;
-        if (distanceSquared > radiusSquared) {
+        if (!TryGetDistanceSquaredWithinRadius(position, snapshot.Position, radiusSquared, out var distanceSquared)) {
           continue;
         }
 
@@ -74,9 +72,7 @@ namespace Mods.Prometheus.Scripts {
           continue;
         }
 
-        var offset = snapshot.Position - sourcePosition;
-        var distanceSquared = offset.sqrMagnitude;
-        if (distanceSquared > radiusSquared) {
+        if (!TryGetDistanceSquaredWithinRadius(sourcePosition, snapshot.Position, radiusSquared, out var distanceSquared)) {
           continue;
         }
 
@@ -95,6 +91,12 @@ namespace Mods.Prometheus.Scripts {
       targetEntityId = bestTargetEntityId;
       normalizedDistance = Mathf.Clamp01(Mathf.Sqrt(bestDistanceSquared) / radius);
       return true;
+    }
+
+    private static bool TryGetDistanceSquaredWithinRadius(Vector3 sourcePosition, Vector3 targetPosition, float radiusSquared, out float distanceSquared) {
+      var offset = targetPosition - sourcePosition;
+      distanceSquared = offset.sqrMagnitude;
+      return distanceSquared <= radiusSquared;
     }
 
   }

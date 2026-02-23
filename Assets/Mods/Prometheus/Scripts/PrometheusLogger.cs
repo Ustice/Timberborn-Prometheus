@@ -4,6 +4,28 @@ using Timberborn.ModManagerScene;
 using UnityEngine;
 
 namespace Mods.Prometheus.Scripts {
+  internal static class FireTelemetry {
+
+    private const string FireLogPrefix = "[Prometheus/Fire] ";
+
+    public static void Log(string message) {
+      Debug.Log(FormatMessage(message));
+    }
+
+    public static void LogWarning(string message) {
+      Debug.LogWarning(FormatMessage(message));
+    }
+
+    private static string FormatMessage(string message) {
+      return string.IsNullOrEmpty(message)
+        ? FireLogPrefix.TrimEnd()
+        : message.StartsWith(FireLogPrefix, StringComparison.Ordinal)
+          ? message
+          : $"{FireLogPrefix}{message}";
+    }
+
+  }
+
   public class PrometheusLogger : IModStarter {
 
     private static readonly object LogFileSync = new();

@@ -33,12 +33,9 @@ namespace Mods.Prometheus.Scripts {
     }
 
     public void Update() {
-      _timeSinceLastUpdate += Time.deltaTime;
-      if (_timeSinceLastUpdate < UpdateIntervalInSeconds) {
+      if (!TickGate.ShouldRun(ref _timeSinceLastUpdate, UpdateIntervalInSeconds)) {
         return;
       }
-
-      _timeSinceLastUpdate = 0f;
 
       _timeSinceLastNeedManagerRefresh += UpdateIntervalInSeconds;
       if (_timeSinceLastNeedManagerRefresh >= NeedManagerRefreshIntervalInSeconds || _cachedNeedManagers.Count == 0) {
@@ -115,7 +112,7 @@ namespace Mods.Prometheus.Scripts {
         _loggedMissingNeedManagerApi = true;
         const string warning = "Prometheus: NeedManager AddPoints API not found; beaver fire effects disabled.";
         _quickNotificationService.SendNotification(warning);
-        Debug.LogWarning($"[Prometheus/Fire] event=beaver_effect_api_missing message=\"{warning}\"");
+        FireTelemetry.LogWarning($"event=beaver_effect_api_missing message=\"{warning}\"");
       }
     }
 

@@ -24,12 +24,9 @@ namespace Mods.Prometheus.Scripts {
     }
 
     public void Update() {
-      _timeSinceLastUpdate += Time.deltaTime;
-      if (_timeSinceLastUpdate < UpdateIntervalInSeconds) {
+      if (!TickGate.ShouldRun(ref _timeSinceLastUpdate, UpdateIntervalInSeconds)) {
         return;
       }
-
-      _timeSinceLastUpdate = 0f;
 
       EnsureWorkplaceBonusesBound();
       if (_workplaceBonuses is null || _workingSpeedMultiplierProperty is null) {

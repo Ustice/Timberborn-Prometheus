@@ -19,12 +19,9 @@ namespace Mods.Prometheus.Scripts {
     }
 
     public void Update() {
-      _timeSinceLastUpdate += Time.deltaTime;
-      if (_timeSinceLastUpdate < UpdateIntervalInSeconds) {
+      if (!TickGate.ShouldRun(ref _timeSinceLastUpdate, UpdateIntervalInSeconds)) {
         return;
       }
-
-      _timeSinceLastUpdate = 0f;
 
       var floodableObject = GameObject.GetComponent("FloodableObject");
       var wateredNaturalResource = GameObject.GetComponent("WateredNaturalResource");
@@ -58,29 +55,30 @@ namespace Mods.Prometheus.Scripts {
     }
 
     private static bool ReadBool(object target, string propertyName) {
-      if (target is null) {
+      if (!TryReadPropertyValue(target, propertyName, out bool value)) {
         return false;
       }
 
-      var property = target.GetType().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-      if (property is null || property.PropertyType != typeof(bool)) {
-        return false;
-      }
-
-      return (bool)property.GetValue(target);
+      return value;
     }
 
     private static float ReadFloat(object target, string propertyName) {
+      return TryReadPropertyValue(target, propertyName, out float value) ? value : 0f;
+    }
+
+    private static bool TryReadPropertyValue<TValue>(object target, string propertyName, out TValue value) {
+      value = default;
       if (target is null) {
-        return 0f;
+        return false;
       }
 
       var property = target.GetType().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-      if (property is null || property.PropertyType != typeof(float)) {
-        return 0f;
+      if (property is null || property.PropertyType != typeof(TValue)) {
+        return false;
       }
 
-      return (float)property.GetValue(target);
+      value = (TValue)property.GetValue(target);
+      return true;
     }
 
   }

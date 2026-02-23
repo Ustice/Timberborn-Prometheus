@@ -106,7 +106,7 @@ namespace Mods.Prometheus.Scripts {
     public void RequestSpreadIgnition(int targetEntityId, int sourceEntityId, float propagationChance, PropagationIgnitionSourceKind sourceKind = PropagationIgnitionSourceKind.Spread) {
       if (targetEntityId == 0 || sourceEntityId == 0 || targetEntityId == sourceEntityId) {
         if (sourceKind == PropagationIgnitionSourceKind.Explosion) {
-          Debug.Log($"[Prometheus/Fire] event=explosion_ignition_request_ignored sourceId={sourceEntityId} targetId={targetEntityId} reason=invalid_ids");
+          FireTelemetry.Log($"event=explosion_ignition_request_ignored sourceId={sourceEntityId} targetId={targetEntityId} reason=invalid_ids");
         }
         return;
       }
@@ -115,21 +115,21 @@ namespace Mods.Prometheus.Scripts {
       if (_spreadIgnitionRequestsByEntityId.TryGetValue(targetEntityId, out var existingRequest)) {
         if (existingRequest.PropagationChance >= clampedPropagationChance) {
           if (sourceKind == PropagationIgnitionSourceKind.Explosion || existingRequest.SourceKind == PropagationIgnitionSourceKind.Explosion) {
-            Debug.Log(
-              $"[Prometheus/Fire] event=explosion_ignition_request_ignored sourceId={sourceEntityId} targetId={targetEntityId} reason=weaker_or_equal_request incomingChance={clampedPropagationChance:0.000} existingChance={existingRequest.PropagationChance:0.000} existingSourceKind={existingRequest.SourceKind}");
+            FireTelemetry.Log(
+              $"event=explosion_ignition_request_ignored sourceId={sourceEntityId} targetId={targetEntityId} reason=weaker_or_equal_request incomingChance={clampedPropagationChance:0.000} existingChance={existingRequest.PropagationChance:0.000} existingSourceKind={existingRequest.SourceKind}");
           }
           return;
         }
 
         if (sourceKind == PropagationIgnitionSourceKind.Explosion || existingRequest.SourceKind == PropagationIgnitionSourceKind.Explosion) {
-          Debug.Log(
-            $"[Prometheus/Fire] event=explosion_ignition_request_replaced sourceId={sourceEntityId} targetId={targetEntityId} incomingChance={clampedPropagationChance:0.000} previousChance={existingRequest.PropagationChance:0.000} previousSourceKind={existingRequest.SourceKind}");
+          FireTelemetry.Log(
+            $"event=explosion_ignition_request_replaced sourceId={sourceEntityId} targetId={targetEntityId} incomingChance={clampedPropagationChance:0.000} previousChance={existingRequest.PropagationChance:0.000} previousSourceKind={existingRequest.SourceKind}");
         }
       }
 
       _spreadIgnitionRequestsByEntityId[targetEntityId] = new SpreadIgnitionRequest(sourceEntityId, clampedPropagationChance, sourceKind);
       if (sourceKind == PropagationIgnitionSourceKind.Explosion) {
-        Debug.Log($"[Prometheus/Fire] event=explosion_ignition_request_queued sourceId={sourceEntityId} targetId={targetEntityId} chance={clampedPropagationChance:0.000}");
+        FireTelemetry.Log($"event=explosion_ignition_request_queued sourceId={sourceEntityId} targetId={targetEntityId} chance={clampedPropagationChance:0.000}");
       }
     }
 
