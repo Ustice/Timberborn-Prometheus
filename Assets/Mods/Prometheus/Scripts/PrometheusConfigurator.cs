@@ -7,6 +7,15 @@ namespace Mods.Prometheus.Scripts {
   public class PrometheusConfigurator : Configurator {
 
     protected override void Configure() {
+      BindRuntimeStates();
+      BindFireResponseComponents();
+      Bind<PrometheusFireDebugFragment>().AsSingleton();
+
+      RegisterEntityPanelModule();
+      RegisterTemplateModule();
+    }
+
+    private void BindRuntimeStates() {
       Bind<FireSuppressionRuntimeState>().AsSingleton();
       Bind<FireTuningRuntimeState>().AsSingleton();
       Bind<FireSimulationRuntimeState>().AsSingleton();
@@ -17,7 +26,9 @@ namespace Mods.Prometheus.Scripts {
       Bind<FireWaterContextRuntimeState>().AsSingleton();
       Bind<FireRecoveryRuntimeState>().AsSingleton();
       Bind<FireFestivalRuntimeState>().AsSingleton();
+    }
 
+    private void BindFireResponseComponents() {
       Bind<FireResponseProfile>().AsTransient();
       Bind<FireFestivalRiskController>().AsTransient();
       Bind<FireWaterContextProbe>().AsTransient();
@@ -30,15 +41,23 @@ namespace Mods.Prometheus.Scripts {
       Bind<FireRecoveryEffectApplier>().AsTransient();
       Bind<FireWorkplaceEffectApplier>().AsTransient();
       Bind<FireBeaverEffectApplier>().AsTransient();
-      Bind<PrometheusFireDebugFragment>().AsSingleton();
+    }
 
+    private void RegisterEntityPanelModule() {
       MultiBind<EntityPanelModule>().ToProvider<EntityPanelModuleProvider>().AsSingleton();
+    }
 
+    private void RegisterTemplateModule() {
       MultiBind<TemplateModule>().ToProvider(ProvideTemplateModule).AsSingleton();
     }
 
     private static TemplateModule ProvideTemplateModule() {
       var builder = new TemplateModule.Builder();
+      AddFireResponseDecorators(builder);
+      return builder.Build();
+    }
+
+    private static void AddFireResponseDecorators(TemplateModule.Builder builder) {
       builder.AddDecorator<FireResponseProfileSpec, FireResponseProfile>();
       builder.AddDecorator<FireResponseProfileSpec, FireFestivalRiskController>();
       builder.AddDecorator<FireResponseProfileSpec, FireWaterContextProbe>();
@@ -51,7 +70,6 @@ namespace Mods.Prometheus.Scripts {
       builder.AddDecorator<FireResponseProfileSpec, FireRecoveryEffectApplier>();
       builder.AddDecorator<FireResponseProfileSpec, FireWorkplaceEffectApplier>();
       builder.AddDecorator<FireResponseProfileSpec, FireBeaverEffectApplier>();
-      return builder.Build();
     }
 
     private class EntityPanelModuleProvider : IProvider<EntityPanelModule> {
