@@ -26,6 +26,8 @@ namespace Mods.Prometheus.Scripts {
 
     private readonly Dictionary<int, FireEntityRegistrySnapshot> _snapshotsByEntityId = new();
 
+    public int SnapshotCount => _snapshotsByEntityId.Count;
+
     public void SetSnapshot(int entityId, FireEntityRegistrySnapshot snapshot) {
       _snapshotsByEntityId[entityId] = snapshot;
     }
@@ -55,6 +57,10 @@ namespace Mods.Prometheus.Scripts {
       }
 
       return Mathf.Clamp(accumulatedPressure, 0f, 0.12f);
+    }
+
+    public void RemoveSnapshot(int entityId) {
+      _snapshotsByEntityId.Remove(entityId);
     }
 
     public bool TryGetNearestSpreadTarget(int sourceEntityId, Vector3 sourcePosition, float radius, out int targetEntityId, out float normalizedDistance) {

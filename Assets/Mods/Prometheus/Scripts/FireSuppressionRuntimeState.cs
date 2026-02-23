@@ -11,6 +11,12 @@ namespace Mods.Prometheus.Scripts {
       return _snapshotsByEntityId.TryGetValue(entityId, out snapshot);
     }
 
+    public int SnapshotCount => _snapshotsByEntityId.Count;
+
+    public void RemoveSnapshot(int entityId) {
+      _snapshotsByEntityId.Remove(entityId);
+    }
+
   }
 
   internal static class TickGate {

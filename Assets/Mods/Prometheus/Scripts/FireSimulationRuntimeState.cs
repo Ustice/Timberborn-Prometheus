@@ -83,12 +83,22 @@ namespace Mods.Prometheus.Scripts {
     private readonly HashSet<int> _forcedIgnitionEntityIds = new();
     private readonly Dictionary<int, SpreadIgnitionRequest> _spreadIgnitionRequestsByEntityId = new();
 
+    public int SnapshotCount => _snapshotsByEntityId.Count;
+    public int PendingForcedIgnitionCount => _forcedIgnitionEntityIds.Count;
+    public int PendingSpreadIgnitionCount => _spreadIgnitionRequestsByEntityId.Count;
+
     public void SetSnapshot(int entityId, FireSimulationSnapshot snapshot) {
       _snapshotsByEntityId[entityId] = snapshot;
     }
 
     public bool TryGetSnapshot(int entityId, out FireSimulationSnapshot snapshot) {
       return _snapshotsByEntityId.TryGetValue(entityId, out snapshot);
+    }
+
+    public void RemoveSnapshot(int entityId) {
+      _snapshotsByEntityId.Remove(entityId);
+      _forcedIgnitionEntityIds.Remove(entityId);
+      _spreadIgnitionRequestsByEntityId.Remove(entityId);
     }
 
     public void RequestForcedIgnition(int entityId) {

@@ -1,16 +1,27 @@
 using System;
 using System.Text;
 using Timberborn.BaseComponentSystem;
+using Timberborn.CoreUI;
 using Timberborn.EntityPanelSystem;
+using Timberborn.SingletonSystem;
+using Timberborn.UILayoutSystem;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace Mods.Prometheus.Scripts {
+  internal enum FireLogFilter {
+    All,
+    Events,
+    Warnings,
+    Errors,
+  }
+
   internal class PrometheusFireDebugFragment : IEntityPanelFragment {
 
     private readonly FireTuningRuntimeState _fireTuningRuntimeState;
     private readonly FireSuppressionRuntimeState _fireSuppressionRuntimeState;
     private readonly FireSimulationRuntimeState _fireSimulationRuntimeState;
+    private readonly FireEntityRegistryRuntimeState _fireEntityRegistryRuntimeState;
     private readonly FireDispatchScoringRuntimeState _fireDispatchScoringRuntimeState;
     private readonly FireWaterContextRuntimeState _fireWaterContextRuntimeState;
     private readonly FireFestivalRuntimeState _fireFestivalRuntimeState;
@@ -25,6 +36,17 @@ namespace Mods.Prometheus.Scripts {
     private Label _copyStatusLabel;
     private Foldout _detailsFoldout;
     private VisualElement _detailsContainer;
+    private Foldout _fireLogFoldout;
+    private VisualElement _fireLogContainer;
+    private ScrollView _fireLogScrollView;
+    private VisualElement _fireLogLinesContainer;
+    private Button _clearLogButton;
+    private Toggle _autoScrollToggle;
+    private Button _allLogFilterButton;
+    private Button _eventsLogFilterButton;
+    private Button _warningsLogFilterButton;
+    private Button _errorsLogFilterButton;
+    private TextField _fireLogSearchField;
     private ScrollView _dataScrollView;
     private Label _dataLabel;
     private int _selectedEntityId;
@@ -32,6 +54,20 @@ namespace Mods.Prometheus.Scripts {
     private bool _selectedEntityHasSimulationController;
     private bool _selectedEntityHasSuppressionApplier;
     private string _latestDebugText = string.Empty;
+    private bool _autoScrollFireLog = true;
+    private FireLogFilter _fireLogFilter = FireLogFilter.All;
+    private string _fireLogSearchText = string.Empty;
+    private int _baselineSuppressionSnapshotCount;
+    private int _baselineSimulationSnapshotCount;
+    private int _baselineDispatchSnapshotCount;
+    private int _baselineWaterSnapshotCount;
+    private int _baselineFestivalSnapshotCount;
+    private int _baselineImpactSnapshotCount;
+    private int _baselineDamageSnapshotCount;
+    private int _baselineRecoverySnapshotCount;
+    private int _baselineRegistrySnapshotCount;
+    private int _baselinePendingForcedIgnitionCount;
+    private int _baselinePendingSpreadIgnitionCount;
     private int _copyFeedbackVersion;
     private bool _copyFeedbackActive;
     private static readonly Color PanelTextColor = new(0.84f, 0.92f, 0.83f, 1f);
@@ -43,6 +79,7 @@ namespace Mods.Prometheus.Scripts {
       FireTuningRuntimeState fireTuningRuntimeState,
       FireSuppressionRuntimeState fireSuppressionRuntimeState,
       FireSimulationRuntimeState fireSimulationRuntimeState,
+      FireEntityRegistryRuntimeState fireEntityRegistryRuntimeState,
       FireDispatchScoringRuntimeState fireDispatchScoringRuntimeState,
       FireWaterContextRuntimeState fireWaterContextRuntimeState,
       FireFestivalRuntimeState fireFestivalRuntimeState,
@@ -52,6 +89,7 @@ namespace Mods.Prometheus.Scripts {
       _fireTuningRuntimeState = fireTuningRuntimeState;
       _fireSuppressionRuntimeState = fireSuppressionRuntimeState;
       _fireSimulationRuntimeState = fireSimulationRuntimeState;
+      _fireEntityRegistryRuntimeState = fireEntityRegistryRuntimeState;
       _fireDispatchScoringRuntimeState = fireDispatchScoringRuntimeState;
       _fireWaterContextRuntimeState = fireWaterContextRuntimeState;
       _fireFestivalRuntimeState = fireFestivalRuntimeState;
@@ -63,6 +101,7 @@ namespace Mods.Prometheus.Scripts {
     public VisualElement InitializeFragment() {
       _root = new VisualElement();
       _root.style.display = DisplayStyle.None;
+      _root.style.overflow = Overflow.Visible;
       _root.style.marginTop = 4;
       _root.style.marginBottom = 4;
       _root.style.paddingLeft = 8;
@@ -148,7 +187,9 @@ namespace Mods.Prometheus.Scripts {
       _detailsContainer.style.display = DisplayStyle.None;
       _root.Add(_detailsContainer);
 
-      _dataScrollView = new ScrollView(ScrollViewMode.VerticalAndHorizontal);
+      _dataScrollView = new ScrollView(ScrollViewMode.Vertical);
+      _dataScrollView.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+      _dataScrollView.verticalScrollerVisibility = ScrollerVisibility.Auto;
       _dataScrollView.style.minHeight = 160;
       _dataScrollView.style.maxHeight = 360;
       _dataScrollView.style.flexShrink = 0;
@@ -172,6 +213,7 @@ namespace Mods.Prometheus.Scripts {
       _dataLabel.style.color = new Color(0.84f, 0.92f, 0.83f, 1f);
       _dataLabel.style.unityTextAlign = TextAnchor.UpperLeft;
       _dataLabel.style.flexGrow = 1;
+      _dataLabel.style.minWidth = 0;
       _dataLabel.style.paddingLeft = 6;
       _dataLabel.style.paddingRight = 6;
       _dataLabel.style.paddingTop = 6;
@@ -180,7 +222,117 @@ namespace Mods.Prometheus.Scripts {
       _dataScrollView.Add(_dataLabel);
       _detailsContainer.Add(_dataScrollView);
 
+      _fireLogFoldout = new Foldout {
+        text = "Show fire log",
+        value = false
+      };
+      _fireLogFoldout.style.marginBottom = 4;
+      _fireLogFoldout.style.color = PanelTextColor;
+      _fireLogFoldout.RegisterValueChangedCallback(evt => UpdateFireLogVisibility(evt.newValue));
+      _root.Add(_fireLogFoldout);
+
+      var fireLogFoldoutToggle = _fireLogFoldout.Q<Toggle>();
+      if (fireLogFoldoutToggle is not null) {
+        fireLogFoldoutToggle.style.color = PanelTextColor;
+        fireLogFoldoutToggle.style.unityBackgroundImageTintColor = PanelTextColor;
+      }
+
+      var fireLogFoldoutCheckmark = _fireLogFoldout.Q<VisualElement>(className: "unity-foldout__checkmark");
+      if (fireLogFoldoutCheckmark is not null) {
+        fireLogFoldoutCheckmark.style.unityBackgroundImageTintColor = PanelTextColor;
+      }
+
+      _fireLogContainer = new VisualElement();
+      _fireLogContainer.style.display = DisplayStyle.None;
+      _root.Add(_fireLogContainer);
+
+      var fireLogToolbar = new VisualElement();
+      fireLogToolbar.style.flexDirection = FlexDirection.Row;
+      fireLogToolbar.style.alignItems = Align.Center;
+      fireLogToolbar.style.justifyContent = Justify.SpaceBetween;
+      fireLogToolbar.style.marginBottom = 4;
+
+      var fireLogFilterButtons = new VisualElement();
+      fireLogFilterButtons.style.flexDirection = FlexDirection.Row;
+      fireLogFilterButtons.style.alignItems = Align.Center;
+
+      _allLogFilterButton = CreateFireLogFilterButton("All", FireLogFilter.All);
+      _eventsLogFilterButton = CreateFireLogFilterButton("Events", FireLogFilter.Events);
+      _warningsLogFilterButton = CreateFireLogFilterButton("Warnings", FireLogFilter.Warnings);
+      _errorsLogFilterButton = CreateFireLogFilterButton("Errors", FireLogFilter.Errors);
+
+      fireLogFilterButtons.Add(_allLogFilterButton);
+      fireLogFilterButtons.Add(_eventsLogFilterButton);
+      fireLogFilterButtons.Add(_warningsLogFilterButton);
+      fireLogFilterButtons.Add(_errorsLogFilterButton);
+
+      _fireLogSearchField = new TextField {
+        value = string.Empty
+      };
+      _fireLogSearchField.label = "Search";
+      _fireLogSearchField.style.minWidth = 220;
+      _fireLogSearchField.style.marginLeft = 6;
+      _fireLogSearchField.style.color = PanelTextColor;
+      _fireLogSearchField.RegisterValueChangedCallback(evt => {
+        _fireLogSearchText = evt.newValue ?? string.Empty;
+        UpdateInGameFireLogPanel();
+      });
+      fireLogFilterButtons.Add(_fireLogSearchField);
+
+      fireLogToolbar.Add(fireLogFilterButtons);
+
+      _autoScrollToggle = new Toggle("Auto-scroll") {
+        value = _autoScrollFireLog
+      };
+      _autoScrollToggle.style.color = PanelTextColor;
+      _autoScrollToggle.style.fontSize = 11;
+      _autoScrollToggle.RegisterValueChangedCallback(evt => _autoScrollFireLog = evt.newValue);
+      fireLogToolbar.Add(_autoScrollToggle);
+
+      _clearLogButton = new Button(ClearInGameFireLog) {
+        text = "Clear log"
+      };
+      _clearLogButton.style.height = 20;
+      _clearLogButton.style.fontSize = 11;
+      _clearLogButton.style.unityFontStyleAndWeight = FontStyle.Bold;
+      _clearLogButton.style.unityBackgroundImageTintColor = CopyButtonWarningTint;
+      _clearLogButton.style.marginLeft = 6;
+      fireLogToolbar.Add(_clearLogButton);
+      _fireLogContainer.Add(fireLogToolbar);
+
+      _fireLogScrollView = new ScrollView(ScrollViewMode.Vertical);
+      _fireLogScrollView.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+      _fireLogScrollView.verticalScrollerVisibility = ScrollerVisibility.Auto;
+      _fireLogScrollView.style.minHeight = 140;
+      _fireLogScrollView.style.maxHeight = 300;
+      _fireLogScrollView.style.flexShrink = 0;
+      _fireLogScrollView.style.backgroundColor = new Color(0.08f, 0.13f, 0.10f, 0.9f);
+      _fireLogScrollView.style.borderTopLeftRadius = 3;
+      _fireLogScrollView.style.borderTopRightRadius = 3;
+      _fireLogScrollView.style.borderBottomLeftRadius = 3;
+      _fireLogScrollView.style.borderBottomRightRadius = 3;
+      _fireLogScrollView.style.borderTopWidth = 1;
+      _fireLogScrollView.style.borderRightWidth = 1;
+      _fireLogScrollView.style.borderBottomWidth = 1;
+      _fireLogScrollView.style.borderLeftWidth = 1;
+      _fireLogScrollView.style.borderTopColor = new Color(0.22f, 0.33f, 0.27f, 1f);
+      _fireLogScrollView.style.borderRightColor = new Color(0.22f, 0.33f, 0.27f, 1f);
+      _fireLogScrollView.style.borderBottomColor = new Color(0.22f, 0.33f, 0.27f, 1f);
+      _fireLogScrollView.style.borderLeftColor = new Color(0.22f, 0.33f, 0.27f, 1f);
+
+      _fireLogLinesContainer = new VisualElement();
+      _fireLogLinesContainer.style.flexDirection = FlexDirection.Column;
+      _fireLogLinesContainer.style.flexGrow = 1;
+      _fireLogLinesContainer.style.paddingLeft = 6;
+      _fireLogLinesContainer.style.paddingRight = 6;
+      _fireLogLinesContainer.style.paddingTop = 6;
+      _fireLogLinesContainer.style.paddingBottom = 6;
+
+      _fireLogScrollView.Add(_fireLogLinesContainer);
+      _fireLogContainer.Add(_fireLogScrollView);
+
       UpdateDetailsVisibility(_detailsFoldout.value);
+      UpdateFireLogVisibility(_fireLogFoldout.value);
 
       return _root;
     }
@@ -188,6 +340,11 @@ namespace Mods.Prometheus.Scripts {
     private void UpdateDetailsVisibility(bool showDetails) {
       _detailsContainer.style.display = showDetails ? DisplayStyle.Flex : DisplayStyle.None;
       _detailsFoldout.text = showDetails ? "Hide details" : "Show details";
+    }
+
+    private void UpdateFireLogVisibility(bool showFireLog) {
+      _fireLogContainer.style.display = showFireLog ? DisplayStyle.Flex : DisplayStyle.None;
+      _fireLogFoldout.text = showFireLog ? "Hide fire log" : "Show fire log";
     }
 
     private void CopyDebugTextToClipboard() {
@@ -273,7 +430,20 @@ namespace Mods.Prometheus.Scripts {
 
       _igniteButton.SetEnabled(_selectedEntityHasFireProfile);
       _detailsFoldout.value = false;
+      _fireLogFoldout.value = false;
+      _autoScrollFireLog = true;
+      _fireLogFilter = FireLogFilter.All;
+      _fireLogSearchText = string.Empty;
+      if (_autoScrollToggle != null) {
+        _autoScrollToggle.value = true;
+      }
+      if (_fireLogSearchField != null) {
+        _fireLogSearchField.value = string.Empty;
+      }
+      ApplyFireLogFilterButtonStyles();
       _copyButton.style.color = PanelTextColor;
+
+      CaptureRuntimeCountBaselines();
       _root.style.display = DisplayStyle.Flex;
       UpdateFragment();
     }
@@ -290,7 +460,10 @@ namespace Mods.Prometheus.Scripts {
       SetCopyButtonVisuals("Copy", CopyButtonDefaultTint);
       _igniteButton.SetEnabled(false);
       _detailsFoldout.value = false;
+      _fireLogFoldout.value = false;
+      _fireLogLinesContainer?.Clear();
       UpdateDetailsVisibility(false);
+      UpdateFireLogVisibility(false);
       _root.style.display = DisplayStyle.None;
     }
 
@@ -326,6 +499,20 @@ namespace Mods.Prometheus.Scripts {
       stringBuilder.AppendLine($"- Spread/fuel x{tuning.FuelSpreadMultiplier:0.00}");
       stringBuilder.AppendLine($"- Spread/barrier x{tuning.BarrierResistanceMultiplier:0.00}");
 
+      stringBuilder.AppendLine();
+
+      stringBuilder.AppendLine("Runtime store counts");
+      AppendRuntimeCountLine(stringBuilder, "Suppression snapshots", _fireSuppressionRuntimeState.SnapshotCount, _baselineSuppressionSnapshotCount);
+      AppendRuntimeCountLine(stringBuilder, "Simulation snapshots", _fireSimulationRuntimeState.SnapshotCount, _baselineSimulationSnapshotCount);
+      AppendRuntimeCountLine(stringBuilder, "Dispatch snapshots", _fireDispatchScoringRuntimeState.SnapshotCount, _baselineDispatchSnapshotCount);
+      AppendRuntimeCountLine(stringBuilder, "Water snapshots", _fireWaterContextRuntimeState.SnapshotCount, _baselineWaterSnapshotCount);
+      AppendRuntimeCountLine(stringBuilder, "Festival snapshots", _fireFestivalRuntimeState.SnapshotCount, _baselineFestivalSnapshotCount);
+      AppendRuntimeCountLine(stringBuilder, "Impact snapshots", _fireImpactRuntimeState.SnapshotCount, _baselineImpactSnapshotCount);
+      AppendRuntimeCountLine(stringBuilder, "Damage snapshots", _fireDamageStateRuntimeState.SnapshotCount, _baselineDamageSnapshotCount);
+      AppendRuntimeCountLine(stringBuilder, "Recovery snapshots", _fireRecoveryRuntimeState.SnapshotCount, _baselineRecoverySnapshotCount);
+      AppendRuntimeCountLine(stringBuilder, "Registry snapshots", _fireEntityRegistryRuntimeState.SnapshotCount, _baselineRegistrySnapshotCount);
+      AppendRuntimeCountLine(stringBuilder, "Pending forced ignitions", _fireSimulationRuntimeState.PendingForcedIgnitionCount, _baselinePendingForcedIgnitionCount);
+      AppendRuntimeCountLine(stringBuilder, "Pending spread ignitions", _fireSimulationRuntimeState.PendingSpreadIgnitionCount, _baselinePendingSpreadIgnitionCount);
       stringBuilder.AppendLine();
 
       if (_fireSuppressionRuntimeState.TryGetSnapshot(_selectedEntityId, out var suppression)) {
@@ -455,10 +642,256 @@ namespace Mods.Prometheus.Scripts {
 
       _latestDebugText = stringBuilder.ToString();
       _dataLabel.text = _latestDebugText;
+      UpdateInGameFireLogPanel();
       if (!_copyFeedbackActive) {
         _copyStatusLabel.text = string.Empty;
         SetCopyButtonVisuals("Copy", CopyButtonDefaultTint);
       }
+    }
+
+    private void CaptureRuntimeCountBaselines() {
+      _baselineSuppressionSnapshotCount = _fireSuppressionRuntimeState.SnapshotCount;
+      _baselineSimulationSnapshotCount = _fireSimulationRuntimeState.SnapshotCount;
+      _baselineDispatchSnapshotCount = _fireDispatchScoringRuntimeState.SnapshotCount;
+      _baselineWaterSnapshotCount = _fireWaterContextRuntimeState.SnapshotCount;
+      _baselineFestivalSnapshotCount = _fireFestivalRuntimeState.SnapshotCount;
+      _baselineImpactSnapshotCount = _fireImpactRuntimeState.SnapshotCount;
+      _baselineDamageSnapshotCount = _fireDamageStateRuntimeState.SnapshotCount;
+      _baselineRecoverySnapshotCount = _fireRecoveryRuntimeState.SnapshotCount;
+      _baselineRegistrySnapshotCount = _fireEntityRegistryRuntimeState.SnapshotCount;
+      _baselinePendingForcedIgnitionCount = _fireSimulationRuntimeState.PendingForcedIgnitionCount;
+      _baselinePendingSpreadIgnitionCount = _fireSimulationRuntimeState.PendingSpreadIgnitionCount;
+    }
+
+    private static void AppendRuntimeCountLine(StringBuilder stringBuilder, string label, int current, int baseline) {
+      var delta = current - baseline;
+      var deltaText = delta == 0 ? "±0" : delta > 0 ? $"+{delta}" : delta.ToString();
+      stringBuilder.AppendLine($"- {label}: {current} ({deltaText} since selection)");
+    }
+
+    private void UpdateInGameFireLogPanel() {
+      if (_fireLogLinesContainer == null) {
+        return;
+      }
+
+      _fireLogLinesContainer.Clear();
+
+      var entries = FireTelemetry.GetRecentInGameLogEntries();
+      var filteredCount = 0;
+      for (var i = 0; i < entries.Length; i++) {
+        var entry = entries[i];
+        if (!ShouldIncludeLogEntry(entry)) {
+          continue;
+        }
+
+        filteredCount++;
+        _fireLogLinesContainer.Add(CreateLogEntryRow(entry));
+      }
+
+      if (filteredCount == 0) {
+        var emptyLabel = new Label("No log entries for current filter.");
+        emptyLabel.style.fontSize = 10;
+        emptyLabel.style.color = new Color(0.72f, 0.78f, 0.72f, 1f);
+        emptyLabel.style.unityTextAlign = TextAnchor.UpperLeft;
+        _fireLogLinesContainer.Add(emptyLabel);
+      }
+
+      if (_autoScrollFireLog && _fireLogScrollView != null) {
+        _fireLogScrollView.scrollOffset = new Vector2(_fireLogScrollView.scrollOffset.x, float.MaxValue);
+      }
+    }
+
+    private Button CreateFireLogFilterButton(string text, FireLogFilter filter) {
+      var button = new Button(() => SetFireLogFilter(filter)) {
+        text = text
+      };
+      button.style.height = 20;
+      button.style.fontSize = 10;
+      button.style.unityFontStyleAndWeight = FontStyle.Bold;
+      button.style.marginRight = 4;
+      button.style.color = PanelTextColor;
+      return button;
+    }
+
+    private void SetFireLogFilter(FireLogFilter filter) {
+      _fireLogFilter = filter;
+      ApplyFireLogFilterButtonStyles();
+      UpdateInGameFireLogPanel();
+    }
+
+    private void ApplyFireLogFilterButtonStyles() {
+      ApplyFireLogFilterButtonStyle(_allLogFilterButton, _fireLogFilter == FireLogFilter.All);
+      ApplyFireLogFilterButtonStyle(_eventsLogFilterButton, _fireLogFilter == FireLogFilter.Events);
+      ApplyFireLogFilterButtonStyle(_warningsLogFilterButton, _fireLogFilter == FireLogFilter.Warnings);
+      ApplyFireLogFilterButtonStyle(_errorsLogFilterButton, _fireLogFilter == FireLogFilter.Errors);
+    }
+
+    private static void ApplyFireLogFilterButtonStyle(Button button, bool selected) {
+      if (button == null) {
+        return;
+      }
+
+      button.style.unityBackgroundImageTintColor = selected
+        ? new Color(0.33f, 0.57f, 0.40f, 1f)
+        : new Color(1f, 1f, 1f, 1f);
+    }
+
+    private bool ShouldIncludeLogEntry(FireInGameLogEntry entry) {
+      var includesBySeverity = _fireLogFilter switch {
+        FireLogFilter.All => true,
+        FireLogFilter.Events => entry.LogType == LogType.Log,
+        FireLogFilter.Warnings => entry.LogType == LogType.Warning,
+        FireLogFilter.Errors => entry.LogType == LogType.Error
+                                || entry.LogType == LogType.Assert
+                                || entry.LogType == LogType.Exception,
+        _ => true,
+      };
+
+      if (!includesBySeverity) {
+        return false;
+      }
+
+      if (string.IsNullOrWhiteSpace(_fireLogSearchText)) {
+        return true;
+      }
+
+      var needle = _fireLogSearchText.Trim();
+      return entry.Message.Contains(needle, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private VisualElement CreateLogEntryRow(FireInGameLogEntry entry) {
+      var row = new VisualElement();
+      row.style.flexDirection = FlexDirection.Row;
+      row.style.alignItems = Align.FlexStart;
+      row.style.marginBottom = 2;
+      row.style.minWidth = 0;
+
+      var label = CreateLogEntryLabel(entry);
+      label.style.flexGrow = 1;
+      label.style.minWidth = 0;
+      label.style.marginRight = 6;
+      row.Add(label);
+
+      var viewButton = new Button(() => ViewEntityFromLogEntry(entry)) {
+        text = "View"
+      };
+      viewButton.style.height = 18;
+      viewButton.style.fontSize = 10;
+      viewButton.style.unityFontStyleAndWeight = FontStyle.Bold;
+      viewButton.style.minWidth = 44;
+      viewButton.style.unityBackgroundImageTintColor = new Color(0.55f, 0.70f, 0.92f, 1f);
+      viewButton.SetEnabled(TryExtractEntityId(entry.Message, out _));
+      row.Add(viewButton);
+
+      return row;
+    }
+
+    private static Label CreateLogEntryLabel(FireInGameLogEntry entry) {
+      var severityLabel = entry.LogType switch {
+        LogType.Warning => "WARN",
+        LogType.Error => "ERROR",
+        LogType.Assert => "ERROR",
+        LogType.Exception => "ERROR",
+        _ => "EVENT",
+      };
+
+      var label = new Label($"[{entry.Timestamp}] [{severityLabel}] {entry.Message}");
+      label.style.whiteSpace = WhiteSpace.PreWrap;
+      label.style.fontSize = 10;
+      label.style.unityTextAlign = TextAnchor.UpperLeft;
+      label.style.marginBottom = 2;
+      label.style.color = entry.LogType switch {
+        LogType.Warning => new Color(0.98f, 0.78f, 0.40f, 1f),
+        LogType.Error => new Color(0.96f, 0.47f, 0.47f, 1f),
+        LogType.Assert => new Color(0.96f, 0.47f, 0.47f, 1f),
+        LogType.Exception => new Color(0.96f, 0.47f, 0.47f, 1f),
+        _ => new Color(0.76f, 0.93f, 0.76f, 1f),
+      };
+
+      return label;
+    }
+
+    private void ViewEntityFromLogEntry(FireInGameLogEntry entry) {
+      if (!TryExtractEntityId(entry.Message, out var entityId)) {
+        SetCopyFeedback("No entity id in this log line.", new Color(0.96f, 0.74f, 0.40f, 1f));
+        return;
+      }
+
+      if (TryFocusCameraOnEntity(entityId, out var entityName)) {
+        SetCopyFeedback($"Viewing entity {entityName} (id={entityId}).", new Color(0.72f, 0.93f, 0.72f, 1f));
+      } else {
+        SetCopyFeedback($"Entity id {entityId} not found in loaded scene.", new Color(0.96f, 0.74f, 0.40f, 1f));
+      }
+    }
+
+    private static bool TryExtractEntityId(string message, out int entityId) {
+      entityId = 0;
+      if (string.IsNullOrWhiteSpace(message)) {
+        return false;
+      }
+
+      return TryParseIntValueAfterToken(message, "id=", out entityId)
+             || TryParseIntValueAfterToken(message, "sourceId=", out entityId)
+             || TryParseIntValueAfterToken(message, "targetId=", out entityId);
+    }
+
+    private static bool TryParseIntValueAfterToken(string message, string token, out int value) {
+      value = 0;
+      var tokenIndex = message.IndexOf(token, StringComparison.OrdinalIgnoreCase);
+      if (tokenIndex < 0) {
+        return false;
+      }
+
+      var start = tokenIndex + token.Length;
+      var end = start;
+      while (end < message.Length && char.IsDigit(message[end])) {
+        end++;
+      }
+
+      if (end <= start) {
+        return false;
+      }
+
+      return int.TryParse(message.Substring(start, end - start), out value) && value != 0;
+    }
+
+    private static bool TryFocusCameraOnEntity(int entityId, out string entityName) {
+      entityName = string.Empty;
+      var allObjects = Resources.FindObjectsOfTypeAll<GameObject>();
+      for (var i = 0; i < allObjects.Length; i++) {
+        var gameObject = allObjects[i];
+        if (gameObject == null || gameObject.GetInstanceID() != entityId) {
+          continue;
+        }
+
+        if (!gameObject.scene.IsValid() || !gameObject.scene.isLoaded) {
+          continue;
+        }
+
+        var camera = Camera.main;
+        if (camera == null) {
+          entityName = gameObject.name;
+          return false;
+        }
+
+        var targetPosition = gameObject.transform.position;
+        var currentForward = camera.transform.forward.sqrMagnitude > 0.0001f
+          ? camera.transform.forward.normalized
+          : Vector3.forward;
+        var desiredOffset = (-currentForward * 22f) + (Vector3.up * 8f);
+        camera.transform.position = targetPosition + desiredOffset;
+        camera.transform.LookAt(targetPosition + (Vector3.up * 1.2f));
+        entityName = gameObject.name;
+        return true;
+      }
+
+      return false;
+    }
+
+    private void ClearInGameFireLog() {
+      FireTelemetry.ClearInGameLog();
+      UpdateInGameFireLogPanel();
+      SetCopyFeedback("Fire log cleared.", new Color(0.72f, 0.93f, 0.72f, 1f));
     }
 
     private static void AppendSnapshotUnavailableSection(StringBuilder stringBuilder, string sectionTitle) {
@@ -490,6 +923,487 @@ namespace Mods.Prometheus.Scripts {
       stringBuilder.AppendLine(sectionTitle);
       appendSnapshotLines(stringBuilder, snapshot);
       stringBuilder.AppendLine();
+    }
+
+  }
+
+  internal class PrometheusFireLogPanel : ILoadableSingleton {
+
+    private readonly UILayout _uiLayout;
+    private readonly Color _panelTextColor = new(0.84f, 0.92f, 0.83f, 1f);
+
+    public event Action<bool> OpenStateChanged;
+    public event Action<int> UnreadCountChanged;
+    public bool IsOpen => _panelFoldout is not null && _panelFoldout.value;
+    public int UnreadCount => _unreadCount;
+
+    private VisualElement _root;
+    private Foldout _panelFoldout;
+    private ScrollView _logScrollView;
+    private TextField _logTextField;
+    private TextField _searchField;
+    private Toggle _autoScrollToggle;
+    private Button _allFilterButton;
+    private Button _eventsFilterButton;
+    private Button _warningsFilterButton;
+    private Button _errorsFilterButton;
+    private Label _eventsSummaryLabel;
+    private Label _warningsSummaryLabel;
+    private Label _errorsSummaryLabel;
+    private Label _assertsSummaryLabel;
+    private Label _exceptionsSummaryLabel;
+
+    private bool _autoScroll = true;
+    private FireLogFilter _filter = FireLogFilter.All;
+    private string _searchText = string.Empty;
+    private int _lastRenderedEntryCount = -1;
+    private int _lastObservedEntryCount;
+    private int _unreadCount;
+
+    public PrometheusFireLogPanel(UILayout uiLayout) {
+      _uiLayout = uiLayout;
+    }
+
+    public void Load() {
+      _root = BuildPanelRoot();
+      _uiLayout.AddBottomRight(_root, 5);
+      UpdateFilterButtonStyles();
+
+      _lastObservedEntryCount = FireTelemetry.GetRecentInGameLogEntries().Length;
+      SetUnreadCount(0);
+      RefreshLogPanel(force: true);
+      OpenStateChanged?.Invoke(IsOpen);
+
+      _root.schedule.Execute(PollLogStateAndRefresh).Every(500);
+    }
+
+    public void ToggleOpenClose() {
+      SetOpen(_panelFoldout is not null && !_panelFoldout.value);
+    }
+
+    public void SetOpen(bool isOpen) {
+      if (_panelFoldout == null) {
+        return;
+      }
+
+      if (_panelFoldout.value == isOpen) {
+        if (isOpen) {
+          RefreshLogPanel(force: true);
+        }
+
+        return;
+      }
+
+      _panelFoldout.value = isOpen;
+    }
+
+    private VisualElement BuildPanelRoot() {
+      var root = new VisualElement();
+      root.style.width = 460;
+      root.style.maxWidth = 560;
+      root.style.marginRight = 8;
+      root.style.marginBottom = 8;
+      root.style.paddingLeft = 8;
+      root.style.paddingRight = 8;
+      root.style.paddingTop = 6;
+      root.style.paddingBottom = 6;
+      root.style.backgroundColor = new Color(0.12f, 0.24f, 0.18f, 0.95f);
+      root.style.borderTopLeftRadius = 4;
+      root.style.borderTopRightRadius = 4;
+      root.style.borderBottomLeftRadius = 4;
+      root.style.borderBottomRightRadius = 4;
+      root.style.borderTopWidth = 1;
+      root.style.borderRightWidth = 1;
+      root.style.borderBottomWidth = 1;
+      root.style.borderLeftWidth = 1;
+      root.style.borderTopColor = new Color(0.27f, 0.46f, 0.33f, 1f);
+      root.style.borderRightColor = new Color(0.27f, 0.46f, 0.33f, 1f);
+      root.style.borderBottomColor = new Color(0.27f, 0.46f, 0.33f, 1f);
+      root.style.borderLeftColor = new Color(0.27f, 0.46f, 0.33f, 1f);
+      root.style.overflow = Overflow.Visible;
+
+      _panelFoldout = new Foldout {
+        text = "Prometheus Fire Log",
+        value = false
+      };
+      _panelFoldout.style.color = _panelTextColor;
+      _panelFoldout.RegisterValueChangedCallback(evt => HandlePanelFoldoutChanged(evt.newValue));
+      root.Add(_panelFoldout);
+
+      var foldoutToggle = _panelFoldout.Q<Toggle>();
+      if (foldoutToggle is not null) {
+        foldoutToggle.style.color = _panelTextColor;
+        foldoutToggle.style.unityBackgroundImageTintColor = _panelTextColor;
+      }
+
+      var foldoutCheckmark = _panelFoldout.Q<VisualElement>(className: "unity-foldout__checkmark");
+      if (foldoutCheckmark is not null) {
+        foldoutCheckmark.style.unityBackgroundImageTintColor = _panelTextColor;
+      }
+
+      _panelFoldout.Add(BuildToolbar());
+      _panelFoldout.Add(BuildTypeSummaryRow());
+
+      _logScrollView = new ScrollView(ScrollViewMode.Vertical);
+      _logScrollView.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+      _logScrollView.verticalScrollerVisibility = ScrollerVisibility.Auto;
+      _logScrollView.style.minHeight = 180;
+      _logScrollView.style.maxHeight = 340;
+      _logScrollView.style.backgroundColor = new Color(0.08f, 0.13f, 0.10f, 0.9f);
+      _logScrollView.style.borderTopLeftRadius = 3;
+      _logScrollView.style.borderTopRightRadius = 3;
+      _logScrollView.style.borderBottomLeftRadius = 3;
+      _logScrollView.style.borderBottomRightRadius = 3;
+      _logScrollView.style.borderTopWidth = 1;
+      _logScrollView.style.borderRightWidth = 1;
+      _logScrollView.style.borderBottomWidth = 1;
+      _logScrollView.style.borderLeftWidth = 1;
+      _logScrollView.style.borderTopColor = new Color(0.22f, 0.33f, 0.27f, 1f);
+      _logScrollView.style.borderRightColor = new Color(0.22f, 0.33f, 0.27f, 1f);
+      _logScrollView.style.borderBottomColor = new Color(0.22f, 0.33f, 0.27f, 1f);
+      _logScrollView.style.borderLeftColor = new Color(0.22f, 0.33f, 0.27f, 1f);
+
+      _logTextField = new TextField {
+        value = string.Empty,
+        multiline = true,
+        isReadOnly = true
+      };
+      _logTextField.style.whiteSpace = WhiteSpace.PreWrap;
+      _logTextField.style.fontSize = 10;
+      _logTextField.style.unityTextAlign = TextAnchor.UpperLeft;
+      _logTextField.style.minWidth = 0;
+      _logTextField.style.marginBottom = 2;
+      _logTextField.style.color = _panelTextColor;
+      _logTextField.style.backgroundColor = new Color(0f, 0f, 0f, 0f);
+      _logTextField.style.borderTopWidth = 0;
+      _logTextField.style.borderRightWidth = 0;
+      _logTextField.style.borderBottomWidth = 0;
+      _logTextField.style.borderLeftWidth = 0;
+
+      var logInput = _logTextField.Q(className: "unity-text-field__input");
+      if (logInput is not null) {
+        logInput.style.whiteSpace = WhiteSpace.PreWrap;
+        logInput.style.unityTextAlign = TextAnchor.UpperLeft;
+        logInput.style.paddingLeft = 0;
+        logInput.style.paddingRight = 0;
+        logInput.style.paddingTop = 0;
+        logInput.style.paddingBottom = 0;
+        logInput.style.backgroundColor = new Color(0f, 0f, 0f, 0f);
+        logInput.style.borderTopWidth = 0;
+        logInput.style.borderRightWidth = 0;
+        logInput.style.borderBottomWidth = 0;
+        logInput.style.borderLeftWidth = 0;
+      }
+
+      _logScrollView.Add(_logTextField);
+
+      _panelFoldout.Add(_logScrollView);
+      UpdateFoldoutTitle(_panelFoldout.value);
+
+      return root;
+    }
+
+    private void UpdateFoldoutTitle(bool isOpen) {
+      if (_panelFoldout == null) {
+        return;
+      }
+
+      _panelFoldout.text = isOpen ? "Prometheus Fire Log ▾" : "Prometheus Fire Log ▸";
+    }
+
+    private void HandlePanelFoldoutChanged(bool isOpen) {
+      UpdateFoldoutTitle(isOpen);
+      if (isOpen) {
+        _lastObservedEntryCount = FireTelemetry.GetRecentInGameLogEntries().Length;
+        SetUnreadCount(0);
+        RefreshLogPanel(force: true);
+      }
+
+      OpenStateChanged?.Invoke(isOpen);
+    }
+
+    private void PollLogStateAndRefresh() {
+      var totalCount = FireTelemetry.GetRecentInGameLogEntries().Length;
+
+      if (totalCount < _lastObservedEntryCount) {
+        _lastObservedEntryCount = totalCount;
+        SetUnreadCount(0);
+      } else if (totalCount > _lastObservedEntryCount) {
+        var addedCount = totalCount - _lastObservedEntryCount;
+        _lastObservedEntryCount = totalCount;
+        if (!IsOpen) {
+          SetUnreadCount(_unreadCount + addedCount);
+        }
+      }
+
+      RefreshLogPanel(force: false);
+    }
+
+    private void SetUnreadCount(int unreadCount) {
+      var normalized = unreadCount < 0 ? 0 : unreadCount;
+      if (_unreadCount == normalized) {
+        return;
+      }
+
+      _unreadCount = normalized;
+      UnreadCountChanged?.Invoke(_unreadCount);
+    }
+
+    private VisualElement BuildToolbar() {
+      var toolbar = new VisualElement();
+      toolbar.style.flexDirection = FlexDirection.Row;
+      toolbar.style.alignItems = Align.Center;
+      toolbar.style.marginBottom = 4;
+
+      _allFilterButton = CreateFilterButton("All", FireLogFilter.All);
+      _eventsFilterButton = CreateFilterButton("Events", FireLogFilter.Events);
+      _warningsFilterButton = CreateFilterButton("Warnings", FireLogFilter.Warnings);
+      _errorsFilterButton = CreateFilterButton("Errors", FireLogFilter.Errors);
+
+      toolbar.Add(_allFilterButton);
+      toolbar.Add(_eventsFilterButton);
+      toolbar.Add(_warningsFilterButton);
+      toolbar.Add(_errorsFilterButton);
+
+      _searchField = new TextField {
+        value = string.Empty,
+        label = "Search"
+      };
+      _searchField.style.minWidth = 190;
+      _searchField.style.marginLeft = 6;
+      _searchField.style.color = _panelTextColor;
+      _searchField.RegisterValueChangedCallback(evt => {
+        _searchText = evt.newValue ?? string.Empty;
+        RefreshLogPanel(force: true);
+      });
+      toolbar.Add(_searchField);
+
+      _autoScrollToggle = new Toggle("Auto") {
+        value = _autoScroll
+      };
+      _autoScrollToggle.style.marginLeft = 6;
+      _autoScrollToggle.style.color = _panelTextColor;
+      _autoScrollToggle.style.fontSize = 11;
+      _autoScrollToggle.RegisterValueChangedCallback(evt => _autoScroll = evt.newValue);
+      toolbar.Add(_autoScrollToggle);
+
+      var clearButton = new Button(() => {
+        FireTelemetry.ClearInGameLog();
+        _lastObservedEntryCount = 0;
+        SetUnreadCount(0);
+        RefreshLogPanel(force: true);
+      }) {
+        text = "Clear Log"
+      };
+      clearButton.style.height = 20;
+      clearButton.style.fontSize = 11;
+      clearButton.style.unityFontStyleAndWeight = FontStyle.Bold;
+      clearButton.style.unityBackgroundImageTintColor = new Color(0.93f, 0.72f, 0.38f, 1f);
+      clearButton.style.marginLeft = 6;
+      clearButton.tooltip = "Clear all in-game fire log entries.";
+      toolbar.Add(clearButton);
+
+      return toolbar;
+    }
+
+    private VisualElement BuildTypeSummaryRow() {
+      var summaryRow = new VisualElement();
+      summaryRow.style.flexDirection = FlexDirection.Row;
+      summaryRow.style.alignItems = Align.Center;
+      summaryRow.style.flexWrap = Wrap.Wrap;
+      summaryRow.style.marginBottom = 4;
+
+      _eventsSummaryLabel = CreateSeveritySummaryLabel("EVENT", new Color(0.76f, 0.93f, 0.76f, 1f));
+      _warningsSummaryLabel = CreateSeveritySummaryLabel("WARN", new Color(0.98f, 0.78f, 0.40f, 1f));
+      _errorsSummaryLabel = CreateSeveritySummaryLabel("ERROR", new Color(0.96f, 0.47f, 0.47f, 1f));
+      _assertsSummaryLabel = CreateSeveritySummaryLabel("ASSERT", new Color(0.96f, 0.47f, 0.47f, 1f));
+      _exceptionsSummaryLabel = CreateSeveritySummaryLabel("EXCEPTION", new Color(0.96f, 0.47f, 0.47f, 1f));
+
+      summaryRow.Add(_eventsSummaryLabel);
+      summaryRow.Add(_warningsSummaryLabel);
+      summaryRow.Add(_errorsSummaryLabel);
+      summaryRow.Add(_assertsSummaryLabel);
+      summaryRow.Add(_exceptionsSummaryLabel);
+
+      return summaryRow;
+    }
+
+    private static Label CreateSeveritySummaryLabel(string typeLabel, Color textColor) {
+      var label = new Label($"{typeLabel}: 0");
+      label.style.fontSize = 10;
+      label.style.unityFontStyleAndWeight = FontStyle.Bold;
+      label.style.color = textColor;
+      label.style.marginRight = 6;
+      label.style.marginBottom = 2;
+      label.style.paddingLeft = 5;
+      label.style.paddingRight = 5;
+      label.style.paddingTop = 2;
+      label.style.paddingBottom = 2;
+      label.style.borderTopLeftRadius = 3;
+      label.style.borderTopRightRadius = 3;
+      label.style.borderBottomLeftRadius = 3;
+      label.style.borderBottomRightRadius = 3;
+      label.style.backgroundColor = new Color(0.09f, 0.16f, 0.12f, 0.95f);
+      return label;
+    }
+
+    private void UpdateTypeSummary(ReadOnlySpan<FireInGameLogEntry> entries) {
+      var eventsCount = 0;
+      var warningsCount = 0;
+      var errorsCount = 0;
+      var assertsCount = 0;
+      var exceptionsCount = 0;
+
+      for (var i = 0; i < entries.Length; i++) {
+        var logType = entries[i].LogType;
+        switch (logType) {
+          case LogType.Warning:
+            warningsCount++;
+            break;
+          case LogType.Error:
+            errorsCount++;
+            break;
+          case LogType.Assert:
+            assertsCount++;
+            break;
+          case LogType.Exception:
+            exceptionsCount++;
+            break;
+          default:
+            eventsCount++;
+            break;
+        }
+      }
+
+      if (_eventsSummaryLabel != null) {
+        _eventsSummaryLabel.text = $"EVENT: {eventsCount}";
+      }
+
+      if (_warningsSummaryLabel != null) {
+        _warningsSummaryLabel.text = $"WARN: {warningsCount}";
+      }
+
+      if (_errorsSummaryLabel != null) {
+        _errorsSummaryLabel.text = $"ERROR: {errorsCount}";
+      }
+
+      if (_assertsSummaryLabel != null) {
+        _assertsSummaryLabel.text = $"ASSERT: {assertsCount}";
+      }
+
+      if (_exceptionsSummaryLabel != null) {
+        _exceptionsSummaryLabel.text = $"EXCEPTION: {exceptionsCount}";
+      }
+    }
+
+    private Button CreateFilterButton(string text, FireLogFilter filter) {
+      var button = new Button(() => {
+        _filter = filter;
+        UpdateFilterButtonStyles();
+        RefreshLogPanel(force: true);
+      }) {
+        text = text
+      };
+
+      button.style.height = 20;
+      button.style.fontSize = 10;
+      button.style.unityFontStyleAndWeight = FontStyle.Bold;
+      button.style.marginRight = 4;
+      button.style.color = _panelTextColor;
+      return button;
+    }
+
+    private void UpdateFilterButtonStyles() {
+      ApplyFilterStyle(_allFilterButton, _filter == FireLogFilter.All);
+      ApplyFilterStyle(_eventsFilterButton, _filter == FireLogFilter.Events);
+      ApplyFilterStyle(_warningsFilterButton, _filter == FireLogFilter.Warnings);
+      ApplyFilterStyle(_errorsFilterButton, _filter == FireLogFilter.Errors);
+    }
+
+    private static void ApplyFilterStyle(Button button, bool selected) {
+      if (button == null) {
+        return;
+      }
+
+      button.style.unityBackgroundImageTintColor = selected
+        ? new Color(0.33f, 0.57f, 0.40f, 1f)
+        : new Color(1f, 1f, 1f, 1f);
+    }
+
+    private void RefreshLogPanel(bool force) {
+      if (_panelFoldout == null || !_panelFoldout.value) {
+        return;
+      }
+
+      var entries = FireTelemetry.GetRecentInGameLogEntries();
+      UpdateTypeSummary(entries);
+      if (!force && entries.Length == _lastRenderedEntryCount) {
+        return;
+      }
+
+      _lastRenderedEntryCount = entries.Length;
+
+      var visibleLinesBuilder = new StringBuilder();
+
+      var filteredCount = 0;
+      for (var i = 0; i < entries.Length; i++) {
+        var entry = entries[i];
+        if (!ShouldIncludeEntry(entry)) {
+          continue;
+        }
+
+        filteredCount++;
+        AppendEntryLine(visibleLinesBuilder, entry);
+      }
+
+      if (filteredCount == 0) {
+        _logTextField.value = "No log entries for current filter.";
+      } else {
+        _logTextField.value = visibleLinesBuilder.ToString();
+      }
+
+      if (_autoScroll) {
+        _logScrollView.scrollOffset = new Vector2(_logScrollView.scrollOffset.x, float.MaxValue);
+      }
+    }
+
+    private bool ShouldIncludeEntry(FireInGameLogEntry entry) {
+      var includesBySeverity = _filter switch {
+        FireLogFilter.All => true,
+        FireLogFilter.Events => entry.LogType == LogType.Log,
+        FireLogFilter.Warnings => entry.LogType == LogType.Warning,
+        FireLogFilter.Errors => entry.LogType == LogType.Error
+                                || entry.LogType == LogType.Assert
+                                || entry.LogType == LogType.Exception,
+        _ => true,
+      };
+
+      if (!includesBySeverity) {
+        return false;
+      }
+
+      if (string.IsNullOrWhiteSpace(_searchText)) {
+        return true;
+      }
+
+      var needle = _searchText.Trim();
+      return entry.Message.Contains(needle, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static void AppendEntryLine(StringBuilder stringBuilder, FireInGameLogEntry entry) {
+      var severityToken = entry.LogType switch {
+        LogType.Warning => "▲ WARN",
+        LogType.Error => "✖ ERROR",
+        LogType.Assert => "◆ ASSERT",
+        LogType.Exception => "✸ EXCEPTION",
+        _ => "● EVENT",
+      };
+
+      if (stringBuilder.Length > 0) {
+        stringBuilder.AppendLine();
+      }
+
+      stringBuilder.Append($"[{entry.Timestamp}] [{severityToken}] {entry.Message}");
     }
 
   }

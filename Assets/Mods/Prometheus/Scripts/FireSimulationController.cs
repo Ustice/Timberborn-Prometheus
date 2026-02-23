@@ -10,6 +10,7 @@ namespace Mods.Prometheus.Scripts {
     private const float UpdateIntervalInSeconds = 1f;
     private const float ResponseNotificationCooldownInSeconds = 9f;
     private const float BurningTelemetryLogIntervalInSeconds = 5f;
+    private const float PreviewExclusionLogIntervalInSeconds = 12f;
 
     private FireSuppressionRuntimeState _fireSuppressionRuntimeState;
     private FireTuningRuntimeState _fireTuningRuntimeState;
@@ -37,6 +38,7 @@ namespace Mods.Prometheus.Scripts {
     private float _fireMarkerPulseTime;
     private bool _explosionDetonatedDuringCurrentBurn;
     private float _explosionSuppressionDisruptionSecondsRemaining;
+    private float _previewExclusionLogCooldownRemainingSeconds;
 
     [Inject]
     public void InjectDependencies(
@@ -64,6 +66,17 @@ namespace Mods.Prometheus.Scripts {
 
     public void Update() {
       var entityId = GameObject.GetInstanceID();
+
+      if (TryGetPlacementPreviewExclusionReason(GameObject, out var exclusionReason)) {
+        if (_previewExclusionLogCooldownRemainingSeconds <= 0f) {
+          FireTelemetry.Log($"event=preview_excluded entity={GameObject.name} id={entityId} reason={exclusionReason}");
+          _previewExclusionLogCooldownRemainingSeconds = PreviewExclusionLogIntervalInSeconds;
+        }
+
+        ResetSimulationForExcludedEntity(entityId);
+        return;
+      }
+
       var hasExistingSnapshot = _fireSimulationRuntimeState.TryGetSnapshot(entityId, out _);
 
       if (!TickGate.ShouldRun(ref _timeSinceLastUpdate, UpdateIntervalInSeconds, hasExistingSnapshot)) {
@@ -462,11 +475,31 @@ namespace Mods.Prometheus.Scripts {
       _wasBurning = simulationSnapshot.Burning;
     }
 
+    private void ResetSimulationForExcludedEntity(int entityId) {
+      _currentIntensity = 0f;
+      _wasBurning = false;
+      _dispatchAssignedScore = 0f;
+      _dispatchAssignmentLockRemainingSeconds = 0f;
+      _responseNotificationCooldownRemainingSeconds = 0f;
+      _burningTelemetryLogCooldownRemainingSeconds = 0f;
+      _explosionDetonatedDuringCurrentBurn = false;
+      _explosionSuppressionDisruptionSecondsRemaining = 0f;
+
+      _fireSimulationRuntimeState.RemoveSnapshot(entityId);
+      _fireEntityRegistryRuntimeState.RemoveSnapshot(entityId);
+      _fireDispatchScoringRuntimeState.RemoveSnapshot(entityId);
+
+      if (_fireMarkerObject != null && _fireMarkerObject.activeSelf) {
+        _fireMarkerObject.SetActive(false);
+      }
+    }
+
     private void AdvanceCooldownTimers() {
       _responseNotificationCooldownRemainingSeconds = Mathf.Max(0f, _responseNotificationCooldownRemainingSeconds - UpdateIntervalInSeconds);
       _dispatchAssignmentLockRemainingSeconds = Mathf.Max(0f, _dispatchAssignmentLockRemainingSeconds - UpdateIntervalInSeconds);
       _burningTelemetryLogCooldownRemainingSeconds = Mathf.Max(0f, _burningTelemetryLogCooldownRemainingSeconds - UpdateIntervalInSeconds);
       _explosionSuppressionDisruptionSecondsRemaining = Mathf.Max(0f, _explosionSuppressionDisruptionSecondsRemaining - UpdateIntervalInSeconds);
+      _previewExclusionLogCooldownRemainingSeconds = Mathf.Max(0f, _previewExclusionLogCooldownRemainingSeconds - UpdateIntervalInSeconds);
     }
 
     private static string DetermineDominantIgnitionSource(
@@ -666,6 +699,80 @@ namespace Mods.Prometheus.Scripts {
       _fireMarkerText.color = new Color(1f, 0.4f, 0.18f, 1f);
 
       _fireMarkerObject.SetActive(false);
+    }
+
+    private static bool TryGetPlacementPreviewExclusionReason(GameObject gameObject, out string exclusionReason) {
+      exclusionReason = string.Empty;
+
+      if (gameObject == null) {
+        return false;
+      }
+
+      if (!gameObject.scene.IsValid() || !gameObject.scene.isLoaded) {
+        exclusionReason = "scene_invalid";
+        return true;
+      }
+
+      if ((gameObject.hideFlags & (HideFlags.DontSave | HideFlags.HideInHierarchy)) != 0) {
+        exclusionReason = "hidden_or_dontsave";
+        return true;
+      }
+
+      if (ContainsPreviewToken(gameObject.name)) {
+        exclusionReason = "name_token";
+        return true;
+      }
+
+      var parent = gameObject.transform.parent;
+      if (parent != null && ContainsPreviewToken(parent.name)) {
+        exclusionReason = "parent_name_token";
+        return true;
+      }
+
+      var components = gameObject.GetComponents<Component>();
+      for (var i = 0; i < components.Length; i++) {
+        var component = components[i];
+        if (component == null) {
+          continue;
+        }
+
+        var componentTypeName = component.GetType().Name;
+        if (IsKnownPreviewComponentTypeName(componentTypeName)) {
+          exclusionReason = $"component_exact:{componentTypeName}";
+          return true;
+        }
+
+        if (ContainsPreviewToken(componentTypeName)) {
+          exclusionReason = $"component_token:{componentTypeName}";
+          return true;
+        }
+      }
+
+      exclusionReason = string.Empty;
+      return false;
+    }
+
+    private static bool IsKnownPreviewComponentTypeName(string componentTypeName) {
+      return componentTypeName == "BuildingPreview"
+             || componentTypeName == "PlacementPreview"
+             || componentTypeName == "BuildingPlacerPreview"
+             || componentTypeName == "BlockObjectPlacerPreview"
+             || componentTypeName == "BlueprintPreview"
+             || componentTypeName == "PreviewCursor";
+    }
+
+    private static bool ContainsPreviewToken(string value) {
+      if (string.IsNullOrWhiteSpace(value)) {
+        return false;
+      }
+
+      var lower = value.ToLowerInvariant();
+      return lower.Contains("preview")
+             || lower.Contains("ghost")
+             || lower.Contains("placement")
+             || lower.Contains("placer")
+             || lower.Contains("blueprint")
+             || lower.Contains("cursor");
     }
 
   }

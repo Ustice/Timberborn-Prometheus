@@ -54,14 +54,13 @@ Recommended guardrails:
 
 * Last updated: 2026-02-22
 * Current focus:
-  * Validate explosion request/apply lifecycle with low-noise `Fire.log` evidence.
-  * Keep the renamed build/handoff workflow (`scripts/build.sh`, normalized skill names, `Fire.log`) stable for tight-loop iteration.
+  * Validate fire-system hardening changes in live gameplay (dead building suppression, preview exclusion, destroy cleanup).
+  * Validate new in-game fire debug UX (filters/search/colored log rows/entity jump).
 * Latest verified results:
-  * Completed-building run confirms deterministic debug explosion path: `debug_ignite_request`, `debug_ignite_applied`, `explosion_ignition_request`, and `explosion_detonated` (with `forced=True`, `mode=Off`).
-  * Build/deploy and handoff naming cleanup is in place: `scripts/build.sh`, `Fire.log`, and generic skill names (`deploy`, `build-deploy`, `session-handoff`).
+  * Behavior fixes landed: dead buildings suppress workers + operational behaviors; placement previews excluded from ignition path; snapshots cleaned on entity destroy.
+  * Debug panel now includes runtime count deltas, minimizable scrollable fire log, severity filters, colored labels, search, and per-line `View` (entity focus) button.
 * Next steps:
-  * Run one `bash scripts/build.sh --launch` smoke pass post-rename to confirm expected `[build]` output and log clearing behavior.
-  * Add targeted logs for spread-ignition request consumption/ignore reasons.
-  * Re-run single-ignite capture and verify whether `explosion_ignite_applied` occurs.
-  * After request/apply tracing is clear, resume mode-by-mode policy validation pass.
+  * Run one focused in-game pass to validate `View` button behavior across `id=`, `sourceId=`, and `targetId=` log lines.
+  * Re-run explosion request/apply lifecycle capture with one-ignite-per-window guidance and archive evidence from `Fire.log` + `Player.log`.
+  * Expand dead-building verification across additional building archetypes and tune if needed.
 * Full handoff: `Assets/Mods/Prometheus/SESSION_HANDOFF.md`
