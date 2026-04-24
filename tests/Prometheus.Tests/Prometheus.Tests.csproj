@@ -22,6 +22,7 @@
   <ItemGroup>
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/FireDamageStateRuntimeState.cs" Link="Source/FireDamageStateRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/FireEntityRegistryRuntimeState.cs" Link="Source/FireEntityRegistryRuntimeState.cs" />
+    <Compile Include="../../Assets/Mods/Prometheus/Scripts/FireImpactRuntimeState.cs" Link="Source/FireImpactRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/FireRecoveryRuntimeState.cs" Link="Source/FireRecoveryRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/FireSimulationRuntimeState.cs" Link="Source/FireSimulationRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/FireSuppressionRuntimeState.cs" Link="Source/FireSuppressionRuntimeState.cs" />

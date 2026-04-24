@@ -91,6 +91,7 @@ Pass criteria:
 ### 3a) Worker/beaver exposure pass
 
 - [ ] Confirm assigned workers inside burning buildings receive the intended Phase 2 exposure effects.
+- [ ] Confirm assigned worker exposure does not depend on the worker being physically near the building transform.
 - [ ] Confirm nearby beavers are affected by proximity without colony-wide spillover.
 - [ ] Confirm workers recover after fire pressure clears or `Reset Fire Sim` is used.
 

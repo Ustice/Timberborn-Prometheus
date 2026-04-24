@@ -705,6 +705,7 @@ Active/planned entries only. Full historical log moved to `DESIGN_CHANGELOG_ARCH
 
 | Date | Phase | Update | Status |
 | --- | --- | --- | --- |
+| 2026-04-24 | Phase 2 | Added test-backed beaver exposure rules and first indoor worker exposure path for assigned workers in burning workplaces | In Validation |
 | 2026-04-24 | Phase 2 | Added architecture rules for thin adapters, reset contracts, RuntimeState/Rules ownership, testable decisions, telemetry constants, and deferred stable identity | Done |
 | 2026-04-24 | Phase 2/5 | Added plain C# regression-test gate for gameplay decisions; Unity EditMode tests are deferred until the standalone dependency story is cleaner, and debug panel UI remains manual QA while it is actively evolving | Done |
 | 2026-04-24 | Phase 1 | Closed core fire simulation after live QA confirmed ignition/spread/extinguish/damage/dead-ash terminal behavior and `Reset Fire Sim` clean-slate recovery; deferred beaver/worker exposure inside burning buildings to Phase 2 | Done |

@@ -12,10 +12,7 @@ namespace Mods.Prometheus.Scripts {
 
     private const float UpdateIntervalInSeconds = 1f;
     private const float NeedManagerRefreshIntervalInSeconds = 5f;
-    private const float EffectRadius = 8f;
     private const float TargetEffectCooldownInSeconds = 1f;
-    private const float MaxThirstPenaltyPerSecond = 0.0001f;
-    private const float MaxHeatStressPenaltyPerSecond = 0.0005f;
 
     private FireImpactRuntimeState _fireImpactRuntimeState;
     private QuickNotificationService _quickNotificationService;
@@ -60,11 +57,8 @@ namespace Mods.Prometheus.Scripts {
         return;
       }
 
-      var thirstPenalty = -Mathf.Clamp(impactSnapshot.DehydrationPressure * MaxThirstPenaltyPerSecond, 0f, MaxThirstPenaltyPerSecond);
-      var heatStressPenalty = -Mathf.Clamp((impactSnapshot.DehydrationPressure + impactSnapshot.InjuryPressure) * MaxHeatStressPenaltyPerSecond * 0.5f, 0f, MaxHeatStressPenaltyPerSecond);
-
-      if (Mathf.Approximately(thirstPenalty, 0f)
-          && Mathf.Approximately(heatStressPenalty, 0f)) {
+      var fullExposureNeedDeltas = FireBeaverExposureRules.ComputeProximityNeedDeltas(impactSnapshot, 0f);
+      if (!fullExposureNeedDeltas.HasEffect) {
         return;
       }
 
@@ -84,7 +78,7 @@ namespace Mods.Prometheus.Scripts {
 
         var targetPosition = needManagerTarget.Transform.position;
         var distance = Vector3.Distance(sourcePosition, targetPosition);
-        if (distance > EffectRadius) {
+        if (distance > FireBeaverExposureRules.EffectRadius) {
           continue;
         }
 
@@ -94,10 +88,46 @@ namespace Mods.Prometheus.Scripts {
         }
         _nextEffectTimeByNeedManager[needManagerTarget.NeedManager] = Time.time + TargetEffectCooldownInSeconds;
 
-        var proximityMultiplier = Mathf.Clamp01(1f - (distance / EffectRadius));
-        TryApplyNeedDelta(needManagerTarget.NeedManager, "Thirst", thirstPenalty * proximityMultiplier);
-        TryApplyNeedDelta(needManagerTarget.NeedManager, "HeatStress", heatStressPenalty * proximityMultiplier);
+        ApplyNeedDeltas(
+          needManagerTarget.NeedManager,
+          FireBeaverExposureRules.ComputeProximityNeedDeltas(impactSnapshot, distance));
       }
+    }
+
+    internal static bool TryApplyIndoorExposure(Transform targetTransform, FireImpactSnapshot impactSnapshot) {
+      if (targetTransform == null) {
+        return false;
+      }
+
+      if (_cachedNeedManagers.Count == 0 || !HasNeedApplicationApi()) {
+        RefreshNeedManagersFromScene();
+      }
+
+      if (_cachedNeedManagers.Count == 0 || !HasNeedApplicationApi()) {
+        return false;
+      }
+
+      var needDeltas = FireBeaverExposureRules.ComputeIndoorNeedDeltas(impactSnapshot);
+      if (!needDeltas.HasEffect) {
+        return false;
+      }
+
+      for (var i = _cachedNeedManagers.Count - 1; i >= 0; i--) {
+        var needManagerTarget = _cachedNeedManagers[i];
+        if (needManagerTarget.NeedManager is null || needManagerTarget.Transform == null) {
+          _cachedNeedManagers.RemoveAt(i);
+          continue;
+        }
+
+        if (needManagerTarget.Transform != targetTransform) {
+          continue;
+        }
+
+        ApplyNeedDeltas(needManagerTarget.NeedManager, needDeltas);
+        return true;
+      }
+
+      return false;
     }
 
     internal static int DebugClearFireNeedEffects() {
@@ -347,6 +377,15 @@ namespace Mods.Prometheus.Scripts {
       } catch (ArgumentException) {
         // Intentionally ignored: fallback for unexpected signature drift.
       }
+    }
+
+    private static void ApplyNeedDeltas(object needManager, FireBeaverNeedDeltas needDeltas) {
+      if (!needDeltas.HasEffect) {
+        return;
+      }
+
+      TryApplyNeedDelta(needManager, "Thirst", needDeltas.ThirstDelta);
+      TryApplyNeedDelta(needManager, "HeatStress", needDeltas.HeatStressDelta);
     }
 
     private static void TrySetNeedPoints(object needManager, string needId, float points) {

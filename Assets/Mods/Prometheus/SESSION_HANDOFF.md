@@ -73,9 +73,10 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
 ### Build/deploy verification
 
 - Repeated `bash scripts/build.sh` runs completed successfully after each incremental change.
-- Plain C# regression harness added via `bash scripts/test.sh`; first targets are runtime stores, ignition request behavior, entity registry targeting, lifecycle thresholds, response-state thresholds, terminal dead snapshot behavior, reset clearing behavior, and workplace component classification.
+- Plain C# regression harness added via `bash scripts/test.sh`; first targets are runtime stores, ignition request behavior, entity registry targeting, lifecycle thresholds, response-state thresholds, terminal dead snapshot behavior, reset clearing behavior, workplace component classification, and beaver exposure pressure rules.
 - Unity EditMode testing was explored and can launch after license activation, but loading the full Timberborn assembly graph in this standalone repo pulled in fragile plugin/package dependencies. Future test work should prefer dependency-light rule/runtime classes first, with Unity tests reserved for lifecycle behavior that truly needs Unity.
 - Debug panel UI is intentionally excluded from automated tests for now and remains manual QA because the workflow is still evolving.
+- First Phase 2 worker/beaver exposure slice landed: assigned workers in burning workplaces receive indoor beaver need exposure through the same NeedManager path as proximity exposure, while proximity and indoor exposure magnitudes are computed by `FireBeaverExposureRules` and covered by plain C# tests.
 - Latest resume build initially hit a missing VS Tools Unity analyzer path after VS Code updated `visualstudiotoolsforunity.vstuc` from `1.2.1` to `1.2.2`; adding a local compatibility symlink restored `dotnet build`.
 - Latest `bash scripts/build.sh --launch` completed successfully, cleared fresh logs, deployed the symlinked payload, and launched Timberborn.
 - Fresh startup logs confirmed `Prometheus (v0.2)` load, the Prometheus test autosave opened, and no exception/error lines were present in the scanned startup window.
@@ -108,9 +109,9 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
    - If ID is stale/unloaded or camera is unavailable, fallback status message is shown.
    - Parser now supports negative Unity instance IDs.
 
-3. **Worker/building exposure needs Phase 2 validation**
+3. **Worker/building exposure needs Phase 2 live validation**
    - API binding resolves in live logs as `workplace_speed_api_resolved`.
-   - Beavers do not currently burn just because they are inside burning buildings.
+   - Assigned workers in burning workplaces now receive explicit indoor exposure attempts via `workplace_indoor_exposure`.
    - Validate worker production slowdown, worker exposure, and recovery together with Phase 2 responder/workplace behavior.
 
 4. **Beaver fire effects need Phase 2 balance validation**
@@ -131,7 +132,7 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
    - Folktails near-water vs far-front response,
    - Ironteeth high-heat response,
    - response-state readability.
-2. Add/update Unity EditMode tests for any new real Phase 2 system decision before relying on it in tuning.
+2. Add/update plain C# tests for any new real Phase 2 system decision before relying on it in tuning.
 3. Validate worker/building exposure on at least 3 production archetypes (e.g., Bakery/JamStove/Explosives Factory):
    - assigned workers slow under heat pressure,
    - beavers/workers inside burning buildings receive appropriate effects,

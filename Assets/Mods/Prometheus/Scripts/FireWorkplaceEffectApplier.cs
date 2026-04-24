@@ -26,6 +26,7 @@ namespace Mods.Prometheus.Scripts {
     private bool _loggedWorkplaceSpeedApiResolved;
     private float _lastLoggedPenaltyDelta = float.NaN;
     private int _lastLoggedAssignedWorkerCount = -1;
+    private int _lastLoggedIndoorExposedWorkerCount = -1;
 
     [Inject]
     public void InjectDependencies(
@@ -81,6 +82,7 @@ namespace Mods.Prometheus.Scripts {
       }
 
       ApplyWorkerSpeedPenalty(workingSpeedMultiplier);
+      ApplyAssignedWorkerIndoorExposure(impactSnapshot);
     }
 
     internal void DebugResetFireEffects() {
@@ -93,6 +95,7 @@ namespace Mods.Prometheus.Scripts {
       RestoreOperationalBehaviours();
       _lastLoggedPenaltyDelta = float.NaN;
       _lastLoggedAssignedWorkerCount = -1;
+      _lastLoggedIndoorExposedWorkerCount = -1;
     }
 
     private void EnsureWorkplaceBound() {
@@ -158,6 +161,29 @@ namespace Mods.Prometheus.Scripts {
       }
 
       LogWorkerPenaltyState(assignedWorkerCount, penaltyDelta, appliedCount);
+    }
+
+    private void ApplyAssignedWorkerIndoorExposure(FireImpactSnapshot impactSnapshot) {
+      if (_workplace is null) {
+        return;
+      }
+
+      var exposedWorkerCount = 0;
+      foreach (var worker in _workplace.AssignedWorkers) {
+        if (worker is null || worker.GameObject == null) {
+          continue;
+        }
+
+        if (FireBeaverEffectApplier.TryApplyIndoorExposure(worker.GameObject.transform, impactSnapshot)) {
+          exposedWorkerCount++;
+        }
+      }
+
+      if (exposedWorkerCount > 0 && exposedWorkerCount != _lastLoggedIndoorExposedWorkerCount) {
+        FireTelemetry.Log($"event=workplace_indoor_exposure entity={GameObject.name} id={GameObject.GetInstanceID()} exposedWorkers={exposedWorkerCount}");
+      }
+
+      _lastLoggedIndoorExposedWorkerCount = exposedWorkerCount;
     }
 
     private void RestoreWorkerSpeedPenalties() {

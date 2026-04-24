@@ -49,6 +49,12 @@ namespace Prometheus.Tests {
     [Fact]
     public void OperationalComponentClassification_AvoidsFireAndWorkplaceInternals_Test() => OperationalComponentClassificationAvoidsFireAndWorkplaceInternals();
 
+    [Fact]
+    public void BeaverExposureRules_ScaleByProximity_Test() => BeaverExposureRulesScaleByProximity();
+
+    [Fact]
+    public void BeaverExposureRules_IndoorExposureUsesFullPressure_Test() => BeaverExposureRulesIndoorExposureUsesFullPressure();
+
     private static void SnapshotStoreRemovesAndClearsSnapshots() {
       var state = new FireSuppressionRuntimeState();
       var snapshot = new FireSuppressionSnapshot("BucketBrigade", 1f, 0.25f, 0.5f, 6f, 0.08f);
@@ -219,6 +225,31 @@ namespace Prometheus.Tests {
       False(FireWorkplaceRules.IsOperationalComponentName("Deteriorable"));
       False(FireWorkplaceRules.IsOperationalComponentName(""));
       False(FireWorkplaceRules.IsOperationalComponentName(null));
+    }
+
+    private static void BeaverExposureRulesScaleByProximity() {
+      var impactSnapshot = new FireImpactSnapshot(0f, 0f, 0f, 0.8f, 0.4f);
+
+      var nearDeltas = FireBeaverExposureRules.ComputeProximityNeedDeltas(impactSnapshot, 0f);
+      var halfDistanceDeltas = FireBeaverExposureRules.ComputeProximityNeedDeltas(impactSnapshot, FireBeaverExposureRules.EffectRadius * 0.5f);
+      var outsideDeltas = FireBeaverExposureRules.ComputeProximityNeedDeltas(impactSnapshot, FireBeaverExposureRules.EffectRadius + 1f);
+
+      NearlyEqual(-0.00008f, nearDeltas.ThirstDelta, 0.000001f);
+      NearlyEqual(-0.0003f, nearDeltas.HeatStressDelta, 0.000001f);
+      NearlyEqual(nearDeltas.ThirstDelta * 0.5f, halfDistanceDeltas.ThirstDelta, 0.000001f);
+      NearlyEqual(nearDeltas.HeatStressDelta * 0.5f, halfDistanceDeltas.HeatStressDelta, 0.000001f);
+      False(outsideDeltas.HasEffect);
+    }
+
+    private static void BeaverExposureRulesIndoorExposureUsesFullPressure() {
+      var impactSnapshot = new FireImpactSnapshot(0f, 0f, 0f, 0.8f, 0.4f);
+
+      var proximityDeltas = FireBeaverExposureRules.ComputeProximityNeedDeltas(impactSnapshot, 0f);
+      var indoorDeltas = FireBeaverExposureRules.ComputeIndoorNeedDeltas(impactSnapshot);
+
+      NearlyEqual(proximityDeltas.ThirstDelta, indoorDeltas.ThirstDelta, 0.000001f);
+      NearlyEqual(proximityDeltas.HeatStressDelta, indoorDeltas.HeatStressDelta, 0.000001f);
+      True(indoorDeltas.HasEffect);
     }
 
     private static FireSimulationSnapshot CreateSimulationSnapshot(bool burning, float intensity) {
