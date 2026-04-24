@@ -64,6 +64,39 @@ Create a coherent fire ecosystem where players can:
 
 ---
 
+## Phase 2 Architecture Rules
+
+Use these rules as guardrails before adding Phase 2 firefighting, worker, and beaver exposure behavior.
+
+1. **Keep Unity/Timberborn adapters thin**
+   - Components that inherit `BaseComponent` or implement `IUpdatableComponent` should mostly read Unity/Timberborn state, call dependency-light `RuntimeState`/`Rules` code, and apply the resulting component changes.
+   - Avoid putting durable gameplay decisions directly inside Appliers when the decision can live in plain C#.
+
+2. **Make reset behavior a first-class contract**
+   - Any Phase 2 effect that can be applied must define how it is cleared.
+   - `Reset Fire Sim` should restore fire, damage, recovery, worker penalty, beaver exposure, and operational-suppression state back to a healthy/functioning baseline where feasible.
+   - Dead/ash terminal behavior must remain terminal for burning, while reset must be able to explicitly restore it for QA and recovery flows.
+
+3. **Keep ownership boundaries clear**
+   - `RuntimeState` owns current facts and snapshots.
+   - `Rules` compute decisions from facts without touching Unity or Timberborn components.
+   - Appliers translate state-machine outcomes into Unity/Timberborn component changes and restore those changes when state clears.
+   - Debug UI may command and observe systems, but should not become the owner of gameplay behavior.
+
+4. **Test meaningful system decisions**
+   - When a real decision lands, prefer extracting it into dependency-light rule/runtime code and adding a regression test.
+   - Debug panel layout and workflow can remain manual QA while it is actively changing.
+
+5. **Centralize fragile integration points**
+   - Type-name matching, entity identity assumptions, and telemetry event names should be kept behind small helpers or registries.
+   - Event names should use constants from an iterable registry so logs stay consistent and tests/docs can derive the available event set.
+
+6. **Defer stable identity until persistence requires it**
+   - Loaded-runtime Unity instance IDs remain acceptable for Phase 2 effects on loaded entities.
+   - If effects need save/load continuity or unloaded-entity tracking, introduce a dedicated entity identity layer rather than scattering UUIDs or Timberborn-specific IDs through gameplay code.
+
+---
+
 ## System Concept: Fire Lifecycle
 
 ### 1) Ignition
@@ -672,6 +705,7 @@ Active/planned entries only. Full historical log moved to `DESIGN_CHANGELOG_ARCH
 
 | Date | Phase | Update | Status |
 | --- | --- | --- | --- |
+| 2026-04-24 | Phase 2 | Added architecture rules for thin adapters, reset contracts, RuntimeState/Rules ownership, testable decisions, telemetry constants, and deferred stable identity | Done |
 | 2026-04-24 | Phase 2/5 | Added plain C# regression-test gate for gameplay decisions; Unity EditMode tests are deferred until the standalone dependency story is cleaner, and debug panel UI remains manual QA while it is actively evolving | Done |
 | 2026-04-24 | Phase 1 | Closed core fire simulation after live QA confirmed ignition/spread/extinguish/damage/dead-ash terminal behavior and `Reset Fire Sim` clean-slate recovery; deferred beaver/worker exposure inside burning buildings to Phase 2 | Done |
 | 2026-02-22 | Phase 2/3 | Added Emberpelts future extension concept (heat-adapted response, tail-stamp suppression style, charcoal salvage + ash-soil synergy, wet-fur breeding constraint awareness) | Planned |
