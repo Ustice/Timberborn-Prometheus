@@ -172,10 +172,10 @@ namespace Mods.Prometheus.Scripts {
 
       _button.text = isOpen ? "Debug ●" : $"Debug{unreadSuffix}";
       _button.style.unityBackgroundImageTintColor = isOpen
-        ? new Color(0.33f, 0.57f, 0.40f, 1f)
+        ? PrometheusDebugPalette.ButtonSelected
         : unreadCount > 0
-          ? new Color(0.93f, 0.72f, 0.38f, 1f)
-        : new Color(1f, 1f, 1f, 1f);
+          ? PrometheusDebugPalette.ButtonUnread
+        : PrometheusDebugPalette.ButtonNeutral;
     }
 
   }

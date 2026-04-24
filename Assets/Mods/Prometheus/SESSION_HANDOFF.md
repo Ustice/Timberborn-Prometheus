@@ -89,6 +89,7 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
 - Screenshot QA showed the legacy `DEAD` text markers rendered as huge magenta blocks; they now default off and can be re-enabled/tuned from the debug panel.
 - The global Prometheus debug panel now has a `Visual Tuning` section with live sliders for ember, smoke, fire, steam, char, and text-marker scale.
 - Latest panel pass converts the global debug panel from a tall stack into compact tabs (`Actions`, `Visuals`, `Selection`, `Log`) and gives buttons filled, outlined, higher-contrast normal/hover/press states closer to native Timberborn controls.
+- Visible debug-panel colors now live in `PrometheusDebugPalette` as named design tokens (`Text`, `Border`, `Button`, `ButtonSelected`, severity colors, feedback colors, etc.) so future UI changes do not add more inline RGBA values.
 - Latest visual-effect pass increased the plain C# suite to 22 tests and passed `bash scripts/test.sh`; `bash scripts/build.sh` also passed and deployed the refreshed DLL.
 - Latest debug-panel redesign build passed `bash scripts/test.sh` and `bash scripts/build.sh`; in-game layout still needs visual QA after launch/reload.
 - Telemetry registry pass increased the plain C# suite to 17 tests and passed `bash scripts/test.sh`; `bash scripts/build.sh` also passed.

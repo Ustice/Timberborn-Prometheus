@@ -80,10 +80,6 @@ namespace Mods.Prometheus.Scripts {
     private int _baselinePendingSpreadIgnitionCount;
     private int _copyFeedbackVersion;
     private bool _copyFeedbackActive;
-    private static readonly Color PanelTextColor = new(0.84f, 0.92f, 0.83f, 1f);
-    private static readonly Color CopyButtonDefaultTint = new(1f, 1f, 1f, 1f);
-    private static readonly Color CopyButtonSuccessTint = new(0.64f, 0.86f, 0.64f, 1f);
-    private static readonly Color CopyButtonWarningTint = new(0.93f, 0.72f, 0.38f, 1f);
 
     public PrometheusFireDebugFragment(
       FireTuningRuntimeState fireTuningRuntimeState,
@@ -117,7 +113,7 @@ namespace Mods.Prometheus.Scripts {
       _root.style.paddingRight = 8;
       _root.style.paddingTop = 6;
       _root.style.paddingBottom = 6;
-      _root.style.backgroundColor = new Color(0.12f, 0.24f, 0.18f, 0.95f);
+      _root.style.backgroundColor = PrometheusDebugPalette.Shell;
       _root.style.borderTopLeftRadius = 4;
       _root.style.borderTopRightRadius = 4;
       _root.style.borderBottomLeftRadius = 4;
@@ -126,14 +122,14 @@ namespace Mods.Prometheus.Scripts {
       _root.style.borderRightWidth = 1;
       _root.style.borderBottomWidth = 1;
       _root.style.borderLeftWidth = 1;
-      _root.style.borderTopColor = new Color(0.27f, 0.46f, 0.33f, 1f);
-      _root.style.borderRightColor = new Color(0.27f, 0.46f, 0.33f, 1f);
-      _root.style.borderBottomColor = new Color(0.27f, 0.46f, 0.33f, 1f);
-      _root.style.borderLeftColor = new Color(0.27f, 0.46f, 0.33f, 1f);
+      _root.style.borderTopColor = PrometheusDebugPalette.Border;
+      _root.style.borderRightColor = PrometheusDebugPalette.Border;
+      _root.style.borderBottomColor = PrometheusDebugPalette.Border;
+      _root.style.borderLeftColor = PrometheusDebugPalette.Border;
 
       _titleLabel = new Label("Prometheus Fire Debug");
       _titleLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
-      _titleLabel.style.color = new Color(0.88f, 0.95f, 0.86f, 1f);
+      _titleLabel.style.color = PrometheusDebugPalette.Text;
       _titleLabel.style.marginBottom = 4;
       _root.Add(_titleLabel);
 
@@ -148,7 +144,7 @@ namespace Mods.Prometheus.Scripts {
       _copyStatusLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
       _copyStatusLabel.style.marginRight = 6;
       _copyStatusLabel.style.flexGrow = 1;
-      _copyStatusLabel.style.color = new Color(0.75f, 0.88f, 0.75f, 1f);
+      _copyStatusLabel.style.color = PrometheusDebugPalette.FeedbackSuccess;
       toolbar.Add(_copyStatusLabel);
 
       _copyButton = new Button(CopyDebugTextToClipboard) {
@@ -157,7 +153,7 @@ namespace Mods.Prometheus.Scripts {
       _copyButton.style.height = 20;
       _copyButton.style.fontSize = 11;
       _copyButton.style.unityFontStyleAndWeight = FontStyle.Bold;
-      _copyButton.style.unityBackgroundImageTintColor = CopyButtonDefaultTint;
+      _copyButton.style.unityBackgroundImageTintColor = PrometheusDebugPalette.ButtonNeutral;
       toolbar.Add(_copyButton);
 
       _igniteButton = new Button(RequestDebugIgnition) {
@@ -166,7 +162,7 @@ namespace Mods.Prometheus.Scripts {
       _igniteButton.style.height = 20;
       _igniteButton.style.fontSize = 11;
       _igniteButton.style.unityFontStyleAndWeight = FontStyle.Bold;
-      _igniteButton.style.unityBackgroundImageTintColor = CopyButtonWarningTint;
+      _igniteButton.style.unityBackgroundImageTintColor = PrometheusDebugPalette.ButtonUnread;
       _igniteButton.style.marginLeft = 4;
       toolbar.Add(_igniteButton);
 
@@ -177,19 +173,19 @@ namespace Mods.Prometheus.Scripts {
         value = false
       };
       _detailsFoldout.style.marginBottom = 4;
-      _detailsFoldout.style.color = new Color(0.84f, 0.92f, 0.83f, 1f);
+      _detailsFoldout.style.color = PrometheusDebugPalette.Text;
       _detailsFoldout.RegisterValueChangedCallback(evt => UpdateDetailsVisibility(evt.newValue));
       _root.Add(_detailsFoldout);
 
         var foldoutToggle = _detailsFoldout.Q<Toggle>();
         if (foldoutToggle is not null) {
-          foldoutToggle.style.color = PanelTextColor;
-          foldoutToggle.style.unityBackgroundImageTintColor = PanelTextColor;
+          foldoutToggle.style.color = PrometheusDebugPalette.Text;
+          foldoutToggle.style.unityBackgroundImageTintColor = PrometheusDebugPalette.Text;
         }
 
         var foldoutCheckmark = _detailsFoldout.Q<VisualElement>(className: "unity-foldout__checkmark");
         if (foldoutCheckmark is not null) {
-          foldoutCheckmark.style.unityBackgroundImageTintColor = PanelTextColor;
+          foldoutCheckmark.style.unityBackgroundImageTintColor = PrometheusDebugPalette.Text;
         }
 
       _detailsContainer = new VisualElement();
@@ -202,7 +198,7 @@ namespace Mods.Prometheus.Scripts {
       _dataScrollView.style.minHeight = 160;
       _dataScrollView.style.maxHeight = 360;
       _dataScrollView.style.flexShrink = 0;
-      _dataScrollView.style.backgroundColor = new Color(0.08f, 0.16f, 0.12f, 0.9f);
+      _dataScrollView.style.backgroundColor = PrometheusDebugPalette.Inset;
       _dataScrollView.style.borderTopLeftRadius = 3;
       _dataScrollView.style.borderTopRightRadius = 3;
       _dataScrollView.style.borderBottomLeftRadius = 3;
@@ -211,15 +207,15 @@ namespace Mods.Prometheus.Scripts {
       _dataScrollView.style.borderRightWidth = 1;
       _dataScrollView.style.borderBottomWidth = 1;
       _dataScrollView.style.borderLeftWidth = 1;
-      _dataScrollView.style.borderTopColor = new Color(0.22f, 0.38f, 0.29f, 1f);
-      _dataScrollView.style.borderRightColor = new Color(0.22f, 0.38f, 0.29f, 1f);
-      _dataScrollView.style.borderBottomColor = new Color(0.22f, 0.38f, 0.29f, 1f);
-      _dataScrollView.style.borderLeftColor = new Color(0.22f, 0.38f, 0.29f, 1f);
+      _dataScrollView.style.borderTopColor = PrometheusDebugPalette.Border;
+      _dataScrollView.style.borderRightColor = PrometheusDebugPalette.Border;
+      _dataScrollView.style.borderBottomColor = PrometheusDebugPalette.Border;
+      _dataScrollView.style.borderLeftColor = PrometheusDebugPalette.Border;
 
       _dataLabel = new Label();
       _dataLabel.style.whiteSpace = WhiteSpace.PreWrap;
       _dataLabel.style.fontSize = 11;
-      _dataLabel.style.color = new Color(0.84f, 0.92f, 0.83f, 1f);
+      _dataLabel.style.color = PrometheusDebugPalette.Text;
       _dataLabel.style.unityTextAlign = TextAnchor.UpperLeft;
       _dataLabel.style.flexGrow = 1;
       _dataLabel.style.minWidth = 0;
@@ -236,19 +232,19 @@ namespace Mods.Prometheus.Scripts {
         value = false
       };
       _fireLogFoldout.style.marginBottom = 4;
-      _fireLogFoldout.style.color = PanelTextColor;
+      _fireLogFoldout.style.color = PrometheusDebugPalette.Text;
       _fireLogFoldout.RegisterValueChangedCallback(evt => UpdateFireLogVisibility(evt.newValue));
       _root.Add(_fireLogFoldout);
 
       var fireLogFoldoutToggle = _fireLogFoldout.Q<Toggle>();
       if (fireLogFoldoutToggle is not null) {
-        fireLogFoldoutToggle.style.color = PanelTextColor;
-        fireLogFoldoutToggle.style.unityBackgroundImageTintColor = PanelTextColor;
+        fireLogFoldoutToggle.style.color = PrometheusDebugPalette.Text;
+        fireLogFoldoutToggle.style.unityBackgroundImageTintColor = PrometheusDebugPalette.Text;
       }
 
       var fireLogFoldoutCheckmark = _fireLogFoldout.Q<VisualElement>(className: "unity-foldout__checkmark");
       if (fireLogFoldoutCheckmark is not null) {
-        fireLogFoldoutCheckmark.style.unityBackgroundImageTintColor = PanelTextColor;
+        fireLogFoldoutCheckmark.style.unityBackgroundImageTintColor = PrometheusDebugPalette.Text;
       }
 
       _fireLogContainer = new VisualElement();
@@ -281,7 +277,7 @@ namespace Mods.Prometheus.Scripts {
       _fireLogSearchField.label = "Search";
       _fireLogSearchField.style.minWidth = 220;
       _fireLogSearchField.style.marginLeft = 6;
-      _fireLogSearchField.style.color = PanelTextColor;
+      _fireLogSearchField.style.color = PrometheusDebugPalette.Text;
       _fireLogSearchField.RegisterValueChangedCallback(evt => {
         _fireLogSearchText = evt.newValue ?? string.Empty;
         UpdateInGameFireLogPanel();
@@ -293,7 +289,7 @@ namespace Mods.Prometheus.Scripts {
       _autoScrollToggle = new Toggle("Auto-scroll") {
         value = _autoScrollFireLog
       };
-      _autoScrollToggle.style.color = PanelTextColor;
+      _autoScrollToggle.style.color = PrometheusDebugPalette.Text;
       _autoScrollToggle.style.fontSize = 11;
       _autoScrollToggle.RegisterValueChangedCallback(evt => _autoScrollFireLog = evt.newValue);
       fireLogToolbar.Add(_autoScrollToggle);
@@ -304,7 +300,7 @@ namespace Mods.Prometheus.Scripts {
       _clearLogButton.style.height = 20;
       _clearLogButton.style.fontSize = 11;
       _clearLogButton.style.unityFontStyleAndWeight = FontStyle.Bold;
-      _clearLogButton.style.unityBackgroundImageTintColor = CopyButtonWarningTint;
+      _clearLogButton.style.unityBackgroundImageTintColor = PrometheusDebugPalette.ButtonUnread;
       _clearLogButton.style.marginLeft = 6;
       fireLogToolbar.Add(_clearLogButton);
       _fireLogContainer.Add(fireLogToolbar);
@@ -315,7 +311,7 @@ namespace Mods.Prometheus.Scripts {
       _fireLogScrollView.style.minHeight = 140;
       _fireLogScrollView.style.maxHeight = 300;
       _fireLogScrollView.style.flexShrink = 0;
-      _fireLogScrollView.style.backgroundColor = new Color(0.08f, 0.13f, 0.10f, 0.9f);
+      _fireLogScrollView.style.backgroundColor = PrometheusDebugPalette.Inset;
       _fireLogScrollView.style.borderTopLeftRadius = 3;
       _fireLogScrollView.style.borderTopRightRadius = 3;
       _fireLogScrollView.style.borderBottomLeftRadius = 3;
@@ -324,10 +320,10 @@ namespace Mods.Prometheus.Scripts {
       _fireLogScrollView.style.borderRightWidth = 1;
       _fireLogScrollView.style.borderBottomWidth = 1;
       _fireLogScrollView.style.borderLeftWidth = 1;
-      _fireLogScrollView.style.borderTopColor = new Color(0.22f, 0.33f, 0.27f, 1f);
-      _fireLogScrollView.style.borderRightColor = new Color(0.22f, 0.33f, 0.27f, 1f);
-      _fireLogScrollView.style.borderBottomColor = new Color(0.22f, 0.33f, 0.27f, 1f);
-      _fireLogScrollView.style.borderLeftColor = new Color(0.22f, 0.33f, 0.27f, 1f);
+      _fireLogScrollView.style.borderTopColor = PrometheusDebugPalette.Border;
+      _fireLogScrollView.style.borderRightColor = PrometheusDebugPalette.Border;
+      _fireLogScrollView.style.borderBottomColor = PrometheusDebugPalette.Border;
+      _fireLogScrollView.style.borderLeftColor = PrometheusDebugPalette.Border;
 
       _fireLogLinesContainer = new VisualElement();
       _fireLogLinesContainer.style.flexDirection = FlexDirection.Column;
@@ -385,8 +381,8 @@ namespace Mods.Prometheus.Scripts {
     private void CopyDebugTextToClipboard() {
       var debugText = _latestDebugText ?? string.Empty;
       if (string.IsNullOrWhiteSpace(debugText)) {
-        SetCopyButtonVisuals("Copy", CopyButtonWarningTint);
-        SetCopyFeedback("Nothing to copy.", new Color(0.96f, 0.74f, 0.40f, 1f));
+        SetCopyButtonVisuals("Copy", PrometheusDebugPalette.ButtonUnread);
+        SetCopyFeedback("Nothing to copy.", PrometheusDebugPalette.FeedbackWarning);
         ScheduleCopyButtonReset();
         return;
       }
@@ -400,8 +396,8 @@ namespace Mods.Prometheus.Scripts {
       textEditor.Copy();
 
       var lineCount = debugText.Split('\n').Length;
-      SetCopyFeedback($"Copied {lineCount} lines.", new Color(0.72f, 0.93f, 0.72f, 1f));
-      SetCopyButtonVisuals("Copied ✓", CopyButtonSuccessTint);
+      SetCopyFeedback($"Copied {lineCount} lines.", PrometheusDebugPalette.FeedbackSuccess);
+      SetCopyButtonVisuals("Copied ✓", PrometheusDebugPalette.CopySuccess);
       ScheduleCopyButtonReset();
     }
 
@@ -412,7 +408,7 @@ namespace Mods.Prometheus.Scripts {
           return;
         }
 
-        SetCopyButtonVisuals("Copy", CopyButtonDefaultTint);
+        SetCopyButtonVisuals("Copy", PrometheusDebugPalette.ButtonNeutral);
       }).StartingIn(1500);
     }
 
@@ -439,17 +435,17 @@ namespace Mods.Prometheus.Scripts {
 
     private void RequestDebugIgnition() {
       if (_selectedEntityId == 0 || !_selectedEntityHasFireProfile) {
-        SetCopyFeedback("Cannot ignite: selected entity has no fire profile.", new Color(0.96f, 0.74f, 0.40f, 1f));
+        SetCopyFeedback("Cannot ignite: selected entity has no fire profile.", PrometheusDebugPalette.FeedbackWarning);
         return;
       }
 
       if (!_selectedEntityHasSimulationController) {
-        SetCopyFeedback("Cannot ignite: simulation controller not attached.", new Color(0.96f, 0.74f, 0.40f, 1f));
+        SetCopyFeedback("Cannot ignite: simulation controller not attached.", PrometheusDebugPalette.FeedbackWarning);
         return;
       }
 
       _fireSimulationRuntimeState.RequestForcedIgnition(_selectedEntityId);
-      SetCopyFeedback("Ignition request queued.", new Color(0.72f, 0.93f, 0.72f, 1f));
+      SetCopyFeedback("Ignition request queued.", PrometheusDebugPalette.FeedbackSuccess);
     }
 
     public void ShowFragment(BaseComponent entity) {
@@ -476,7 +472,7 @@ namespace Mods.Prometheus.Scripts {
         _fireLogSearchField.value = string.Empty;
       }
       ApplyFireLogFilterButtonStyles();
-      _copyButton.style.color = PanelTextColor;
+      _copyButton.style.color = PrometheusDebugPalette.Text;
 
       CaptureRuntimeCountBaselines();
       ApplyHiddenSelectionBridgeRootStyle();
@@ -490,9 +486,9 @@ namespace Mods.Prometheus.Scripts {
       _selectedEntityHasSuppressionApplier = false;
       _latestDebugText = string.Empty;
       _copyStatusLabel.text = string.Empty;
-      _detailsFoldout.style.color = PanelTextColor;
+      _detailsFoldout.style.color = PrometheusDebugPalette.Text;
       _copyFeedbackVersion++;
-      SetCopyButtonVisuals("Copy", CopyButtonDefaultTint);
+      SetCopyButtonVisuals("Copy", PrometheusDebugPalette.ButtonNeutral);
       _igniteButton.SetEnabled(false);
       _detailsFoldout.value = false;
       _fireLogFoldout.value = false;
@@ -525,7 +521,7 @@ namespace Mods.Prometheus.Scripts {
       stringBuilder.AppendLine($"- Impact x{tuning.ImpactMultiplier:0.00}");
       stringBuilder.AppendLine($"- Damage ticks x{tuning.DamageTickMultiplier:0.00}");
       stringBuilder.AppendLine($"- Ignition/weather x{tuning.WeatherIgnitionMultiplier:0.00}");
-      _dataLabel.style.color = PanelTextColor;
+      _dataLabel.style.color = PrometheusDebugPalette.Text;
       stringBuilder.AppendLine($"- Ignition/controlled burn x{tuning.ControlledBurnIgnitionMultiplier:0.00}");
       stringBuilder.AppendLine($"- Ignition/neighbor x{tuning.NeighborIgnitionMultiplier:0.00}");
       stringBuilder.AppendLine($"- Ignition/explosion x{tuning.ExplosionIgnitionMultiplier:0.00} ({tuning.ExplosionIgnitionMode})");
@@ -674,7 +670,7 @@ namespace Mods.Prometheus.Scripts {
       UpdateInGameFireLogPanel();
       if (!_copyFeedbackActive) {
         _copyStatusLabel.text = string.Empty;
-        SetCopyButtonVisuals("Copy", CopyButtonDefaultTint);
+        SetCopyButtonVisuals("Copy", PrometheusDebugPalette.ButtonNeutral);
       }
     }
 
@@ -719,7 +715,7 @@ namespace Mods.Prometheus.Scripts {
       if (filteredCount == 0) {
         var emptyLabel = new Label("No log entries for current filter.");
         emptyLabel.style.fontSize = 10;
-        emptyLabel.style.color = new Color(0.72f, 0.78f, 0.72f, 1f);
+        emptyLabel.style.color = PrometheusDebugPalette.TextMuted;
         emptyLabel.style.unityTextAlign = TextAnchor.UpperLeft;
         _fireLogLinesContainer.Add(emptyLabel);
       }
@@ -737,7 +733,7 @@ namespace Mods.Prometheus.Scripts {
       button.style.fontSize = 10;
       button.style.unityFontStyleAndWeight = FontStyle.Bold;
       button.style.marginRight = 4;
-      button.style.color = PanelTextColor;
+      button.style.color = PrometheusDebugPalette.Text;
       return button;
     }
 
@@ -760,8 +756,8 @@ namespace Mods.Prometheus.Scripts {
       }
 
       button.style.unityBackgroundImageTintColor = selected
-        ? new Color(0.33f, 0.57f, 0.40f, 1f)
-        : new Color(1f, 1f, 1f, 1f);
+        ? PrometheusDebugPalette.ButtonSelected
+        : Color.white;
     }
 
     private bool ShouldIncludeLogEntry(FireInGameLogEntry entry) {
@@ -807,7 +803,7 @@ namespace Mods.Prometheus.Scripts {
       viewButton.style.fontSize = 10;
       viewButton.style.unityFontStyleAndWeight = FontStyle.Bold;
       viewButton.style.minWidth = 44;
-      viewButton.style.unityBackgroundImageTintColor = new Color(0.55f, 0.70f, 0.92f, 1f);
+      viewButton.style.unityBackgroundImageTintColor = PrometheusDebugPalette.Button;
       viewButton.SetEnabled(TryExtractEntityId(entry.Message, out _));
       row.Add(viewButton);
 
@@ -829,11 +825,11 @@ namespace Mods.Prometheus.Scripts {
       label.style.unityTextAlign = TextAnchor.UpperLeft;
       label.style.marginBottom = 2;
       label.style.color = entry.LogType switch {
-        LogType.Warning => new Color(0.98f, 0.78f, 0.40f, 1f),
-        LogType.Error => new Color(0.96f, 0.47f, 0.47f, 1f),
-        LogType.Assert => new Color(0.96f, 0.47f, 0.47f, 1f),
-        LogType.Exception => new Color(0.96f, 0.47f, 0.47f, 1f),
-        _ => new Color(0.76f, 0.93f, 0.76f, 1f),
+        LogType.Warning => PrometheusDebugPalette.StatusWarning,
+        LogType.Error => PrometheusDebugPalette.StatusError,
+        LogType.Assert => PrometheusDebugPalette.StatusError,
+        LogType.Exception => PrometheusDebugPalette.StatusError,
+        _ => PrometheusDebugPalette.StatusEvent,
       };
 
       return label;
@@ -841,14 +837,14 @@ namespace Mods.Prometheus.Scripts {
 
     private void ViewEntityFromLogEntry(FireInGameLogEntry entry) {
       if (!TryExtractEntityId(entry.Message, out var entityId)) {
-        SetCopyFeedback("No entity id in this log line.", new Color(0.96f, 0.74f, 0.40f, 1f));
+        SetCopyFeedback("No entity id in this log line.", PrometheusDebugPalette.FeedbackWarning);
         return;
       }
 
       if (TryFocusCameraOnEntity(entityId, out var entityName)) {
-        SetCopyFeedback($"Viewing entity {entityName} (id={entityId}).", new Color(0.72f, 0.93f, 0.72f, 1f));
+        SetCopyFeedback($"Viewing entity {entityName} (id={entityId}).", PrometheusDebugPalette.FeedbackSuccess);
       } else {
-        SetCopyFeedback($"Entity id {entityId} not found in loaded scene.", new Color(0.96f, 0.74f, 0.40f, 1f));
+        SetCopyFeedback($"Entity id {entityId} not found in loaded scene.", PrometheusDebugPalette.FeedbackWarning);
       }
     }
 
@@ -924,7 +920,7 @@ namespace Mods.Prometheus.Scripts {
     private void ClearInGameFireLog() {
       FireTelemetry.ClearInGameLog();
       UpdateInGameFireLogPanel();
-      SetCopyFeedback("Fire log cleared.", new Color(0.72f, 0.93f, 0.72f, 1f));
+      SetCopyFeedback("Fire log cleared.", PrometheusDebugPalette.FeedbackSuccess);
     }
 
     private static void AppendSnapshotUnavailableSection(StringBuilder stringBuilder, string sectionTitle) {
@@ -973,23 +969,14 @@ namespace Mods.Prometheus.Scripts {
     private readonly FireRecoveryRuntimeState _fireRecoveryRuntimeState;
     private readonly FireVisualEffectRuntimeState _fireVisualEffectRuntimeState;
     private readonly EntitySelectionService _entitySelectionService;
-    private readonly Color _panelTextColor = new(0.84f, 0.92f, 0.83f, 1f);
-    private readonly Color _panelMutedTextColor = new(0.60f, 0.74f, 0.64f, 1f);
-    private readonly Color _panelGoldColor = new(0.72f, 0.58f, 0.30f, 1f);
-    private readonly Color _panelFrameColor = new(0.18f, 0.35f, 0.28f, 1f);
-    private readonly Color _panelShellColor = new(0.07f, 0.16f, 0.14f, 0.97f);
-    private readonly Color _panelSectionColor = new(0.09f, 0.22f, 0.18f, 0.96f);
-    private readonly Color _panelInsetColor = new(0.05f, 0.12f, 0.10f, 0.96f);
-    private readonly Color _panelHeaderColor = new(0.18f, 0.11f, 0.10f, 0.98f);
     private const float DebugStopAllFiresIgnitionSuppressionSeconds = 60f;
 
     public event Action<bool> OpenStateChanged;
     public event Action<int> UnreadCountChanged;
-    public bool IsOpen => _panelFoldout is not null && _panelFoldout.value;
+    public bool IsOpen => _isOpen;
     public int UnreadCount => _unreadCount;
 
     private VisualElement _root;
-    private Foldout _panelFoldout;
     private ScrollView _logScrollView;
     private VisualElement _logLinesContainer;
     private TextField _searchField;
@@ -1033,6 +1020,7 @@ namespace Mods.Prometheus.Scripts {
     private int _lastObservedEntryCount;
     private int _unreadCount;
     private PrometheusDebugPanelTab _activeTab = PrometheusDebugPanelTab.Actions;
+    private bool _isOpen;
 
     public PrometheusDebugPanel(
       UILayout uiLayout,
@@ -1073,15 +1061,15 @@ namespace Mods.Prometheus.Scripts {
     }
 
     public void ToggleOpenClose() {
-      SetOpen(_panelFoldout is not null && !_panelFoldout.value);
+      SetOpen(!IsOpen);
     }
 
     public void SetOpen(bool isOpen) {
-      if (_panelFoldout == null) {
+      if (_root == null) {
         return;
       }
 
-      if (_panelFoldout.value == isOpen) {
+      if (_isOpen == isOpen) {
         if (isOpen) {
           RefreshLogPanel(force: true);
         }
@@ -1089,7 +1077,15 @@ namespace Mods.Prometheus.Scripts {
         return;
       }
 
-      _panelFoldout.value = isOpen;
+      _isOpen = isOpen;
+      _root.style.display = isOpen ? DisplayStyle.Flex : DisplayStyle.None;
+      if (isOpen) {
+        _lastObservedEntryCount = FireTelemetry.GetRecentInGameLogEntries().Length;
+        SetUnreadCount(0);
+        RefreshLogPanel(force: true);
+      }
+
+      OpenStateChanged?.Invoke(isOpen);
     }
 
     private VisualElement BuildPanelRoot() {
@@ -1102,7 +1098,7 @@ namespace Mods.Prometheus.Scripts {
       root.style.paddingRight = 0;
       root.style.paddingTop = 0;
       root.style.paddingBottom = 0;
-      root.style.backgroundColor = _panelShellColor;
+      root.style.backgroundColor = PrometheusDebugPalette.Shell;
       root.style.borderTopLeftRadius = 3;
       root.style.borderTopRightRadius = 3;
       root.style.borderBottomLeftRadius = 3;
@@ -1111,39 +1107,20 @@ namespace Mods.Prometheus.Scripts {
       root.style.borderRightWidth = 1;
       root.style.borderBottomWidth = 1;
       root.style.borderLeftWidth = 1;
-      root.style.borderTopColor = _panelGoldColor;
-      root.style.borderRightColor = _panelFrameColor;
-      root.style.borderBottomColor = _panelFrameColor;
-      root.style.borderLeftColor = _panelFrameColor;
+      root.style.borderTopColor = PrometheusDebugPalette.Gold;
+      root.style.borderRightColor = PrometheusDebugPalette.Frame;
+      root.style.borderBottomColor = PrometheusDebugPalette.Frame;
+      root.style.borderLeftColor = PrometheusDebugPalette.Frame;
       root.style.overflow = Overflow.Visible;
-
-      _panelFoldout = new Foldout {
-        text = "Prometheus Debug",
-        value = false
-      };
-      _panelFoldout.style.color = _panelTextColor;
-      _panelFoldout.style.paddingLeft = 8;
-      _panelFoldout.style.paddingRight = 8;
-      _panelFoldout.style.paddingTop = 6;
-      _panelFoldout.style.paddingBottom = 8;
-      _panelFoldout.style.backgroundColor = _panelHeaderColor;
-      _panelFoldout.RegisterValueChangedCallback(evt => HandlePanelFoldoutChanged(evt.newValue));
-      root.Add(_panelFoldout);
-
-      var foldoutToggle = _panelFoldout.Q<Toggle>();
-      if (foldoutToggle is not null) {
-        foldoutToggle.style.color = _panelTextColor;
-        foldoutToggle.style.unityBackgroundImageTintColor = _panelTextColor;
-      }
-
-      var foldoutCheckmark = _panelFoldout.Q<VisualElement>(className: "unity-foldout__checkmark");
-      if (foldoutCheckmark is not null) {
-        foldoutCheckmark.style.unityBackgroundImageTintColor = _panelTextColor;
-      }
+      root.style.display = DisplayStyle.None;
 
       var content = new VisualElement();
-      content.style.paddingTop = 8;
-      content.style.backgroundColor = _panelShellColor;
+      content.style.paddingTop = 4;
+      content.style.paddingLeft = 7;
+      content.style.paddingRight = 7;
+      content.style.paddingBottom = 7;
+      content.style.backgroundColor = PrometheusDebugPalette.Shell;
+      content.Add(BuildPanelTopStrip());
 
       var overviewSection = CreateSection("Status");
       overviewSection.Add(BuildTypeSummaryRow());
@@ -1169,40 +1146,58 @@ namespace Mods.Prometheus.Scripts {
 
       ApplyActiveTab();
 
-      _panelFoldout.Add(content);
-      UpdateFoldoutTitle(_panelFoldout.value);
+      root.Add(content);
 
       return root;
     }
 
+    private VisualElement BuildPanelTopStrip() {
+      var row = new VisualElement();
+      row.style.flexDirection = FlexDirection.Row;
+      row.style.justifyContent = Justify.FlexEnd;
+      row.style.alignItems = Align.Center;
+      row.style.height = 24;
+      row.style.marginBottom = 2;
+      row.style.borderBottomWidth = 1;
+      row.style.borderBottomColor = PrometheusDebugPalette.GoldDivider;
+
+      var closeButton = new Button(() => SetOpen(false)) {
+        text = "X"
+      };
+      ApplyCommandButtonStyle(closeButton, PrometheusDebugPalette.ButtonClose, 28);
+      closeButton.style.width = 28;
+      closeButton.style.height = 20;
+      closeButton.style.marginRight = 0;
+      closeButton.tooltip = "Close Prometheus debug panel.";
+      row.Add(closeButton);
+      return row;
+    }
+
     private VisualElement CreateSection(string title) {
       var section = new VisualElement();
-      section.style.marginBottom = 6;
+      section.style.marginBottom = 0;
       section.style.paddingLeft = 8;
       section.style.paddingRight = 8;
       section.style.paddingTop = 6;
       section.style.paddingBottom = 7;
-      section.style.backgroundColor = _panelSectionColor;
-      section.style.borderTopWidth = 1;
-      section.style.borderRightWidth = 1;
+      section.style.backgroundColor = PrometheusDebugPalette.Transparent;
+      section.style.borderTopWidth = 0;
+      section.style.borderRightWidth = 0;
       section.style.borderBottomWidth = 1;
-      section.style.borderLeftWidth = 1;
-      section.style.borderTopColor = _panelFrameColor;
-      section.style.borderRightColor = _panelFrameColor;
-      section.style.borderBottomColor = _panelFrameColor;
-      section.style.borderLeftColor = _panelFrameColor;
+      section.style.borderLeftWidth = 0;
+      section.style.borderBottomColor = PrometheusDebugPalette.Divider;
 
       var header = new Label(title);
       header.style.fontSize = 10;
       header.style.unityFontStyleAndWeight = FontStyle.Bold;
-      header.style.color = _panelGoldColor;
+      header.style.color = PrometheusDebugPalette.Gold;
       header.style.marginBottom = 5;
       section.Add(header);
       return section;
     }
 
     private void ApplyInsetStyle(VisualElement element) {
-      element.style.backgroundColor = _panelInsetColor;
+      element.style.backgroundColor = PrometheusDebugPalette.Inset;
       element.style.borderTopLeftRadius = 2;
       element.style.borderTopRightRadius = 2;
       element.style.borderBottomLeftRadius = 2;
@@ -1211,10 +1206,10 @@ namespace Mods.Prometheus.Scripts {
       element.style.borderRightWidth = 1;
       element.style.borderBottomWidth = 1;
       element.style.borderLeftWidth = 1;
-      element.style.borderTopColor = _panelFrameColor;
-      element.style.borderRightColor = _panelFrameColor;
-      element.style.borderBottomColor = _panelFrameColor;
-      element.style.borderLeftColor = _panelFrameColor;
+      element.style.borderTopColor = PrometheusDebugPalette.Border;
+      element.style.borderRightColor = PrometheusDebugPalette.Border;
+      element.style.borderBottomColor = PrometheusDebugPalette.Border;
+      element.style.borderLeftColor = PrometheusDebugPalette.Border;
     }
 
     private void ApplyCommandButtonStyle(Button button, Color tintColor, int minWidth = 86) {
@@ -1222,7 +1217,7 @@ namespace Mods.Prometheus.Scripts {
       button.style.minWidth = minWidth;
       button.style.fontSize = 11;
       button.style.unityFontStyleAndWeight = FontStyle.Bold;
-      button.style.color = new Color(0.12f, 0.10f, 0.08f, 1f);
+      button.style.color = PrometheusDebugPalette.TextDark;
       button.style.backgroundColor = tintColor;
       button.style.unityBackgroundImageTintColor = tintColor;
       button.style.marginRight = 5;
@@ -1235,16 +1230,16 @@ namespace Mods.Prometheus.Scripts {
       button.style.borderRightWidth = 1;
       button.style.borderBottomWidth = 1;
       button.style.borderLeftWidth = 1;
-      button.style.borderTopColor = new Color(1.00f, 0.86f, 0.52f, 1f);
-      button.style.borderRightColor = new Color(0.26f, 0.16f, 0.08f, 1f);
-      button.style.borderBottomColor = new Color(0.26f, 0.16f, 0.08f, 1f);
-      button.style.borderLeftColor = new Color(1.00f, 0.86f, 0.52f, 1f);
+      button.style.borderTopColor = PrometheusDebugPalette.ButtonBorderHighlight;
+      button.style.borderRightColor = PrometheusDebugPalette.ButtonShadow;
+      button.style.borderBottomColor = PrometheusDebugPalette.ButtonShadow;
+      button.style.borderLeftColor = PrometheusDebugPalette.ButtonBorderHighlight;
       RegisterButtonInteractionStates(button, tintColor);
     }
 
     private void RegisterButtonInteractionStates(Button button, Color baseColor) {
-      var hoverColor = Color.Lerp(baseColor, Color.white, 0.18f);
-      var pressedColor = Color.Lerp(baseColor, Color.white, 0.34f);
+      var hoverColor = Color.Lerp(baseColor, Color.white, 0.24f);
+      var pressedColor = Color.Lerp(baseColor, Color.white, 0.44f);
       button.RegisterCallback<MouseEnterEvent>(_ => SetButtonColor(button, hoverColor));
       button.RegisterCallback<MouseLeaveEvent>(_ => SetButtonColor(button, baseColor));
       button.RegisterCallback<MouseDownEvent>(_ => SetButtonColor(button, pressedColor));
@@ -1258,25 +1253,6 @@ namespace Mods.Prometheus.Scripts {
 
       button.style.backgroundColor = color;
       button.style.unityBackgroundImageTintColor = color;
-    }
-
-    private void UpdateFoldoutTitle(bool isOpen) {
-      if (_panelFoldout == null) {
-        return;
-      }
-
-      _panelFoldout.text = isOpen ? "Prometheus Debug ▾" : "Prometheus Debug ▸";
-    }
-
-    private void HandlePanelFoldoutChanged(bool isOpen) {
-      UpdateFoldoutTitle(isOpen);
-      if (isOpen) {
-        _lastObservedEntryCount = FireTelemetry.GetRecentInGameLogEntries().Length;
-        SetUnreadCount(0);
-        RefreshLogPanel(force: true);
-      }
-
-      OpenStateChanged?.Invoke(isOpen);
     }
 
     private void PollLogStateAndRefresh() {
@@ -1328,7 +1304,7 @@ namespace Mods.Prometheus.Scripts {
       var button = new Button(() => SetActiveTab(tab)) {
         text = text
       };
-      ApplyCommandButtonStyle(button, new Color(0.49f, 0.69f, 0.55f, 1f), 104);
+      ApplyCommandButtonStyle(button, PrometheusDebugPalette.Button, 104);
       return button;
     }
 
@@ -1365,13 +1341,13 @@ namespace Mods.Prometheus.Scripts {
       }
 
       var color = selected
-        ? new Color(0.91f, 0.69f, 0.34f, 1f)
-        : new Color(0.38f, 0.58f, 0.45f, 1f);
+        ? PrometheusDebugPalette.ButtonSelected
+        : PrometheusDebugPalette.Button;
       button.style.backgroundColor = color;
       button.style.unityBackgroundImageTintColor = color;
       button.style.color = selected
-        ? new Color(0.10f, 0.08f, 0.06f, 1f)
-        : _panelTextColor;
+        ? PrometheusDebugPalette.TextDark
+        : PrometheusDebugPalette.Text;
     }
 
     private VisualElement BuildCommandsPanel() {
@@ -1387,21 +1363,21 @@ namespace Mods.Prometheus.Scripts {
       var resetFireSimulationButton = new Button(ResetAllFireSimulation) {
         text = "Reset Fire Sim"
       };
-      ApplyCommandButtonStyle(resetFireSimulationButton, new Color(0.88f, 0.68f, 0.38f, 1f), 116);
+      ApplyCommandButtonStyle(resetFireSimulationButton, PrometheusDebugPalette.Button, 116);
       resetFireSimulationButton.tooltip = "Reset Prometheus fire simulation, damage, ash/dead state, workplace suppression, and runtime snapshots for all loaded fire entities.";
       commandsRow.Add(resetFireSimulationButton);
 
       var stopAllFiresButton = new Button(ExtinguishAllFires) {
         text = "Stop Fires"
       };
-      ApplyCommandButtonStyle(stopAllFiresButton, new Color(0.96f, 0.60f, 0.42f, 1f));
+      ApplyCommandButtonStyle(stopAllFiresButton, PrometheusDebugPalette.Button);
       stopAllFiresButton.tooltip = "Immediately extinguish all currently burning entities tracked by Prometheus.";
       commandsRow.Add(stopAllFiresButton);
 
       var clearBeaverEffectsButton = new Button(ClearBeaverFireEffects) {
         text = "Clear Beavers"
       };
-      ApplyCommandButtonStyle(clearBeaverEffectsButton, new Color(0.63f, 0.78f, 0.98f, 1f), 106);
+      ApplyCommandButtonStyle(clearBeaverEffectsButton, PrometheusDebugPalette.Button, 106);
       clearBeaverEffectsButton.tooltip = "Clear Prometheus HeatStress and mod-applied Injury debt from currently loaded beavers.";
       commandsRow.Add(clearBeaverEffectsButton);
 
@@ -1413,7 +1389,7 @@ namespace Mods.Prometheus.Scripts {
       }) {
         text = "Clear Log"
       };
-      ApplyCommandButtonStyle(clearButton, new Color(0.76f, 0.86f, 0.68f, 1f), 82);
+      ApplyCommandButtonStyle(clearButton, PrometheusDebugPalette.Button, 82);
       clearButton.tooltip = "Clear all in-game fire log entries.";
       commandsRow.Add(clearButton);
 
@@ -1422,7 +1398,7 @@ namespace Mods.Prometheus.Scripts {
       _adminFeedbackLabel.style.minWidth = 120;
       _adminFeedbackLabel.style.marginBottom = 4;
       _adminFeedbackLabel.style.fontSize = 11;
-      _adminFeedbackLabel.style.color = new Color(0.72f, 0.93f, 0.72f, 1f);
+      _adminFeedbackLabel.style.color = PrometheusDebugPalette.FeedbackSuccess;
       commandsRow.Add(_adminFeedbackLabel);
 
       commandsSection.Add(commandsRow);
@@ -1459,7 +1435,7 @@ namespace Mods.Prometheus.Scripts {
       _searchField.style.flexGrow = 1;
       _searchField.style.marginLeft = 6;
       _searchField.style.marginBottom = 4;
-      _searchField.style.color = _panelTextColor;
+      _searchField.style.color = PrometheusDebugPalette.Text;
       _searchField.RegisterValueChangedCallback(evt => {
         _searchText = evt.newValue ?? string.Empty;
         RefreshLogPanel(force: true);
@@ -1471,7 +1447,7 @@ namespace Mods.Prometheus.Scripts {
       };
       _autoScrollToggle.style.marginLeft = 6;
       _autoScrollToggle.style.marginBottom = 4;
-      _autoScrollToggle.style.color = _panelTextColor;
+      _autoScrollToggle.style.color = PrometheusDebugPalette.Text;
       _autoScrollToggle.style.fontSize = 11;
       _autoScrollToggle.RegisterValueChangedCallback(evt => _autoScroll = evt.newValue);
       filterRow.Add(_autoScrollToggle);
@@ -1521,7 +1497,7 @@ namespace Mods.Prometheus.Scripts {
       var textMarkerToggle = new Toggle("Text markers") {
         value = _fireVisualEffectRuntimeState.TextMarkersEnabled
       };
-      textMarkerToggle.style.color = _panelTextColor;
+      textMarkerToggle.style.color = PrometheusDebugPalette.Text;
       textMarkerToggle.style.fontSize = 11;
       textMarkerToggle.style.marginRight = 8;
       textMarkerToggle.style.marginBottom = 4;
@@ -1534,7 +1510,7 @@ namespace Mods.Prometheus.Scripts {
       var copyButton = new Button(CopyVisualTuningSettings) {
         text = "Copy Visuals"
       };
-      ApplyCommandButtonStyle(copyButton, new Color(0.76f, 0.86f, 0.68f, 1f), 104);
+      ApplyCommandButtonStyle(copyButton, PrometheusDebugPalette.Button, 104);
       copyButton.tooltip = "Copy current visual tuning values to the clipboard.";
       controlRow.Add(copyButton);
 
@@ -1544,13 +1520,13 @@ namespace Mods.Prometheus.Scripts {
       }) {
         text = "Reset Visuals"
       };
-      ApplyCommandButtonStyle(resetButton, new Color(0.88f, 0.68f, 0.38f, 1f), 104);
+      ApplyCommandButtonStyle(resetButton, PrometheusDebugPalette.Button, 104);
       resetButton.tooltip = "Reset visual tuning scales to default and turn text markers off.";
       controlRow.Add(resetButton);
 
       _visualTuningFeedbackLabel = new Label();
       _visualTuningFeedbackLabel.style.fontSize = 10;
-      _visualTuningFeedbackLabel.style.color = new Color(0.72f, 0.93f, 0.72f, 1f);
+      _visualTuningFeedbackLabel.style.color = PrometheusDebugPalette.FeedbackSuccess;
       _visualTuningFeedbackLabel.style.marginBottom = 4;
       _visualTuningFeedbackLabel.style.flexGrow = 1;
       controlRow.Add(_visualTuningFeedbackLabel);
@@ -1582,26 +1558,26 @@ namespace Mods.Prometheus.Scripts {
       var nameLabel = new Label(labelText);
       nameLabel.style.width = 74;
       nameLabel.style.fontSize = 10;
-      nameLabel.style.color = _panelTextColor;
+      nameLabel.style.color = PrometheusDebugPalette.Text;
       row.Add(nameLabel);
 
       var valueLabel = new Label($"x{initialValue:0.00}");
       valueLabel.style.width = 40;
       valueLabel.style.fontSize = 10;
-      valueLabel.style.color = _panelMutedTextColor;
+      valueLabel.style.color = PrometheusDebugPalette.TextMuted;
 
       var slider = new Slider(0f, 3f) {
         value = initialValue
       };
-      slider.style.backgroundColor = new Color(0.03f, 0.08f, 0.07f, 1f);
+      slider.style.backgroundColor = PrometheusDebugPalette.InsetDark;
       slider.style.borderTopWidth = 1;
       slider.style.borderRightWidth = 1;
       slider.style.borderBottomWidth = 1;
       slider.style.borderLeftWidth = 1;
-      slider.style.borderTopColor = _panelGoldColor;
-      slider.style.borderRightColor = _panelFrameColor;
-      slider.style.borderBottomColor = _panelFrameColor;
-      slider.style.borderLeftColor = _panelGoldColor;
+      slider.style.borderTopColor = PrometheusDebugPalette.Gold;
+      slider.style.borderRightColor = PrometheusDebugPalette.Frame;
+      slider.style.borderBottomColor = PrometheusDebugPalette.Frame;
+      slider.style.borderLeftColor = PrometheusDebugPalette.Gold;
       slider.style.paddingLeft = 4;
       slider.style.paddingRight = 4;
       slider.style.flexGrow = 1;
@@ -1632,19 +1608,19 @@ namespace Mods.Prometheus.Scripts {
         text = "Entity Details",
         value = true
       };
-      _selectionFoldout.style.color = _panelTextColor;
+      _selectionFoldout.style.color = PrometheusDebugPalette.Text;
       _selectionFoldout.style.marginBottom = 0;
       _selectionFoldout.RegisterValueChangedCallback(_ => RefreshSelectionPanel());
 
       var foldoutToggle = _selectionFoldout.Q<Toggle>();
       if (foldoutToggle is not null) {
-        foldoutToggle.style.color = _panelTextColor;
-        foldoutToggle.style.unityBackgroundImageTintColor = _panelTextColor;
+        foldoutToggle.style.color = PrometheusDebugPalette.Text;
+        foldoutToggle.style.unityBackgroundImageTintColor = PrometheusDebugPalette.Text;
       }
 
       var foldoutCheckmark = _selectionFoldout.Q<VisualElement>(className: "unity-foldout__checkmark");
       if (foldoutCheckmark is not null) {
-        foldoutCheckmark.style.unityBackgroundImageTintColor = _panelTextColor;
+        foldoutCheckmark.style.unityBackgroundImageTintColor = PrometheusDebugPalette.Text;
       }
 
       _selectionContainer = new VisualElement();
@@ -1662,25 +1638,25 @@ namespace Mods.Prometheus.Scripts {
       _selectionTitleLabel.style.marginRight = 6;
       _selectionTitleLabel.style.fontSize = 11;
       _selectionTitleLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
-      _selectionTitleLabel.style.color = _panelTextColor;
+      _selectionTitleLabel.style.color = PrometheusDebugPalette.Text;
       selectionToolbar.Add(_selectionTitleLabel);
 
       _selectionCopyButton = new Button(CopySelectedEntityDebugText) {
         text = "Copy"
       };
-      ApplyCommandButtonStyle(_selectionCopyButton, new Color(0.76f, 0.86f, 0.68f, 1f), 54);
+      ApplyCommandButtonStyle(_selectionCopyButton, PrometheusDebugPalette.Button, 54);
       selectionToolbar.Add(_selectionCopyButton);
 
       _selectionIgniteButton = new Button(RequestSelectedDebugIgnition) {
         text = "Ignite"
       };
-      ApplyCommandButtonStyle(_selectionIgniteButton, new Color(0.93f, 0.72f, 0.38f, 1f), 60);
+      ApplyCommandButtonStyle(_selectionIgniteButton, PrometheusDebugPalette.Button, 60);
       selectionToolbar.Add(_selectionIgniteButton);
 
       _selectionFeedbackLabel = new Label();
       _selectionFeedbackLabel.style.marginLeft = 6;
       _selectionFeedbackLabel.style.fontSize = 10;
-      _selectionFeedbackLabel.style.color = new Color(0.72f, 0.93f, 0.72f, 1f);
+      _selectionFeedbackLabel.style.color = PrometheusDebugPalette.FeedbackSuccess;
       selectionToolbar.Add(_selectionFeedbackLabel);
 
       _selectionContainer.Add(selectionToolbar);
@@ -1696,7 +1672,7 @@ namespace Mods.Prometheus.Scripts {
       _selectionDebugLabel.style.whiteSpace = WhiteSpace.PreWrap;
       _selectionDebugLabel.style.fontSize = 10;
       _selectionDebugLabel.style.unityTextAlign = TextAnchor.UpperLeft;
-      _selectionDebugLabel.style.color = _panelTextColor;
+      _selectionDebugLabel.style.color = PrometheusDebugPalette.Text;
       _selectionDebugLabel.style.paddingLeft = 6;
       _selectionDebugLabel.style.paddingRight = 6;
       _selectionDebugLabel.style.paddingTop = 6;
@@ -1736,7 +1712,7 @@ namespace Mods.Prometheus.Scripts {
     private void RefreshSelectionPanel() {
       if (_selectionTitleLabel != null) {
         _selectionTitleLabel.text = _selectedEntityTitle;
-        _selectionTitleLabel.style.color = _selectedEntityId == 0 ? _panelMutedTextColor : _panelTextColor;
+        _selectionTitleLabel.style.color = _selectedEntityId == 0 ? PrometheusDebugPalette.TextMuted : PrometheusDebugPalette.Text;
       }
 
       if (_selectionDebugLabel != null) {
@@ -1754,22 +1730,22 @@ namespace Mods.Prometheus.Scripts {
 
     private void CopySelectedEntityDebugText() {
       if (string.IsNullOrWhiteSpace(_selectedEntityDebugText)) {
-        SetSelectionFeedback("Nothing to copy.", new Color(0.96f, 0.74f, 0.40f, 1f));
+        SetSelectionFeedback("Nothing to copy.", PrometheusDebugPalette.FeedbackWarning);
         return;
       }
 
       GUIUtility.systemCopyBuffer = _selectedEntityDebugText;
-      SetSelectionFeedback("Copied selection details.", new Color(0.72f, 0.93f, 0.72f, 1f));
+      SetSelectionFeedback("Copied selection details.", PrometheusDebugPalette.FeedbackSuccess);
     }
 
     private void RequestSelectedDebugIgnition() {
       if (_selectedEntityId == 0 || !_selectedEntityHasFireProfile || !_selectedEntityHasSimulationController) {
-        SetSelectionFeedback("Cannot ignite selected entity.", new Color(0.96f, 0.74f, 0.40f, 1f));
+        SetSelectionFeedback("Cannot ignite selected entity.", PrometheusDebugPalette.FeedbackWarning);
         return;
       }
 
       _fireSimulationRuntimeState.RequestForcedIgnition(_selectedEntityId);
-      SetSelectionFeedback("Ignition request queued.", new Color(0.72f, 0.93f, 0.72f, 1f));
+      SetSelectionFeedback("Ignition request queued.", PrometheusDebugPalette.FeedbackSuccess);
     }
 
     private void SetSelectionFeedback(string message, Color color) {
@@ -2047,11 +2023,11 @@ namespace Mods.Prometheus.Scripts {
       summaryRow.style.flexWrap = Wrap.Wrap;
       summaryRow.style.marginBottom = 4;
 
-      _eventsSummaryLabel = CreateSeveritySummaryLabel("EVENT", new Color(0.76f, 0.93f, 0.76f, 1f));
-      _warningsSummaryLabel = CreateSeveritySummaryLabel("WARN", new Color(0.98f, 0.78f, 0.40f, 1f));
-      _errorsSummaryLabel = CreateSeveritySummaryLabel("ERROR", new Color(0.96f, 0.47f, 0.47f, 1f));
-      _assertsSummaryLabel = CreateSeveritySummaryLabel("ASSERT", new Color(0.96f, 0.47f, 0.47f, 1f));
-      _exceptionsSummaryLabel = CreateSeveritySummaryLabel("EXCEPTION", new Color(0.96f, 0.47f, 0.47f, 1f));
+      _eventsSummaryLabel = CreateSeveritySummaryLabel("EVENT", PrometheusDebugPalette.StatusEvent);
+      _warningsSummaryLabel = CreateSeveritySummaryLabel("WARN", PrometheusDebugPalette.StatusWarning);
+      _errorsSummaryLabel = CreateSeveritySummaryLabel("ERROR", PrometheusDebugPalette.StatusError);
+      _assertsSummaryLabel = CreateSeveritySummaryLabel("ASSERT", PrometheusDebugPalette.StatusError);
+      _exceptionsSummaryLabel = CreateSeveritySummaryLabel("EXCEPTION", PrometheusDebugPalette.StatusError);
 
       summaryRow.Add(_eventsSummaryLabel);
       summaryRow.Add(_warningsSummaryLabel);
@@ -2077,7 +2053,7 @@ namespace Mods.Prometheus.Scripts {
       label.style.borderTopRightRadius = 3;
       label.style.borderBottomLeftRadius = 3;
       label.style.borderBottomRightRadius = 3;
-      label.style.backgroundColor = new Color(0.09f, 0.16f, 0.12f, 0.95f);
+      label.style.backgroundColor = PrometheusDebugPalette.Inset;
       return label;
     }
 
@@ -2139,7 +2115,7 @@ namespace Mods.Prometheus.Scripts {
         text = text
       };
 
-      ApplyCommandButtonStyle(button, new Color(0.38f, 0.58f, 0.45f, 1f), 64);
+      ApplyCommandButtonStyle(button, PrometheusDebugPalette.Button, 64);
       button.style.height = 21;
       button.style.marginRight = 4;
       return button;
@@ -2158,15 +2134,15 @@ namespace Mods.Prometheus.Scripts {
       }
 
       button.style.unityBackgroundImageTintColor = selected
-        ? _panelGoldColor
-        : new Color(0.30f, 0.46f, 0.36f, 1f);
+        ? PrometheusDebugPalette.Gold
+        : PrometheusDebugPalette.Button;
       button.style.color = selected
-        ? new Color(0.12f, 0.10f, 0.08f, 1f)
-        : _panelTextColor;
+        ? PrometheusDebugPalette.TextDark
+        : PrometheusDebugPalette.Text;
     }
 
     private void RefreshLogPanel(bool force) {
-      if (_panelFoldout == null || !_panelFoldout.value) {
+      if (!IsOpen) {
         return;
       }
 
@@ -2230,26 +2206,26 @@ namespace Mods.Prometheus.Scripts {
       row.style.marginBottom = 4;
       row.style.minWidth = 0;
 
-      var viewButton = new Button(() => ViewPanelLogEntry(entry)) {
-        text = "View"
-      };
-      viewButton.style.width = 44;
-      viewButton.style.minWidth = 44;
-      viewButton.style.maxWidth = 44;
-      viewButton.style.height = 18;
-      viewButton.style.fontSize = 10;
-      viewButton.style.flexShrink = 0;
-      viewButton.style.unityFontStyleAndWeight = FontStyle.Bold;
-      viewButton.style.unityBackgroundImageTintColor = new Color(0.55f, 0.70f, 0.92f, 1f);
-      viewButton.style.marginRight = 6;
-      viewButton.SetEnabled(PrometheusFireDebugFragment.TryExtractEntityId(entry.Message, out _));
-      row.Add(viewButton);
-
       var label = CreatePanelLogEntryLabel(entry);
       label.style.flexGrow = 1;
       label.style.flexShrink = 1;
       label.style.minWidth = 0;
+      label.style.marginRight = 6;
       row.Add(label);
+
+      var viewButton = new Button(() => ViewPanelLogEntry(entry)) {
+        text = "O"
+      };
+      ApplyCommandButtonStyle(viewButton, PrometheusDebugPalette.Button, 26);
+      viewButton.style.width = 26;
+      viewButton.style.minWidth = 26;
+      viewButton.style.maxWidth = 26;
+      viewButton.style.height = 20;
+      viewButton.style.flexShrink = 0;
+      viewButton.style.marginRight = 0;
+      viewButton.tooltip = "View selected log entity.";
+      viewButton.SetEnabled(PrometheusFireDebugFragment.TryExtractEntityId(entry.Message, out _));
+      row.Add(viewButton);
 
       return row;
     }
@@ -2269,11 +2245,11 @@ namespace Mods.Prometheus.Scripts {
       label.style.unityTextAlign = TextAnchor.UpperLeft;
       label.style.marginBottom = 2;
       label.style.color = entry.LogType switch {
-        LogType.Warning => new Color(0.98f, 0.78f, 0.40f, 1f),
-        LogType.Error => new Color(0.96f, 0.47f, 0.47f, 1f),
-        LogType.Assert => new Color(0.96f, 0.47f, 0.47f, 1f),
-        LogType.Exception => new Color(0.96f, 0.47f, 0.47f, 1f),
-        _ => new Color(0.76f, 0.93f, 0.76f, 1f),
+        LogType.Warning => PrometheusDebugPalette.StatusWarning,
+        LogType.Error => PrometheusDebugPalette.StatusError,
+        LogType.Assert => PrometheusDebugPalette.StatusError,
+        LogType.Exception => PrometheusDebugPalette.StatusError,
+        _ => PrometheusDebugPalette.StatusEvent,
       };
 
       return label;
@@ -2283,7 +2259,7 @@ namespace Mods.Prometheus.Scripts {
       var label = new Label(message);
       label.style.whiteSpace = WhiteSpace.PreWrap;
       label.style.fontSize = 10;
-      label.style.color = new Color(0.96f, 0.74f, 0.40f, 1f);
+      label.style.color = PrometheusDebugPalette.FeedbackWarning;
       return label;
     }
 
