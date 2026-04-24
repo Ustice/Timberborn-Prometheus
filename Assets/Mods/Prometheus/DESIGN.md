@@ -746,6 +746,7 @@ Active/planned entries only. Full historical log moved to `DESIGN_CHANGELOG_ARCH
 | --- | --- | --- | --- |
 | 2026-04-24 | Phase 2 UX | Added tunable ember, smoke, fire, steam, and char visual intensity rules plus a thin Unity particle/material adapter for loaded fire-profiled entities | In Validation |
 | 2026-04-24 | Phase 2 UX | Added live debug-panel visual tuning controls and defaulted legacy `FIRE!`/`DEAD` text markers off after screenshot QA exposed missing-material marker noise | In Validation |
+| 2026-04-24 | Phase 2 UX | Reworked the global debug panel into compact native-style tabs with higher-contrast filled/outlined button states for normal, hover, and pressed interaction | In Validation |
 | 2026-04-24 | Phase 2 Content | Pruned old bucket-kit, firefighting-foam, fire-control-gear, fireworks-crate, and festival-risk scaffolding; renamed ash fertilizer content to Fertile Ash | Done |
 | 2026-04-24 | Phase 2 Design | Reordered Phase 2 around ember-field cellular spread, moisture/steam dampening, fire-state visuals, charred presentation, and Fertile Ash before suppression/responder systems | Planned |
 | 2026-04-24 | Phase 2 Architecture | Extracted faction quenching and dispatch lock/hysteresis decisions into dependency-light rules with regression coverage | Done |

@@ -20,6 +20,13 @@ namespace Mods.Prometheus.Scripts {
     Errors,
   }
 
+  internal enum PrometheusDebugPanelTab {
+    Actions,
+    Visuals,
+    Selection,
+    Log,
+  }
+
   internal class PrometheusFireDebugFragment : IEntityPanelFragment {
 
     private readonly FireTuningRuntimeState _fireTuningRuntimeState;
@@ -997,6 +1004,14 @@ namespace Mods.Prometheus.Scripts {
     private Label _assertsSummaryLabel;
     private Label _exceptionsSummaryLabel;
     private Label _adminFeedbackLabel;
+    private Button _actionsTabButton;
+    private Button _visualsTabButton;
+    private Button _selectionTabButton;
+    private Button _logTabButton;
+    private VisualElement _actionsTabContent;
+    private VisualElement _visualsTabContent;
+    private VisualElement _selectionTabContent;
+    private VisualElement _logTabContent;
     private Foldout _selectionFoldout;
     private VisualElement _selectionContainer;
     private Label _selectionTitleLabel;
@@ -1017,6 +1032,7 @@ namespace Mods.Prometheus.Scripts {
     private string _lastRenderedEntrySignature = string.Empty;
     private int _lastObservedEntryCount;
     private int _unreadCount;
+    private PrometheusDebugPanelTab _activeTab = PrometheusDebugPanelTab.Actions;
 
     public PrometheusDebugPanel(
       UILayout uiLayout,
@@ -1133,29 +1149,26 @@ namespace Mods.Prometheus.Scripts {
       overviewSection.Add(BuildTypeSummaryRow());
       content.Add(overviewSection);
 
-      content.Add(BuildToolbar());
-      content.Add(BuildVisualTuningPanel());
-      content.Add(BuildSelectionPanel());
+      content.Add(BuildTabBar());
 
-      var logSection = CreateSection("Log");
+      _actionsTabContent = new VisualElement();
+      _actionsTabContent.Add(BuildCommandsPanel());
+      content.Add(_actionsTabContent);
 
-      _logScrollView = new ScrollView(ScrollViewMode.Vertical);
-      _logScrollView.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
-      _logScrollView.verticalScrollerVisibility = ScrollerVisibility.Auto;
-      _logScrollView.style.minHeight = 170;
-      _logScrollView.style.maxHeight = 300;
-      ApplyInsetStyle(_logScrollView);
+      _visualsTabContent = new VisualElement();
+      _visualsTabContent.Add(BuildVisualTuningPanel());
+      content.Add(_visualsTabContent);
 
-      _logLinesContainer = new VisualElement();
-      _logLinesContainer.style.paddingLeft = 6;
-      _logLinesContainer.style.paddingRight = 6;
-      _logLinesContainer.style.paddingTop = 6;
-      _logLinesContainer.style.paddingBottom = 6;
-      _logLinesContainer.style.minWidth = 0;
-      _logScrollView.Add(_logLinesContainer);
+      _selectionTabContent = new VisualElement();
+      _selectionTabContent.Add(BuildSelectionPanel());
+      content.Add(_selectionTabContent);
 
-      logSection.Add(_logScrollView);
-      content.Add(logSection);
+      _logTabContent = new VisualElement();
+      _logTabContent.Add(BuildLogPanel());
+      content.Add(_logTabContent);
+
+      ApplyActiveTab();
+
       _panelFoldout.Add(content);
       UpdateFoldoutTitle(_panelFoldout.value);
 
@@ -1210,9 +1223,41 @@ namespace Mods.Prometheus.Scripts {
       button.style.fontSize = 11;
       button.style.unityFontStyleAndWeight = FontStyle.Bold;
       button.style.color = new Color(0.12f, 0.10f, 0.08f, 1f);
+      button.style.backgroundColor = tintColor;
       button.style.unityBackgroundImageTintColor = tintColor;
       button.style.marginRight = 5;
       button.style.marginBottom = 4;
+      button.style.borderTopLeftRadius = 2;
+      button.style.borderTopRightRadius = 2;
+      button.style.borderBottomLeftRadius = 2;
+      button.style.borderBottomRightRadius = 2;
+      button.style.borderTopWidth = 1;
+      button.style.borderRightWidth = 1;
+      button.style.borderBottomWidth = 1;
+      button.style.borderLeftWidth = 1;
+      button.style.borderTopColor = new Color(1.00f, 0.86f, 0.52f, 1f);
+      button.style.borderRightColor = new Color(0.26f, 0.16f, 0.08f, 1f);
+      button.style.borderBottomColor = new Color(0.26f, 0.16f, 0.08f, 1f);
+      button.style.borderLeftColor = new Color(1.00f, 0.86f, 0.52f, 1f);
+      RegisterButtonInteractionStates(button, tintColor);
+    }
+
+    private void RegisterButtonInteractionStates(Button button, Color baseColor) {
+      var hoverColor = Color.Lerp(baseColor, Color.white, 0.18f);
+      var pressedColor = Color.Lerp(baseColor, Color.white, 0.34f);
+      button.RegisterCallback<MouseEnterEvent>(_ => SetButtonColor(button, hoverColor));
+      button.RegisterCallback<MouseLeaveEvent>(_ => SetButtonColor(button, baseColor));
+      button.RegisterCallback<MouseDownEvent>(_ => SetButtonColor(button, pressedColor));
+      button.RegisterCallback<MouseUpEvent>(_ => SetButtonColor(button, hoverColor));
+    }
+
+    private static void SetButtonColor(Button button, Color color) {
+      if (button == null) {
+        return;
+      }
+
+      button.style.backgroundColor = color;
+      button.style.unityBackgroundImageTintColor = color;
     }
 
     private void UpdateFoldoutTitle(bool isOpen) {
@@ -1261,7 +1306,75 @@ namespace Mods.Prometheus.Scripts {
       UnreadCountChanged?.Invoke(_unreadCount);
     }
 
-    private VisualElement BuildToolbar() {
+    private VisualElement BuildTabBar() {
+      var tabRow = new VisualElement();
+      tabRow.style.flexDirection = FlexDirection.Row;
+      tabRow.style.flexWrap = Wrap.Wrap;
+      tabRow.style.marginBottom = 6;
+
+      _actionsTabButton = CreateTabButton("Actions", PrometheusDebugPanelTab.Actions);
+      _visualsTabButton = CreateTabButton("Visuals", PrometheusDebugPanelTab.Visuals);
+      _selectionTabButton = CreateTabButton("Selection", PrometheusDebugPanelTab.Selection);
+      _logTabButton = CreateTabButton("Log", PrometheusDebugPanelTab.Log);
+
+      tabRow.Add(_actionsTabButton);
+      tabRow.Add(_visualsTabButton);
+      tabRow.Add(_selectionTabButton);
+      tabRow.Add(_logTabButton);
+      return tabRow;
+    }
+
+    private Button CreateTabButton(string text, PrometheusDebugPanelTab tab) {
+      var button = new Button(() => SetActiveTab(tab)) {
+        text = text
+      };
+      ApplyCommandButtonStyle(button, new Color(0.49f, 0.69f, 0.55f, 1f), 104);
+      return button;
+    }
+
+    private void SetActiveTab(PrometheusDebugPanelTab tab) {
+      _activeTab = tab;
+      ApplyActiveTab();
+      if (tab == PrometheusDebugPanelTab.Log) {
+        RefreshLogPanel(force: true);
+      }
+    }
+
+    private void ApplyActiveTab() {
+      SetTabContentVisible(_actionsTabContent, _activeTab == PrometheusDebugPanelTab.Actions);
+      SetTabContentVisible(_visualsTabContent, _activeTab == PrometheusDebugPanelTab.Visuals);
+      SetTabContentVisible(_selectionTabContent, _activeTab == PrometheusDebugPanelTab.Selection);
+      SetTabContentVisible(_logTabContent, _activeTab == PrometheusDebugPanelTab.Log);
+      ApplyTabButtonStyle(_actionsTabButton, _activeTab == PrometheusDebugPanelTab.Actions);
+      ApplyTabButtonStyle(_visualsTabButton, _activeTab == PrometheusDebugPanelTab.Visuals);
+      ApplyTabButtonStyle(_selectionTabButton, _activeTab == PrometheusDebugPanelTab.Selection);
+      ApplyTabButtonStyle(_logTabButton, _activeTab == PrometheusDebugPanelTab.Log);
+    }
+
+    private static void SetTabContentVisible(VisualElement content, bool visible) {
+      if (content == null) {
+        return;
+      }
+
+      content.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
+    }
+
+    private void ApplyTabButtonStyle(Button button, bool selected) {
+      if (button == null) {
+        return;
+      }
+
+      var color = selected
+        ? new Color(0.91f, 0.69f, 0.34f, 1f)
+        : new Color(0.38f, 0.58f, 0.45f, 1f);
+      button.style.backgroundColor = color;
+      button.style.unityBackgroundImageTintColor = color;
+      button.style.color = selected
+        ? new Color(0.10f, 0.08f, 0.06f, 1f)
+        : _panelTextColor;
+    }
+
+    private VisualElement BuildCommandsPanel() {
       var controls = new VisualElement();
       controls.style.marginBottom = 0;
 
@@ -1315,6 +1428,13 @@ namespace Mods.Prometheus.Scripts {
       commandsSection.Add(commandsRow);
       controls.Add(commandsSection);
 
+      return controls;
+    }
+
+    private VisualElement BuildLogPanel() {
+      var controls = new VisualElement();
+      controls.style.marginBottom = 0;
+
       var filtersSection = CreateSection("Filters");
       var filterRow = new VisualElement();
       filterRow.style.flexDirection = FlexDirection.Row;
@@ -1359,6 +1479,25 @@ namespace Mods.Prometheus.Scripts {
       filtersSection.Add(filterRow);
       controls.Add(filtersSection);
 
+      var logSection = CreateSection("Log");
+
+      _logScrollView = new ScrollView(ScrollViewMode.Vertical);
+      _logScrollView.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+      _logScrollView.verticalScrollerVisibility = ScrollerVisibility.Auto;
+      _logScrollView.style.minHeight = 170;
+      _logScrollView.style.maxHeight = 300;
+      ApplyInsetStyle(_logScrollView);
+
+      _logLinesContainer = new VisualElement();
+      _logLinesContainer.style.paddingLeft = 6;
+      _logLinesContainer.style.paddingRight = 6;
+      _logLinesContainer.style.paddingTop = 6;
+      _logLinesContainer.style.paddingBottom = 6;
+      _logLinesContainer.style.minWidth = 0;
+      _logScrollView.Add(_logLinesContainer);
+
+      logSection.Add(_logScrollView);
+      controls.Add(logSection);
       return controls;
     }
 
@@ -1454,6 +1593,17 @@ namespace Mods.Prometheus.Scripts {
       var slider = new Slider(0f, 3f) {
         value = initialValue
       };
+      slider.style.backgroundColor = new Color(0.03f, 0.08f, 0.07f, 1f);
+      slider.style.borderTopWidth = 1;
+      slider.style.borderRightWidth = 1;
+      slider.style.borderBottomWidth = 1;
+      slider.style.borderLeftWidth = 1;
+      slider.style.borderTopColor = _panelGoldColor;
+      slider.style.borderRightColor = _panelFrameColor;
+      slider.style.borderBottomColor = _panelFrameColor;
+      slider.style.borderLeftColor = _panelGoldColor;
+      slider.style.paddingLeft = 4;
+      slider.style.paddingRight = 4;
       slider.style.flexGrow = 1;
       slider.style.minWidth = 220;
       slider.style.marginRight = 6;
@@ -1989,11 +2139,9 @@ namespace Mods.Prometheus.Scripts {
         text = text
       };
 
-      button.style.height = 20;
-      button.style.fontSize = 10;
-      button.style.unityFontStyleAndWeight = FontStyle.Bold;
+      ApplyCommandButtonStyle(button, new Color(0.38f, 0.58f, 0.45f, 1f), 64);
+      button.style.height = 21;
       button.style.marginRight = 4;
-      button.style.color = _panelTextColor;
       return button;
     }
 

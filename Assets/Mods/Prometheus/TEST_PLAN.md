@@ -47,6 +47,9 @@ Unity EditMode tests are deferred until the standalone repo has a clean Timberbo
 
 - [ ] Bottom-left `Prometheus Debug` panel opens above the Timberborn bottom bar without overlapping the selected-building details panel.
 - [ ] Panel sections are visually distinct (`Status`, `Commands`, `Filters`, `Selection`, `Log`) and remain readable at the default game UI scale.
+- [ ] Global panel tabs (`Actions`, `Visuals`, `Selection`, `Log`) hide inactive sections and keep the open panel short enough for normal QA.
+- [ ] Buttons have readable fill/outline contrast against the panel background.
+- [ ] Button hover state is visibly lighter than resting state, and mouse-down state is brighter until release.
 - [ ] Primary QA commands are grouped together and visible when the panel is open: `Reset Fire Sim`, `Stop Fires`, `Clear Beavers`, and `Clear Log`.
 - [ ] Selecting a Prometheus-profiled entity (e.g., Bakery or Explosives Factory) updates the panel `Selection` section.
 - [ ] The selected-building details panel does not show a separate Prometheus debug fragment.
