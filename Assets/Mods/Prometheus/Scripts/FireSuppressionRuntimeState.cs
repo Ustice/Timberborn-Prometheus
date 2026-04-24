@@ -69,4 +69,46 @@ namespace Mods.Prometheus.Scripts {
 
   internal class FireSuppressionRuntimeState : EntitySnapshotStore<FireSuppressionSnapshot> {
   }
+
+  internal static class FireWorkplaceRules {
+
+    internal static bool IsWorkplaceSupportComponentName(string componentTypeName) {
+      if (string.IsNullOrWhiteSpace(componentTypeName)) {
+        return false;
+      }
+
+      if (componentTypeName.Contains("Bonuses")) {
+        return false;
+      }
+
+      return componentTypeName == "Workplace"
+             || componentTypeName.EndsWith("Workplace")
+             || componentTypeName.Contains("WorkplaceWorker")
+             || componentTypeName.Contains("WorkplaceEmployee");
+    }
+
+    internal static bool IsOperationalComponentName(string componentTypeName) {
+      if (string.IsNullOrWhiteSpace(componentTypeName)) {
+        return false;
+      }
+
+      if (componentTypeName.Contains("Fire")
+          || componentTypeName.Contains("Workplace")
+          || componentTypeName.Contains("Bonuses")
+          || componentTypeName == "Deteriorable") {
+        return false;
+      }
+
+      return componentTypeName == "Manufactory"
+             || componentTypeName == "Workshop"
+             || componentTypeName == "SimpleManufactoryBehaviors"
+             || componentTypeName.Contains("Manufactory")
+             || componentTypeName.Contains("Production")
+             || componentTypeName.Contains("Workshop")
+             || componentTypeName.Contains("Factory")
+             || componentTypeName.Contains("Crafter")
+             || componentTypeName.Contains("Recipe");
+    }
+
+  }
 }

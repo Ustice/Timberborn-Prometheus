@@ -6,6 +6,7 @@ This repository contains the standalone Prometheus mod assets and local deploy t
 
 * `bash scripts/build.sh` — compile + deploy
 * `bash scripts/build.sh --launch` — compile + stop running Timberborn + wait for fresh/stable build + deploy + clear `Player.log` and `Fire.log` + launch
+* `bash scripts/test.sh` — run fast plain C# regression tests for Prometheus runtime stores and decision rules
 
 The deploy script now compiles `Timberborn.ModExamples.Prometheus.csproj` via `dotnet build` (if present) and promotes the generated DLL/PDB into `Library/ScriptAssemblies` before deployment.
 It still blocks stale builds (when source `Assets/Mods/Prometheus/Scripts/*.cs` files are newer than `Library/ScriptAssemblies/Timberborn.ModExamples.Prometheus.dll`) as a safety net. When `--launch` is used, it waits for DLL freshness plus stability across polling before continuing.
@@ -43,6 +44,21 @@ Use this default loop for feature work and balancing validation:
   * Fallback: if the behavior is not log-observable yet, capture panel evidence and tester notes.
 
 * Repeat with one incremental change at a time.
+
+## Automated tests
+
+Use plain C# tests for gameplay decisions and regression-prone runtime state:
+
+* Run `bash scripts/test.sh`.
+* Tests live under `tests/Prometheus.Tests`.
+* Test results are written to `TestResults/Prometheus.Tests.trx`.
+* Coverage is written under `TestResults/*/coverage.cobertura.xml`.
+* Keep Unity-specific components thin and move decision logic into dependency-light rule/runtime classes when feasible.
+* Debug panel UI remains manually QA'd because it is actively changing.
+
+When making a real system decision, add or update a regression test for that decision whenever feasible.
+
+Unity EditMode testing was explored, but this standalone repo currently cannot reliably load the full Timberborn assembly graph without turning package/plugin resolution into the main problem. Reserve Unity tests for behavior that truly needs Unity lifecycle coverage.
 
 Recommended guardrails:
 

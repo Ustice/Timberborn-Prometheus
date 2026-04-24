@@ -240,7 +240,7 @@ namespace Mods.Prometheus.Scripts {
         }
 
         var componentTypeName = component.GetType().Name;
-        if (!IsWorkplaceSupportComponentName(componentTypeName)) {
+        if (!FireWorkplaceRules.IsWorkplaceSupportComponentName(componentTypeName)) {
           continue;
         }
 
@@ -299,7 +299,7 @@ namespace Mods.Prometheus.Scripts {
         }
 
         var componentTypeName = component.GetType().Name;
-        if (!IsOperationalComponentName(componentTypeName)) {
+        if (!FireWorkplaceRules.IsOperationalComponentName(componentTypeName)) {
           continue;
         }
 
@@ -345,44 +345,6 @@ namespace Mods.Prometheus.Scripts {
 
       _operationalSuppressed = false;
       FireTelemetry.Log($"event=building_operations_restored entity={GameObject.name} id={GameObject.GetInstanceID()} components={_operationalOriginalEnabledState.Count}");
-    }
-
-    private static bool IsWorkplaceSupportComponentName(string componentTypeName) {
-      if (string.IsNullOrWhiteSpace(componentTypeName)) {
-        return false;
-      }
-
-      if (componentTypeName.Contains("Bonuses")) {
-        return false;
-      }
-
-      return componentTypeName == "Workplace"
-             || componentTypeName.EndsWith("Workplace")
-             || componentTypeName.Contains("WorkplaceWorker")
-             || componentTypeName.Contains("WorkplaceEmployee");
-    }
-
-    private static bool IsOperationalComponentName(string componentTypeName) {
-      if (string.IsNullOrWhiteSpace(componentTypeName)) {
-        return false;
-      }
-
-      if (componentTypeName.Contains("Fire")
-          || componentTypeName.Contains("Workplace")
-          || componentTypeName.Contains("Bonuses")
-          || componentTypeName == "Deteriorable") {
-        return false;
-      }
-
-      return componentTypeName == "Manufactory"
-             || componentTypeName == "Workshop"
-             || componentTypeName == "SimpleManufactoryBehaviors"
-             || componentTypeName.Contains("Manufactory")
-             || componentTypeName.Contains("Production")
-             || componentTypeName.Contains("Workshop")
-             || componentTypeName.Contains("Factory")
-             || componentTypeName.Contains("Crafter")
-             || componentTypeName.Contains("Recipe");
     }
 
   }

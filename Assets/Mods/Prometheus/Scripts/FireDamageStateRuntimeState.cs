@@ -38,4 +38,24 @@ namespace Mods.Prometheus.Scripts {
 
   internal class FireDamageStateRuntimeState : EntitySnapshotStore<FireDamageStateSnapshot> {
   }
+
+  internal static class FireDamageStateRules {
+
+    internal static FireDamageState DetermineState(float severity) {
+      if (severity >= 0.95f) {
+        return FireDamageState.Dead;
+      }
+
+      if (severity >= 0.6f) {
+        return FireDamageState.Burning;
+      }
+
+      if (severity >= 0.2f) {
+        return FireDamageState.Scorched;
+      }
+
+      return FireDamageState.Healthy;
+    }
+
+  }
 }

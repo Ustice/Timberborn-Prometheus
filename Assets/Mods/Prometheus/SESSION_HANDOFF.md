@@ -17,7 +17,8 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
 
 1. Begin Phase 2 firefighting gameplay and faction identity validation.
 2. Validate worker/building exposure inside burning buildings as part of Phase 2 workplace/responder behavior.
-3. Continue explosion request/apply lifecycle investigation with improved panel/log tooling if gaps reappear.
+3. Keep Unity EditMode regression tests aligned with real gameplay/system decisions.
+4. Continue explosion request/apply lifecycle investigation with improved panel/log tooling if gaps reappear.
 
 ## Confirmed results so far
 
@@ -72,6 +73,9 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
 ### Build/deploy verification
 
 - Repeated `bash scripts/build.sh` runs completed successfully after each incremental change.
+- Plain C# regression harness added via `bash scripts/test.sh`; first targets are runtime stores, ignition request behavior, entity registry targeting, lifecycle thresholds, response-state thresholds, terminal dead snapshot behavior, reset clearing behavior, and workplace component classification.
+- Unity EditMode testing was explored and can launch after license activation, but loading the full Timberborn assembly graph in this standalone repo pulled in fragile plugin/package dependencies. Future test work should prefer dependency-light rule/runtime classes first, with Unity tests reserved for lifecycle behavior that truly needs Unity.
+- Debug panel UI is intentionally excluded from automated tests for now and remains manual QA because the workflow is still evolving.
 - Latest resume build initially hit a missing VS Tools Unity analyzer path after VS Code updated `visualstudiotoolsforunity.vstuc` from `1.2.1` to `1.2.2`; adding a local compatibility symlink restored `dotnet build`.
 - Latest `bash scripts/build.sh --launch` completed successfully, cleared fresh logs, deployed the symlinked payload, and launched Timberborn.
 - Fresh startup logs confirmed `Prometheus (v0.2)` load, the Prometheus test autosave opened, and no exception/error lines were present in the scanned startup window.
@@ -127,27 +131,30 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
    - Folktails near-water vs far-front response,
    - Ironteeth high-heat response,
    - response-state readability.
-2. Validate worker/building exposure on at least 3 production archetypes (e.g., Bakery/JamStove/Explosives Factory):
+2. Add/update Unity EditMode tests for any new real Phase 2 system decision before relying on it in tuning.
+3. Validate worker/building exposure on at least 3 production archetypes (e.g., Bakery/JamStove/Explosives Factory):
    - assigned workers slow under heat pressure,
    - beavers/workers inside burning buildings receive appropriate effects,
    - worker speed recovers after fire pressure clears,
    - workers suppressed,
    - production halted,
    - restored correctly when no longer dead.
-3. Re-run explosion request/apply trace across multiple one-ignite windows and capture both logs if gaps reappear.
-4. Add a repeatable setup refresh script or documentation for importing current game assets and publicized DLLs.
-5. Run controlled tuning pass (`Low`/`Standard`/`High`) once Phase 2 behavior is coherent.
+4. Re-run explosion request/apply trace across multiple one-ignite windows and capture both logs if gaps reappear.
+5. Add a repeatable setup refresh script or documentation for importing current game assets and publicized DLLs.
+6. Run controlled tuning pass (`Low`/`Standard`/`High`) once Phase 2 behavior is coherent.
 
 ## How to quickly resume
 
 1. Build/deploy:
    - `bash scripts/build.sh --launch`
-2. In game:
+2. Run automated regression tests:
+   - `bash scripts/test.sh`
+3. In game:
    - select a fire-profiled building,
    - expand panel `Show fire log`,
    - trigger one ignition event,
    - use filters/search + `View` button for rapid triage.
-3. Capture evidence:
+4. Capture evidence:
    - panel screenshot(s),
    - `~/Library/Logs/Mechanistry/Timberborn/Fire.log` (preferred),
    - `~/Library/Logs/Mechanistry/Timberborn/Player.log` (full context).

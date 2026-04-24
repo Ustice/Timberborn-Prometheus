@@ -530,6 +530,10 @@ Use that file as the source of truth for smoke checks, dual-front validation mat
 
 ### Carryover validation checklist (Phase 2 completion + Phase 5 polish)
 
+- [ ] Keep plain C# regression tests green for gameplay decision logic before Phase 2 tuning changes land.
+
+- [ ] When a real system decision lands, prefer extracting the decision into dependency-light rule/runtime code and adding a regression test for it.
+
 - [ ] Run balancing pass across low/standard/high fire activity profiles for new Phase 2 behavior.
 
 - [ ] Execute one full dual-front verification scenario pass and tune defaults *(protocol and template are ready below)*.
@@ -668,6 +672,7 @@ Active/planned entries only. Full historical log moved to `DESIGN_CHANGELOG_ARCH
 
 | Date | Phase | Update | Status |
 | --- | --- | --- | --- |
+| 2026-04-24 | Phase 2/5 | Added plain C# regression-test gate for gameplay decisions; Unity EditMode tests are deferred until the standalone dependency story is cleaner, and debug panel UI remains manual QA while it is actively evolving | Done |
 | 2026-04-24 | Phase 1 | Closed core fire simulation after live QA confirmed ignition/spread/extinguish/damage/dead-ash terminal behavior and `Reset Fire Sim` clean-slate recovery; deferred beaver/worker exposure inside burning buildings to Phase 2 | Done |
 | 2026-02-22 | Phase 2/3 | Added Emberpelts future extension concept (heat-adapted response, tail-stamp suppression style, charcoal salvage + ash-soil synergy, wet-fur breeding constraint awareness) | Planned |
 | 2026-02-21 | Phase 2/5 | Added quick-fill dual-front playtest result template and next sprint execution plan (validation, tuning sequence, and exit gates) | Planned |

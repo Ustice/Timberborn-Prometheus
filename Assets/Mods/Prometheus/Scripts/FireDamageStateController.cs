@@ -48,7 +48,7 @@ namespace Mods.Prometheus.Scripts {
       var tickRate = GetTickRate(_category) * _fireTuningRuntimeState.Current.DamageTickMultiplier;
       var tickSeverityDelta = GetTickSeverityDelta(_category) * _fireTuningRuntimeState.Current.DamageTickMultiplier;
 
-      var previousState = DetermineState(_severity);
+      var previousState = FireDamageStateRules.DetermineState(_severity);
 
       if (pressure > 0.02f) {
         _tickProgress += pressure * tickRate;
@@ -69,7 +69,7 @@ namespace Mods.Prometheus.Scripts {
         }
       }
 
-      var state = DetermineState(_severity);
+      var state = FireDamageStateRules.DetermineState(_severity);
       var snapshot = new FireDamageStateSnapshot(_category, state, _severity, _tickProgress, _damageTicksApplied);
       _fireDamageStateRuntimeState.SetSnapshot(entityId, snapshot);
     }
@@ -109,22 +109,6 @@ namespace Mods.Prometheus.Scripts {
         FireDamageCategory.Building => impactSnapshot.BuildingDamagePressure,
         _ => impactSnapshot.BuildingDamagePressure,
       };
-    }
-
-    private static FireDamageState DetermineState(float severity) {
-      if (severity >= 0.95f) {
-        return FireDamageState.Dead;
-      }
-
-      if (severity >= 0.6f) {
-        return FireDamageState.Burning;
-      }
-
-      if (severity >= 0.2f) {
-        return FireDamageState.Scorched;
-      }
-
-      return FireDamageState.Healthy;
     }
 
     private FireDamageCategory DetectCategory() {

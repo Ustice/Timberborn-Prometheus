@@ -6,6 +6,12 @@
 /[Bb]uilds/
 /[Ll]ogs/
 /UserSettings/
+/[Tt]est[Rr]esults/
+/[Cc]ode[Cc]overage/
+/Assets/Plugins/
+/Assets/Plugins.meta
+/tests/**/bin/
+/tests/**/obj/
 
 # Local deployment backups
 /.backups/

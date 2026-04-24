@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <LangVersion>9.0</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector" Version="6.0.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="../../Assets/Mods/Prometheus/Scripts/FireDamageStateRuntimeState.cs" Link="Source/FireDamageStateRuntimeState.cs" />
+    <Compile Include="../../Assets/Mods/Prometheus/Scripts/FireEntityRegistryRuntimeState.cs" Link="Source/FireEntityRegistryRuntimeState.cs" />
+    <Compile Include="../../Assets/Mods/Prometheus/Scripts/FireRecoveryRuntimeState.cs" Link="Source/FireRecoveryRuntimeState.cs" />
+    <Compile Include="../../Assets/Mods/Prometheus/Scripts/FireSimulationRuntimeState.cs" Link="Source/FireSimulationRuntimeState.cs" />
+    <Compile Include="../../Assets/Mods/Prometheus/Scripts/FireSuppressionRuntimeState.cs" Link="Source/FireSuppressionRuntimeState.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="UnityEngine">
+      <HintPath>/Applications/Unity/Hub/Editor/6000.3.6f1/Unity.app/Contents/Resources/Scripting/Managed/UnityEngine/UnityEngine.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>/Applications/Unity/Hub/Editor/6000.3.6f1/Unity.app/Contents/Resources/Scripting/Managed/UnityEngine/UnityEngine.CoreModule.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+</Project>

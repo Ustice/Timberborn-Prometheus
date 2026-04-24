@@ -425,7 +425,7 @@ namespace Mods.Prometheus.Scripts {
 
       _dispatchAssignedScore = Mathf.Max(0f, _dispatchAssignedScore);
 
-      var responseState = DetermineResponseState(burning, _currentIntensity, spreadPressure, quenchingPower);
+      var responseState = FireSimulationRules.DetermineResponseState(burning, _currentIntensity, spreadPressure, quenchingPower);
 
       if (responseState != _responseState && _responseNotificationCooldownRemainingSeconds <= 0f) {
         if (responseState == "Overwhelmed") {
@@ -621,23 +621,7 @@ namespace Mods.Prometheus.Scripts {
       _fireSimulationRuntimeState.RemoveSnapshot(entityId);
       _fireSimulationRuntimeState.SetSnapshot(
         entityId,
-        new FireSimulationSnapshot(
-          false,
-          0f,
-          0f,
-          0f,
-          0f,
-          0f,
-          0f,
-          "DeadBuilding",
-          0f,
-          0f,
-          0f,
-          0f,
-          0f,
-          0f,
-          0f,
-          0f));
+        FireSimulationRules.CreateTerminalDeadBuildingSnapshot());
 
       _fireEntityRegistryRuntimeState.RemoveSnapshot(entityId);
       _fireDispatchScoringRuntimeState.RemoveSnapshot(entityId);
@@ -692,18 +676,6 @@ namespace Mods.Prometheus.Scripts {
       }
 
       return dominantContribution == explosionIgnition ? "Explosion" : "NeighborSpread";
-    }
-
-    private static string DetermineResponseState(bool burning, float intensity, float spreadPressure, float quenchingPower) {
-      if (!burning) {
-        return "Stabilized";
-      }
-
-      if (intensity >= 0.6f && spreadPressure > (quenchingPower * 1.05f)) {
-        return "Overwhelmed";
-      }
-
-      return quenchingPower >= (spreadPressure * 1.2f) && intensity <= 0.45f ? "Contained" : "Stabilized";
     }
 
     private static string DetermineTopDispatchFactor(

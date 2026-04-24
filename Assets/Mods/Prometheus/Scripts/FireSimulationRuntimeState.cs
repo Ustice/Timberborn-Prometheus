@@ -206,4 +206,40 @@ namespace Mods.Prometheus.Scripts {
     }
 
   }
+
+  internal static class FireSimulationRules {
+
+    internal static FireSimulationSnapshot CreateTerminalDeadBuildingSnapshot() {
+      return new FireSimulationSnapshot(
+        false,
+        0f,
+        0f,
+        0f,
+        0f,
+        0f,
+        0f,
+        "DeadBuilding",
+        0f,
+        0f,
+        0f,
+        0f,
+        0f,
+        0f,
+        0f,
+        0f);
+    }
+
+    internal static string DetermineResponseState(bool burning, float intensity, float spreadPressure, float quenchingPower) {
+      if (!burning) {
+        return "Stabilized";
+      }
+
+      if (intensity >= 0.6f && spreadPressure > (quenchingPower * 1.05f)) {
+        return "Overwhelmed";
+      }
+
+      return quenchingPower + 0.0001f >= (spreadPressure * 1.2f) && intensity <= 0.45f ? "Contained" : "Stabilized";
+    }
+
+  }
 }
