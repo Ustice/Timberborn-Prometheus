@@ -70,16 +70,17 @@ Recommended guardrails:
 
 * Last updated: 2026-04-24
 * Current focus:
-  * Phase 2 firefighting gameplay and faction identity.
-  * Fold beaver/worker exposure inside burning buildings into Phase 2 responder/workplace validation.
+  * Phase 2 ember-field spread and fire presentation.
+  * Move suppression/responder complexity behind the core spread model.
 * Latest verified results:
   * Phase 1 core fire loop is complete enough to close: ignition, spread, extinguish, damage, dead/ash terminal behavior, and reset-to-healthy flow have passed live QA.
   * `Reset Fire Sim` now provides a clean-slate recovery path for loaded fire entities and clears stale fire/damage/recovery snapshots.
   * The Prometheus debug panel has been reorganized into Timberborn-style status, command, filter, selection, and log sections for manual QA.
   * Telemetry event names are centralized in an iterable registry and covered by a uniqueness regression test.
-  * Phase 2 response decisions for faction quenching and dispatch lock/hysteresis are extracted into test-backed rules.
-  * Prometheus goods/recipes now use dedicated Timberborn-style gold outline icons for ash fertilizer, firefighting foam, fireworks crates, bucket brigade kits, and fire-control gear.
+  * Phase 2 design has been simplified around ember-field cellular spread: active fires, selected high-intensity buildings, fireworks, and unstable explosive events can emit ember pressure.
+  * Fire presentation should map to runtime state with embers, smoke, active fire, steam from moisture, and charred material/shader treatment.
+  * The only core post-fire resource is Fertile Ash; bucket/foam/gear loops and fire-brigade mechanics are deferred unless they prove necessary.
 * Next steps:
-  * Start Phase 2 validation/tuning around firefighting logistics, worker/building exposure, and faction identity.
+  * Start Phase 2 implementation around ember-field rules, moisture dampening, visual effects, and Fertile Ash source tagging.
   * Re-run explosion request/apply lifecycle capture during Phase 2 validation if gaps reappear.
 * Full handoff: `Assets/Mods/Prometheus/SESSION_HANDOFF.md`

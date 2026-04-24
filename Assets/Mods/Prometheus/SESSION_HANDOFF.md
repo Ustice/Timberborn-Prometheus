@@ -6,7 +6,7 @@
 
 ## Why we are doing this
 
-Current objective is to move from Phase 1 core fire simulation into Phase 2 firefighting gameplay and faction identity.
+Current objective is to move from Phase 1 core fire simulation into Phase 2 ember-field spread and fire presentation.
 Recent work closed the early fire-spread proof of concept and prioritized three outcomes:
 
 1. Correctness fixes for burn lifecycle edge cases (dead buildings, placement previews, destroy cleanup, reset-to-healthy recovery).
@@ -15,10 +15,13 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
 
 ## What we are actively working on
 
-1. Begin Phase 2 firefighting gameplay and faction identity validation.
-2. Validate worker/building exposure inside burning buildings as part of Phase 2 workplace/responder behavior.
+1. Begin Phase 2 ember-field cellular spread, moisture dampening, and visual-state validation.
+2. Keep worker/building exposure inside burning buildings as a later compatibility check after core spread is coherent.
 3. Keep Unity EditMode regression tests aligned with real gameplay/system decisions.
 4. Continue explosion request/apply lifecycle investigation with improved panel/log tooling if gaps reappear.
+5. Preserve the simplified Phase 3 renewal direction: players contain burns with cleared terrain/firebreaks, then foresters collect Fertile Ash from burned vegetation and selected ruins.
+6. Add in-world fire-risk presentation: embers, smoke, fire, steam, and charred materials should map directly to runtime fire state. Ember fields can come from active fires, fireworks, selected high-intensity fire-using buildings such as smelters, and explosive/unstable-core events.
+7. Preserve the Phase 2 scope reduction: no fire-brigade/relay minigame, no direct beaver control, and no standalone bucket/foam/gear goods loops unless they prove necessary.
 
 ## Confirmed results so far
 
@@ -71,8 +74,8 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
 - `burning_tick` telemetry is throttled by real time, not game simulation time, so high-speed gameplay does not flood the panel as aggressively.
 - Current debug-panel UI pass reorganizes the global panel into Timberborn-style status, command, filter, selection, and log sections; the behavior is unchanged and still intentionally manual-QA'd.
 - Telemetry event names now live in `FireTelemetryEvents`, an iterable constant registry intended for future filters/docs/log tooling.
-- Faction quenching and dispatch scoring/lock decisions now live in `FireSimulationRules`, keeping `FireSimulationController` thinner and making Phase 2 tuning decisions regression-testable.
-- Custom Timberborn-style gold outline goods/recipe icons were added for ash fertilizer, firefighting foam, fireworks crates, bucket brigade kits, and fire-control gear; in-game asset import still needs visual QA.
+- Earlier faction quenching and dispatch scoring/lock decisions live in `FireSimulationRules`; these remain useful patterns, but current Phase 2 priority has shifted to ember-field spread before responder behavior.
+- Custom Timberborn-style gold outline goods/recipe icons were added for earlier ash/fire-response concepts; current design narrows the core resource need to Fertile Ash, with other fire-response concepts treated as visual/building flavor unless promoted later.
 
 ### Build/deploy verification
 
@@ -135,21 +138,34 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
 
 ## Next steps (priority order)
 
-1. Run Phase 2 validation around active firefighting and faction identity:
-   - Folktails near-water vs far-front response,
-   - Ironteeth high-heat response,
-   - response-state readability.
+1. Implement and validate Phase 2 ember-field spread:
+   - active fires emit ember fields,
+   - dry fuel ignites when thresholds are met,
+   - wet/soaked terrain and firebreaks dampen or block propagation,
+   - configured high-risk operating buildings emit ember fields while low-risk warm buildings do not by default.
 2. Add/update plain C# tests for any new real Phase 2 system decision before relying on it in tuning.
-3. Validate worker/building exposure on at least 3 production archetypes (e.g., Bakery/JamStove/Explosives Factory):
+3. Add fire-state presentation adapters:
+   - embers for spread pressure,
+   - smoke for smoldering/scorched states,
+   - fire for active burning,
+   - light steam for moisture dampening,
+   - charred shader/material/tint for terminal burned buildings and vegetation.
+4. Add Fertile Ash source tagging for charred vegetation and selected ruined buildings, with foresters as the natural vegetation collection path.
+5. Validate worker/building exposure on at least 3 production archetypes (e.g., Bakery/JamStove/Explosives Factory):
    - assigned workers slow under heat pressure,
    - beavers/workers inside burning buildings receive appropriate effects,
    - worker speed recovers after fire pressure clears,
    - workers suppressed,
    - production halted,
    - restored correctly when no longer dead.
-4. Re-run explosion request/apply trace across multiple one-ignite windows and capture both logs if gaps reappear.
-5. Add a repeatable setup refresh script or documentation for importing current game assets and publicized DLLs.
-6. Run controlled tuning pass (`Low`/`Standard`/`High`) once Phase 2 behavior is coherent.
+6. Re-run explosion request/apply trace across multiple one-ignite windows and capture both logs if gaps reappear.
+7. Add a repeatable setup refresh script or documentation for importing current game assets and publicized DLLs.
+8. Run controlled tuning pass (`Low`/`Standard`/`High`) once Phase 2 ember behavior is coherent.
+9. For Phase 3, implement the controlled-burn loop as terrain/fire management rather than managed-burn bookkeeping:
+   - prepare containment with cleared terrain, water, and firebreaks,
+   - ignite or allow ignition,
+   - wait for fuel to burn out,
+   - collect Fertile Ash via foresters.
 
 ## How to quickly resume
 

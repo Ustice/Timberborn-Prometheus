@@ -9,7 +9,7 @@ Validate:
 - Prometheus runtime load + blueprint type resolution,
 - Fire debug instrumentation visibility/copy workflow,
 - Phase 1 regression safety after closure,
-- Phase 2 dispatch stability and faction asymmetry,
+- Phase 2 ember-field spread, dampening, and visual-state readability,
 - Phase 2 worker/beaver exposure inside burning buildings,
 - Carryover Phase 5 balancing gates.
 
@@ -32,7 +32,7 @@ Validate:
 - [ ] Any new real system decision has a corresponding regression test where feasible.
 - [ ] Unity-specific components stay thin; dependency-light rule/runtime classes carry testable decisions where feasible.
 - [ ] Telemetry event-name constants remain unique and iterable for docs, filters, and future log tooling.
-- [ ] Faction quenching identity and dispatch lock/hysteresis rule tests pass before Phase 2 tuning changes land.
+- [ ] Ember-field emission, dampening, barrier, ignition-threshold, and Fertile Ash source rule tests pass before Phase 2 tuning changes land.
 - [ ] Debug panel UI changes are manually QA'd; automated UI tests are intentionally out of scope for now.
 
 Unity EditMode tests are deferred until the standalone repo has a clean Timberborn/Unity dependency story. The first automated lane is plain C# regression coverage because it catches decision drift without loading the full game assembly graph.
@@ -54,8 +54,8 @@ Unity EditMode tests are deferred until the standalone repo has a clean Timberbo
 
 ### C. Prometheus icon/assets pass
 
-- [ ] Prometheus goods/recipes display custom gold outline icons consistent with base-game goods styling instead of borrowed placeholder stock icons.
-- [ ] Asset import shows no missing sprite/icon warnings for ash fertilizer, firefighting foam, fireworks crates, bucket brigade kits, or fire-control gear.
+- [ ] Prometheus goods/buildings display custom gold outline icons consistent with base-game styling instead of borrowed placeholder stock icons.
+- [ ] Asset import shows no missing sprite/icon warnings for Fertile Ash, ember/fire state effects, fireworks extensions, or current placeholder concepts.
 
 ## Core gameplay validation sequence
 
@@ -67,20 +67,21 @@ Unity EditMode tests are deferred until the standalone repo has a clean Timberbo
 
 ### 2) Single-front behavior pass
 
-Create one manageable front near water/logistics and observe:
+Create one manageable front near dry fuel, wet/soaked terrain, and a cleared/firebreak edge. Observe:
 
 - `Intensity`,
 - `Spread pressure`,
-- `Quenching`,
-- `Candidate score` vs `Assigned score`,
-- `Assignment locked`, `Retarget suppressed`,
-- `Response state` transitions.
+- ember source type/radius/intensity,
+- moisture/steam dampening,
+- fuel susceptibility and ignition threshold result,
+- barrier/firebreak result,
+- visual state transitions.
 
 Pass criteria:
 
-- [ ] Assigned score changes are smooth.
-- [ ] Lock/hysteresis reduces micro-retargeting.
-- [ ] State transitions are sensible (`Overwhelmed` -> `Contained` -> `Stabilized`, where applicable).
+- [ ] Ember pressure changes are smooth and attributable.
+- [ ] Moisture visibly reduces pressure and shows light steam.
+- [ ] State transitions are sensible (embers -> smoke/smolder -> fire -> charred/extinguished, where applicable).
 
 ### 2a) Phase 1 regression check
 
@@ -92,10 +93,17 @@ Pass criteria:
 - [ ] Click `Reset Fire Sim`.
 - [ ] Confirm the entity is healthy/functioning again and can be re-ignited.
 
-### 3) Faction asymmetry pass (short)
+### 3) Ember-field spread pass
 
-- [ ] Folktails: weaker suppression on farther/low-water front versus near-water front.
-- [ ] Ironteeth: stronger suppression as fire intensity rises.
+- [ ] Active fires emit readable ember fields.
+- [ ] Dry fuel can ignite from ember pressure when configured thresholds are met.
+- [ ] Moisture/soaked terrain reduces ember intensity and shows light steam when dampening heat.
+- [ ] Firebreaks/cleared terrain block or sharply reduce propagation.
+- [ ] Configured high-intensity operating buildings (e.g., Smelter) can produce ember fields.
+- [ ] Lower-risk heat buildings (e.g., Bakery) do not produce ember fields unless explicitly configured.
+- [ ] Fireworks and unstable explosive events can create short-lived ember fields without adding a fireworks-control minigame.
+- [ ] Smoke, active fire, steam, embers, and charred presentation match runtime states.
+- [ ] Valid charred vegetation/buildings expose Fertile Ash source state.
 
 ### 3a) Worker/beaver exposure pass
 
@@ -104,37 +112,39 @@ Pass criteria:
 - [ ] Confirm nearby beavers are affected by proximity without colony-wide spillover.
 - [ ] Confirm workers recover after fire pressure clears or `Reset Fire Sim` is used.
 
-### 4) Dual-front validation pass (carryover gate)
+### 4) Ember-field validation pass (carryover gate)
 
-Run for each faction (`Folktails`, `Ironteeth`) across each profile (`Low`, `Standard`, `High`):
+Run across each profile (`Low`, `Standard`, `High`):
 
-- [ ] Front A near water/core logistics,
-- [ ] Front B farther away,
-- [ ] capture one representative responder per front.
+- [ ] dry vegetation spread lane,
+- [ ] wet/soaked dampening boundary,
+- [ ] firebreak/cleared-terrain boundary,
+- [ ] Smelter-style ember source,
+- [ ] Bakery-style non-emitter,
+- [ ] fireworks or unstable explosive burst source.
 
 Pass criteria:
 
-- [ ] Anti-thrash behavior holds (lock windows + hysteresis suppression).
-- [ ] Faction behavior remains distinct and fair.
-- [ ] Response-state notifications are useful and not noisy.
+- [ ] Ember intensity changes are visible and attributable.
+- [ ] Moisture produces readable steam and meaningful dampening.
+- [ ] Fuel, barriers, and thresholds behave consistently.
+- [ ] Low/Standard/High profiles produce sensible differences without runaway spread or visual spam.
 
 ## Tuning order when failing a gate
 
 Apply in this order to avoid chasing symptoms:
 
-1. `DispatchRetargetHysteresisThreshold`
-2. `DispatchAssignmentLockDurationInSeconds`
-3. Dispatch weights (`Severity` / `AssetRisk` / `TravelCost` / `ContainmentLeverage`)
-4. Faction asymmetry coefficients (Folktails distance penalty, Ironteeth high-heat bonus)
+1. Ember emission intensity/radius/falloff
+2. Fuel susceptibility and ignition thresholds
+3. Moisture/steam dampening strength
+4. Firebreak/barrier blocking strength
+5. Visual-effect thresholds for smoke, fire, steam, embers, and char
 
 ## Results recording template
 
-| Date | Faction | Profile | Front A | Front B | Anti-thrash | States | Outcome | Tuned values |
+| Date | Profile | Ember spread | Moisture/steam | Source profiles | Visual states | Fertile Ash | Outcome | Tuned values |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| YYYY-MM-DD | Folktails | Low/Standard/High | | | Pass/Fail | O/C/S | Pass/Fail | |
-| YYYY-MM-DD | Ironteeth | Low/Standard/High | | | Pass/Fail | O/C/S | Pass/Fail | |
-
-Legend: `O/C/S` = `Overwhelmed` / `Contained` / `Stabilized`.
+| YYYY-MM-DD | Low/Standard/High | Pass/Fail | Pass/Fail | Pass/Fail | Pass/Fail | Pass/Fail | Pass/Fail | |
 
 ## Session handoff notes
 

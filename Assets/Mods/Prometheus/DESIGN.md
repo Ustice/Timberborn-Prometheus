@@ -4,9 +4,9 @@
 
 **Prometheus** is a fire-focused Timberborn mod that adds a full gameplay loop around:
 
-1. **Ignition and spread** (fire as a systemic hazard)
-2. **Suppression and logistics** (faction-specific firefighting gameplay)
-3. **Recovery and renewal** (positive post-fire ecology and productivity)
+1. **Ignition and spread** (fire as an ember-field cellular simulation)
+2. **Readable fire states** (embers, steam, smoke, flame, and char)
+3. **Recovery and renewal** (Fertile Ash harvested from charred sources)
 
 The design target is a **balanced simulation**: fire should be dangerous enough to matter, but manageable with preparation and rewarding when used strategically.
 
@@ -28,16 +28,17 @@ Create a coherent fire ecosystem where players can:
    - Fire can spread and damage crops, trees, buildings, and beavers.
 
 2. **Player agency**
-   - Prepared players can contain and extinguish fires through tools, logistics, and planning.
+   - Prepared players can contain and extinguish fires through terrain, moisture, firebreaks, and suppression fields.
 
 3. **Faction identity**
-   - Folktails and Ironteeth solve the same problem through different strategies.
+   - Folktails and Ironteeth manipulate fire pressure differently without adding direct beaver-control minigames.
 
 4. **Risk-reward ecology**
    - Fire can create temporary fertility and production opportunities.
 
 5. **Readable simulation**
    - Players should always understand why fires started/spread, what is currently at risk, and how to respond.
+   - Fire risk should be visible in the world, not only in panels: sparks and airborne embers around active fires should communicate spread pressure, similar to how badwater contamination makes soil risk legible.
 
 ---
 
@@ -46,9 +47,9 @@ Create a coherent fire ecosystem where players can:
 ### Gameplay goals
 
 - Add a systemic fire mechanic that integrates with water, dehydration, agriculture, forestry, and building safety.
-- Make firefighting a strategic layer rather than a one-off gimmick.
+- Make ember fields the core fire-spread mechanic before adding responder/suppression complexity.
 - Enable intentional controlled burns for productivity gains.
-- Introduce fireworks as fun content with non-zero risk.
+- Extend base-game fireworks and unstable explosive content by adding ember-field risk.
 
 ### Player experience goals
 
@@ -66,7 +67,7 @@ Create a coherent fire ecosystem where players can:
 
 ## Phase 2 Architecture Rules
 
-Use these rules as guardrails before adding Phase 2 firefighting, worker, and beaver exposure behavior.
+Use these rules as guardrails before adding Phase 2 ember-field spread, fire presentation, and later suppression behavior.
 
 1. **Keep Unity/Timberborn adapters thin**
    - Components that inherit `BaseComponent` or implement `IUpdatableComponent` should mostly read Unity/Timberborn state, call dependency-light `RuntimeState`/`Rules` code, and apply the resulting component changes.
@@ -115,17 +116,56 @@ To keep fire readable and fair, building ignition risk should be data-driven and
   - Smelter
   - Ironteeth Engine
 - **General rule:** wood-consuming industrial buildings should receive elevated ignition risk compared to non-combustion utility buildings.
+- **Ember field rule:** only selected high-intensity fire-using buildings emit ambient ember fields while operating. A Bakery can have ignition risk without producing a field; a Smelter can produce a visible ember field because it represents industrial-scale heat and sparks.
 
 Design constraints:
 
 - Early-game essentials should remain mostly safe (avoid early frustration spikes).
 - High-risk industry should reward safety investment (distance, suppression, alarm coverage).
 - Risk values should be tuneable per difficulty profile (`Low` / `Standard` / `High`).
+- Ember field sources should be data-driven per building profile, with separate tuning for radius, intensity, operating-state requirement, and whether the field is purely visual or contributes to ignition/spread pressure.
+
+### Ember Field Sources
+
+Ember fields are localized airborne spark/ember zones and the core fire-spread model. They make spread pressure visible and drive cellular-style propagation into nearby fuel. Each update evaluates local fuel, moisture, barriers, source intensity, and negative/suppressing fields before applying ignition or decay.
+
+Candidate sources:
+
+- active fires and high-risk firefronts,
+- fireworks and fireworks-related shows,
+- selected high-intensity fire-using buildings while operating,
+- explosions or unstable-core events during their immediate aftermath.
+
+Counter-fields and dampening:
+
+- moisture reduces ember intensity and can produce light steam visuals,
+- water bodies and soaked terrain strongly dampen propagation,
+- Ironteeth suppression acts like a negative ember field that reduces local ember intensity,
+- Folktail suppression primarily affects the burning target itself, lowering flame/smoke intensity and shortening burn duration.
+
+Non-goals:
+
+- Do not make every warm production building emit an ember field.
+- Do not require player micromanagement of ember fields directly.
+- Do not create separate UI beyond building placement/readability, visible particles, and existing debug/status surfaces.
+
+### Fire Visual State Ladder
+
+Fire state should be readable from in-world effects before the player opens a panel.
+
+- **Embers**: airborne sparks around sources and spread-pressure fronts.
+- **Steam**: light moisture reaction where water/soaked ground/suppression dampens heat.
+- **Smoke**: smoldering/scorched state, worsening before open flame.
+- **Fire**: active burning state with stronger light/flame effects.
+- **Charred**: terminal burned state for buildings and vegetation, preferably represented by a shader/material tint so we avoid large new 3D asset sets.
+
+The visual layer should be an adapter over fire runtime state, not a separate gameplay system.
 
 ### 2) Spread
 
 Fire spread should be influenced by:
 
+- **Ember field intensity**: local ember pressure is the primary propagation input
 - **Fuel type**: crops and trees ignite/spread faster than stone-heavy structures
 - **Dryness/moisture**: drier environments spread faster
 - **Barriers**: water bodies and prepared firebreaks slow or stop spread
@@ -139,29 +179,31 @@ Fire spread should be influenced by:
 
 ### 4) Suppression
 
-- Water and suppression materials reduce fire intensity.
-- Assigned firefighting jobs prioritize nearest/most dangerous fronts.
-- Prepared infrastructure improves response speed and survival odds.
+- Water, moisture, and suppression fields reduce fire/ember intensity.
+- Ironteeth suppression primarily creates a negative ember field that dampens local propagation pressure.
+- Folktail suppression primarily affects the thing on fire directly, lowering active burn intensity and duration.
+- Dedicated fire-brigade/beaver relay systems are out of scope for now; Timberborn beavers are fungible enough that a pass-the-bucket chain does not currently justify a new system.
+- Suppression materials, foam, helmets, suits, and gear are presentation/building flavor by default unless they earn a distinct gameplay role later.
 
 ### 5) Recovery and Renewal
 
-- Burnt ground can transition into **Ashen Soil** for a limited duration.
-- Ashen Soil boosts growth speed and output.
-- Best rewards come from managed burns, not uncontrolled disasters.
+- The only core post-fire resource is **Fertile Ash**.
+- Players harvest Fertile Ash from charred vegetation and selected charred/ruined buildings.
+- Emberpelts can later extend the resource loop by harvesting charcoal.
+- Best outcomes come from physical containment: cleared terrain, water, and firebreaks.
 
 ---
 
-## Faction Asymmetry
+## Faction Asymmetry (Later Suppression Layer)
 
-## Folktails: Bucket Brigade Doctrine
+## Folktails: Direct Dampening Doctrine
 
 - Focus: rapid local response and village defense.
 - Mechanics:
-  - chain logistics from water source to fire line,
-  - relay-style suppression throughput,
-  - low-tech, scalable emergency response.
+  - direct dampening of burning objects,
+  - practical use of water/moisture at the fire target,
+  - low-tech, scalable response without direct beaver control.
 - Candidate content:
-  - Bucket Relay Post,
   - Emergency Cistern,
   - Fire Watch Tower.
 
@@ -169,13 +211,13 @@ Fire spread should be influenced by:
 
 - Focus: engineered suppression and hazard operations.
 - Mechanics:
-  - crafted protective gear,
-  - specialized suppression materials,
+  - negative ember fields that reduce local propagation pressure,
+  - stronger area denial around industrial districts,
+  - suit/helmet/nozzle visuals as building flavor,
   - better operation in high-heat zones.
 - Candidate content:
-  - Fire Gear Workshop,
   - Pressurized Suppressant Station,
-  - Protective equipment production chain.
+  - industrial fire watch/containment buildings.
 
 ## Emberpelts (Future extension)
 
@@ -199,19 +241,6 @@ Fire spread should be influenced by:
 
 ---
 
-## Fireworks Design
-
-Fireworks are a positive social feature with strategic caution:
-
-- Base effect: wellbeing/festival bonus.
-- Optional high-intensity show mode:
-  - stronger wellbeing bonus,
-  - increased ignition chance if local fire safety is weak.
-
-Design intent: fireworks are mostly celebratory, but they naturally connect to the fire system instead of being isolated flavor.
-
----
-
 ## Explosive Hazard Model
 
 Explosive production/storage introduces a distinct hazard layer separate from baseline fire spread.
@@ -221,12 +250,15 @@ Explosive production/storage introduces a distinct hazard layer separate from ba
 - Explosives Factory
 - Explosives Warehouse / storage of explosive crates
 - Placed/laid explosives (world objects)
+- Unstable Cores
+- Base-game fireworks
 
 ### Explosion behavior (design intent)
 
 - Buildings containing explosives can **detonate when burning**.
 - Explosive crates should behave like localized explosive payloads (conceptually similar to a dynamite stick per affected tile/stack segment).
 - Placed explosives that catch fire should detonate.
+- Fireworks keep their Timberborn 1.0 behavior and only gain Prometheus ember-field risk.
 
 ### Fire interaction policy
 
@@ -238,7 +270,7 @@ Rationale:
 - Prevents accidental terrain-risk amplification in dense settlements where players use explosives as standard tools.
 - Keeps explosion consequences strong but readable (blast damage and disruption) without runaway ignition cascades.
 
-Optional advanced tuning (future): allow a small explosion-to-ignition chance only in `High Fire Activity` profile if additional challenge is desired.
+Optional advanced tuning (future): allow explosion/fireworks events to emit short-lived ember fields in higher-risk profiles without adding a separate fireworks-control system.
 
 ### Explosion ignition difficulty setting
 
@@ -266,21 +298,31 @@ Design intent: preserve settlement readability by default while allowing opt-in 
 
 ## Positive Fire Mechanics
 
-### Ashen Soil
+### Fertile Ash
 
-- Temporary terrain/zone modifier after burns.
+- Recoverable post-burn material from burned vegetation and selected ruined structures.
 - Effects:
-  - increased crop growth speed,
-  - increased yield/output.
+  - usable as a fertility input,
+  - supports post-fire recovery and renewal loops.
 - Balance constraints:
-  - duration-limited,
-  - strongest after managed burns,
-  - reduced value after catastrophic spread.
+  - available only after valid burned sources,
+  - requires labor/logistics to collect,
+  - should be useful without making uncontrolled fires profitable.
 
 ### Controlled Burns
 
-- Mid/late-game strategic tool.
-- Lets players intentionally trade short-term risk for long-term farm productivity.
+- Player-authored land-management loop rather than a separate managed-burn ledger.
+- Intended flow:
+
+  1. Prepare containment with cleared terrain, water, and constructed firebreaks.
+
+  2. Ignite selected vegetation or accept a natural/accidental ignition inside the prepared area.
+
+  3. Wait for the fire to consume fuel and burn out.
+
+  4. Use foresters to collect Fertile Ash from burned vegetation and eligible ruins.
+
+- This mirrors Timberborn water management: players shape the environment, let the simulation run, then collect value from a successful setup.
 
 ---
 
@@ -305,7 +347,7 @@ Suggested difficulty presets:
 Implemented foundation in `Assets/Mods/Prometheus`:
 
 - mod script assembly and startup logger,
-- initial fire-economy goods (`AshFertilizer`, `FirefightingFoam`, `FireworksCrate`),
+- initial fire-economy goods (`AshFertilizer`, `FirefightingFoam`, `FireworksCrate`) from earlier scaffolding; current design is narrowing the core resource set to Fertile Ash,
 - initial recipes for those goods,
 - initial `HeatStress` need and faction need-collection wiring,
 - localization keys for new goods/status,
@@ -349,139 +391,125 @@ Status:
 - Core ignition, spread, quenching, damage, terminal dead/ash behavior, and reset-to-healthy debug recovery have passed live QA.
 - Remaining beaver/worker exposure behavior is owned by Phase 2 because it depends on workplace occupancy and responder gameplay.
 
-## Phase 2 — Firefighting Gameplay and Faction Identity
+## Phase 2 — Ember Field Spread and Fire Presentation
 
-**Goal:** introduce differentiated suppression loops.
+**Goal:** make the core fire mechanic coherent before adding suppression systems.
 
 Scope:
 
-- Folktails bucket brigade systems,
-- Ironteeth fire-gear and suppression chain,
-- task prioritization and response logistics tuning.
+- ember field propagation as the primary spread model,
+- moisture and negative-field dampening,
+- smoke/fire/steam/ember visual effects,
+- charred-state presentation for buildings and vegetation,
+- Fertile Ash source tagging on charred vegetation and selected ruined buildings.
 
 Exit criteria:
 
-- Both factions can fight fires effectively in distinct ways.
+- Fire spreads through visible ember pressure in a way that is readable, tuneable, and test-backed.
+- Moisture visibly dampens fire pressure with light steam and meaningful spread reduction.
+- Charred buildings/vegetation are visually distinct without requiring large new 3D asset sets.
+- Fertile Ash can be harvested from valid charred sources.
 
 ### Phase 2 detailed delivery plan (next sprint)
 
-This section turns Phase 2 into an implementation-ready sprint plan focused on **logistics depth, faction differentiation, and response quality**.
+This section turns Phase 2 into an implementation-ready sprint plan focused on **core spread behavior, visual readability, and post-burn resource output**.
 
 #### Objectives
 
-1. Make Folktails and Ironteeth suppression loops feel mechanically distinct in minute-to-minute gameplay.
-2. Improve fire-response reliability via explicit prioritization and dispatch behavior.
-3. Add player-readable signals so responders feel understandable rather than random.
-4. Keep simulation stable under load with bounded update work and telemetry.
+1. Replace direct neighbor-spread thinking with ember-field propagation rules.
+2. Keep ember fields data-driven by source profile, fuel, moisture, barrier, and difficulty.
+3. Add visual effects that communicate fire state: embers, steam, smoke, active fire, and char.
+4. Keep suppression design thin for now: Ironteeth reduce ember fields; Folktails reduce the burning target.
+5. Avoid new responder/brigade minigames until the fire-spread model itself is solid.
 
 #### Scope slices
 
-##### Slice A — Folktails bucket brigade loop
+##### Slice A — Ember field cellular spread
 
-- Introduce/expand low-tech suppression throughput mechanics around:
-  - `BucketBrigadeKit` consumption,
-  - relay distance/efficiency falloff,
-  - emergency water buffering behavior.
-- Add one dedicated Folktails response building workflow (first pass):
-  - **Bucket Relay Post** runtime hooks and profile bonuses.
-- Define balance intent:
-  - high responsiveness close to water/village core,
-  - weaker performance on long frontlines,
-  - lower material complexity than Ironteeth.
+- Add/update dependency-light rules for:
+  - source emission intensity,
+  - radius/falloff,
+  - fuel susceptibility,
+  - moisture dampening,
+  - barrier/firebreak blocking,
+  - ignition threshold and decay.
+- Model ember fields as local spread pressure over nearby valid entities/tiles, not as a player-controlled tool.
+- Candidate field sources:
+  - active fires,
+  - high-risk operating buildings such as Smelters,
+  - fireworks,
+  - explosions and Unstable Cores.
 
-##### Slice B — Ironteeth engineered suppression loop
+##### Slice B — Moisture and negative fields
 
-- Expand industrial suppression chain around:
-  - `FireControlGear` usage and upkeep,
-  - `FirefightingFoam` throughput and application strength,
-  - higher resilience in high-heat zones.
-- Add one dedicated Ironteeth response building workflow (first pass):
-  - **Pressurized Suppressant Station** runtime hooks and profile bonuses.
-- Define balance intent:
-  - slower setup and higher production dependency,
-  - superior sustained suppression at severe fire intensity,
-  - better performance in industrial districts.
+- Moisture reduces ember intensity and spread chance.
+- Moisture interaction should show light steam when heat is being dampened.
+- Ironteeth suppression is modeled as a negative ember field.
+- Folktail suppression affects the thing on fire directly instead of creating a brigade/relay system.
 
-##### Slice C — Task prioritization and dispatch
+##### Slice C — Fire-state visual effects
 
-- Implement a shared firefront scoring model to rank targets by:
-  - danger severity (burn state + spread pressure),
-  - asset value proxy (building/crop/tree/beaver risk),
-  - travel/response cost,
-  - containment leverage (chance to stop propagation).
-- Add faction bias terms on top of shared scoring:
-  - Folktails prefer near/front-edge containment and village defense,
-  - Ironteeth prefer high-intensity nodes and infrastructure protection.
-- Add anti-thrashing behavior:
-  - minimum assignment lock duration,
-  - hysteresis threshold before retargeting.
+- Add effects/adapters for:
+  - embers around active spread-pressure sources,
+  - smoke for smoldering/scorched states,
+  - active flame for burning states,
+  - steam when moisture or suppression dampens heat,
+  - charred shader/material/tint for terminal burned buildings and vegetation.
+- Prefer shaders/material overrides and reusable particle/effect adapters over bespoke replacement models.
 
-##### Slice D — UX/debug readability for Phase 2 behavior
+##### Slice D — Fertile Ash recovery
 
-- Extend debug panel output with dispatch-level fields:
-  - selected target score,
-  - top scoring factors,
-  - assignment lock/hysteresis state,
-  - active faction profile multipliers.
-- Add concise in-game notifications only for meaningful transitions:
-  - response overwhelmed,
-  - containment established,
-  - firefront stabilized.
+- Treat **Fertile Ash** as the only core new resource.
+- Valid sources:
+  - charred vegetation,
+  - selected charred/ruined buildings.
+- Foresters should be the natural collection path for vegetation sources.
+- Emberpelts can later harvest charcoal as an extension, but charcoal is not core Phase 2 scope.
 
 #### Proposed technical work breakdown
 
-1. **Runtime state extensions**
-    - Add dispatch/prioritization snapshots to existing fire runtime state containers.
-2. **Profile schema evolution**
-    - Extend fire-response profile specs with faction-tunable dispatch weights and lock/hysteresis parameters.
-3. **Controller pass integration**
-    - Introduce a deterministic dispatch pass between simulation update and suppression application.
-4. **Effect application pass**
-    - Apply selected assignments to suppression entities with faction-specific throughput/effectiveness multipliers.
-5. **Instrumentation pass**
-    - Emit telemetry used by the debug fragment and tuning verification.
+1. **Rule extraction**
+    - Add dependency-light ember-field rules for emission, decay, moisture, barrier blocking, and ignition thresholds.
+2. **Runtime state extensions**
+    - Add ember field snapshots/source metadata to runtime state, including visual intensity and gameplay intensity separately if needed.
+3. **Controller integration**
+    - Run ember-field propagation before applying ignition/damage transitions.
+4. **Visual adapter pass**
+    - Attach/update particle, material, or shader effects from fire runtime state.
+5. **Recovery source pass**
+    - Mark valid charred sources with Fertile Ash availability and collection eligibility.
+6. **Instrumentation pass**
+    - Emit telemetry for field source, intensity, dampening, ignition threshold result, and visual-state transitions.
 
 #### Acceptance criteria (Phase 2 sprint gate)
 
-- In equivalent fire scenarios, Folktails and Ironteeth produce measurably different suppression patterns.
-- Dispatch chooses stable, high-value targets and avoids excessive retargeting.
-- Player can inspect any responding entity and understand:
-  - why this target was selected,
-  - which multipliers are active,
-  - whether the front is improving or deteriorating.
-- No severe simulation regressions under large-fire scenarios (bounded per-tick cost, no runaway assignment churn).
-
-#### Balance and tuning matrix (initial)
-
-- **Folktails baseline**
-  - suppression strength: medium,
-  - response latency: low,
-  - distance penalty: high,
-  - material dependency: low-medium.
-- **Ironteeth baseline**
-  - suppression strength: high,
-  - response latency: medium,
-  - distance penalty: medium,
-  - material dependency: medium-high.
-
-All values remain data-tunable through runtime profile multipliers and global fire activity settings.
+- A fire creates an ember field that can ignite nearby valid fuel when thresholds are met.
+- Moisture/firebreaks reduce or block ember propagation and show readable dampening feedback.
+- High-risk operating buildings can emit ember fields when configured; low-risk buildings such as Bakeries do not by default.
+- Fireworks and Unstable Core/explosive events can emit short-lived ember fields without changing base fireworks behavior.
+- Smoke, fire, steam, embers, and charred presentation map cleanly to runtime fire states.
+- Valid charred vegetation/buildings can produce Fertile Ash.
+- Plain C# tests cover the new spread/dampening/resource decisions before tuning.
 
 #### Test scenarios for this phase
 
-1. **Village edge brush fire**
-    - Expected: Folktails contain quickly near water relay; Ironteeth stabilize after setup.
-2. **Industrial district ignition chain**
-    - Expected: Ironteeth outperform under sustained high heat.
-3. **Dual-front concurrent fires**
-    - Expected: dispatch prioritizes containment leverage and avoids assignment thrash.
-4. **Long-distance rural wildfire**
-    - Expected: Folktails degrade with distance; Ironteeth sustain if supply chain is intact.
+1. **Vegetation spread line**
+    - Expected: ember field propagates through dry fuel and stops/decays when fuel or threshold fails.
+2. **Moisture dampening**
+    - Expected: wet/soaked area lowers ember intensity, shows steam, and prevents or delays ignition.
+3. **Industrial ember source**
+    - Expected: configured Smelter emits ember pressure while operating; Bakery does not unless explicitly configured.
+4. **Fireworks/explosive burst**
+    - Expected: event emits a short-lived ember field without adding fireworks-control UI.
+5. **Charred recovery**
+    - Expected: valid charred vegetation/buildings expose Fertile Ash collection state.
 
 #### Out of scope for this sprint
 
-- Full new building art/content pipelines beyond first-pass runtime hooks.
-- Major festival/fireworks redesign (Phase 4 ownership).
-- Large renewal-economy rebalance beyond Phase 2 compatibility checks.
+- Fire brigade/relay systems and direct responder-dispatch gameplay.
+- Dedicated bucket/foam/gear goods loops.
+- Major fireworks redesign beyond ember-field risk.
+- Emberpelt charcoal economy beyond marking it as a future extension.
 
 ## Phase 3 — Renewal and Controlled Burn Economy
 
@@ -489,27 +517,29 @@ All values remain data-tunable through runtime profile multipliers and global fi
 
 Scope:
 
-- Ashen Soil lifecycle,
+- Fertile Ash recovery from burned vegetation and selected ruined structures,
 - fertility/yield boosts,
-- controlled burn mechanics and safeguards.
+- constructed firebreaks and cleared-terrain containment,
+- forester-driven collection loop.
 
 Exit criteria:
 
-- Planned burns can be net-positive without overshadowing normal farming.
+- Prepared burns can be net-positive without making uncontrolled fires desirable.
+- Players can understand the loop as terrain/flame management: prepare, ignite or allow ignition, wait, collect.
 
-## Phase 4 — Fireworks and Festival Systems
+## Phase 4 — Fireworks and Explosive Ember Sources
 
-**Goal:** add celebratory content connected to fire risk.
+**Goal:** add Prometheus fire risk to existing explosive/fireworks content without redesigning fireworks.
 
 Scope:
 
-- fireworks content and wellbeing effects,
-- risk scaling by local safety/readiness,
-- optional advanced festival modes.
+- ember fields from base-game fireworks,
+- ember fields from Unstable Cores and explosive events,
+- risk scaling by local ember profile, moisture, and cleared space.
 
 Exit criteria:
 
-- Fireworks are fun, useful, and meaningfully integrated with the fire ecosystem.
+- Fireworks and unstable explosive content can create ember pressure without adding a separate fireworks minigame.
 
 ## Phase 5 — Tuning, UX, and Compatibility
 
@@ -551,14 +581,14 @@ Primary QA runbook is in:
 
 - `Assets/Mods/Prometheus/TEST_PLAN.md`
 
-Use that file as the source of truth for smoke checks, dual-front validation matrix, and tuning sign-off criteria.
+Use that file as the source of truth for smoke checks, ember-field validation matrix, and tuning sign-off criteria.
 
 ### Milestone checklist
 
 - [x] Phase 1 — Core Fire Simulation (Done)
-- [ ] Phase 2 — Firefighting Gameplay and Faction Identity (In Progress)
+- [ ] Phase 2 — Ember Field Spread and Fire Presentation (In Progress)
 - [ ] Phase 3 — Renewal and Controlled Burn Economy
-- [ ] Phase 4 — Fireworks and Festival Systems
+- [ ] Phase 4 — Fireworks/Explosive Ember Integration
 - [ ] Phase 5 — Tuning, UX, and Compatibility (In Progress)
 
 ### Carryover validation checklist (Phase 2 completion + Phase 5 polish)
@@ -569,90 +599,99 @@ Use that file as the source of truth for smoke checks, dual-front validation mat
 
 - [ ] Run balancing pass across low/standard/high fire activity profiles for new Phase 2 behavior.
 
-- [ ] Execute one full dual-front verification scenario pass and tune defaults *(protocol and template are ready below)*.
+- [ ] Execute one full ember-field verification scenario pass and tune defaults *(protocol and template are ready below)*.
 
 - [ ] Mark Phase 2 validation items complete in this document and append measured tuning outcomes to the change log.
 
-### Dual-front verification protocol (ready to run)
+### Ember-field verification protocol (ready to run)
 
-Purpose: validate anti-thrashing dispatch, faction asymmetry, and response-state signaling under concurrent pressure.
+Purpose: validate ember propagation, moisture dampening, visual state readability, and charred-resource output under representative fire pressure.
 
 #### Setup
 
-- Use one settlement save with two independent firefronts: **Front A** near water/core logistics and **Front B** farther from water/infrastructure.
+- Use one settlement save with dry vegetation, wet/soaked terrain, at least one firebreak/cleared gap, a Bakery, a Smelter, and a fireworks or explosive source.
 
-- Run once with a Folktails-focused response cluster and once with an Ironteeth-focused response cluster.
+- Run under all tuning profiles: `Low`, `Standard`, `High`.
 
-- Run each faction under all tuning profiles: `Low`, `Standard`, `High`.
-
-- Observe at least one responding entity per front in `PrometheusFireDebugFragment`.
+- Observe at least one active fire source, one ember-field source building, and one dampened/wet boundary in the debug panel.
 
 #### What to capture
 
-- Dispatch scoring fields: `Candidate score`, `Assigned score`, `Assignment locked`, `Lock remaining (s)`, `Hysteresis threshold`, `Retarget suppressed`, `Top factor`, `Response state`.
+- Ember fields: source ID/type, radius, intensity, falloff, remaining duration, and visual intensity.
 
-- Simulation context fields: `Intensity`, `Spread pressure`, `Quenching`, `Neighbor spread pressure`.
+- Dampening fields: moisture value, steam visual state, negative-field strength, barrier/firebreak result.
 
-- Notification transitions: overwhelmed, containment established, firefront stabilized.
+- Fire state transitions: embers, smoke/smoldering, active fire, charred, and extinguished.
+
+- Recovery context: Fertile Ash source eligibility and amount.
 
 #### Pass/fail thresholds (first balancing gate)
 
-- **Retarget stability (anti-thrashing):** pass when `Assignment locked` holds for most of each lock window, `Assigned score` changes smoothly (no rapid oscillation spikes), and `Retarget suppressed` appears when candidate-score gains are small.
+- **Propagation readability:** pass when dry vegetation ignites from sufficient ember pressure and the player can see why.
 
-- **Folktails distance behavior:** pass when Folktails shows visibly weaker quenching on Front B than Front A in equivalent intensity bands.
+- **Moisture dampening:** pass when wet/soaked terrain reduces ember intensity, emits light steam, and prevents or delays ignition.
 
-- **Ironteeth high-heat behavior:** pass when Ironteeth quenching increases as intensity rises (especially in high-intensity windows).
+- **Source profile correctness:** pass when configured Smelters can emit ember fields while operating and Bakeries do not by default.
 
-- **Response-state readability:** pass when transitions align with telemetry — `Overwhelmed` when spread pressure persistently exceeds quenching, `Contained` when quenching clearly overtakes spread pressure, `Stabilized` as fronts settle/extinguish.
+- **Visual-state mapping:** pass when smoke/fire/steam/embers/charred effects match runtime state transitions without requiring new replacement models.
 
-- **Profile robustness:** pass when behavior remains coherent in `Low` and `High` without runaway notification spam or assignment churn.
+- **Recovery output:** pass when valid charred vegetation/buildings expose Fertile Ash and invalid sources do not.
+
+- **Profile robustness:** pass when behavior remains coherent in `Low` and `High` without runaway spread or visual spam.
 
 #### Tuning adjustment order (if fail)
 
-- Increase/decrease `DispatchRetargetHysteresisThreshold`.
+- Tune ember emission intensity/radius/falloff.
 
-- Increase/decrease `DispatchAssignmentLockDurationInSeconds`.
+- Tune fuel susceptibility and ignition thresholds.
 
-- Rebalance dispatch weights (`Severity` / `AssetRisk` / `TravelCost` / `ContainmentLeverage`).
+- Tune moisture/steam dampening strength.
 
-- Rebalance faction asymmetry modifiers: Folktails relay-distance penalty strength; Ironteeth high-heat quenching bonus scaling.
+- Tune firebreak/barrier blocking strength.
 
 #### Completion rule
 
-After one full dual-front pass per faction across `Low`/`Standard`/`High`, update:
+After one full ember-field pass across `Low`/`Standard`/`High`, update:
 
 - `Run balancing pass across low/standard/high fire activity profiles...` to checked,
 
-- `Add one verification scenario pass (dual-front concurrent fires) and tune defaults` to checked,
+- `Execute one full ember-field verification scenario pass and tune defaults` to checked,
 
 - change log with measured outcomes and any tuned default values.
 
 ### Quick playtest results template (copy/fill)
 
-| Date | Faction | Profile | Front A result | Front B result | Anti-thrash | Response states | Outcome | Tuning changes |
+| Date | Profile | Ember spread | Moisture/steam | Source profiles | Visual states | Fertile Ash | Outcome | Tuning changes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| YYYY-MM-DD | Folktails | Low/Standard/High | e.g. contained in 2.5h | e.g. overwhelmed then contained | Pass/Fail | O/C/S observed | Pass/Fail | e.g. +0.01 hysteresis |
-| YYYY-MM-DD | Ironteeth | Low/Standard/High | | | | | | |
+| YYYY-MM-DD | Low/Standard/High | Pass/Fail | Pass/Fail | Pass/Fail | Pass/Fail | Pass/Fail | Pass/Fail | e.g. -10% radius |
 
-Legend: `O/C/S` = `Overwhelmed` / `Contained` / `Stabilized`.
+Legend: source profiles should include at least one configured high-risk emitter and one explicitly non-emitting warm building.
 
 ### Next sprint plan (Phase 2 completion + Phase 5 balance pass)
 
-Sprint goal: move from implementation-complete behavior to validated, tuned, and documented gameplay defaults.
+Sprint goal: move from implementation-complete Phase 1 behavior to validated, tuned, and documented ember-field defaults.
 
 #### Sprint backlog
 
-- [ ] Execute dual-front verification protocol for Folktails across `Low`/`Standard`/`High`.
+- [ ] Replace remaining responder/dispatch-first assumptions with ember-field spread behavior.
 
-- [ ] Execute dual-front verification protocol for Ironteeth across `Low`/`Standard`/`High`.
+- [ ] Add/test ember-field emission, radius, falloff, decay, and ignition thresholds.
 
-- [ ] Tune dispatch anti-thrash values (`DispatchRetargetHysteresisThreshold`, `DispatchAssignmentLockDurationInSeconds`) from measured runs.
+- [ ] Add/test moisture dampening and light steam feedback.
 
-- [ ] Tune dispatch score weights (`Severity` / `AssetRisk` / `TravelCost` / `ContainmentLeverage`) for stable prioritization under concurrent fronts.
+- [ ] Add/test high-risk operating building ember sources and non-emitting warm buildings.
 
-- [ ] Tune faction asymmetry coefficients (Folktails relay-distance penalty, Ironteeth high-heat quenching bonus) until distinction is clear but fair.
+- [ ] Add/test fireworks/explosive short-lived ember sources.
 
-- [ ] Verify notification readability and noise level under sustained fire events; adjust cooldown/transition rules if needed.
+- [ ] Add smoke/fire/steam/ember visual adapters from runtime fire state.
+
+- [ ] Add charred shader/material/tint path for buildings and vegetation where feasible.
+
+- [ ] Add Fertile Ash source tagging for valid charred vegetation/buildings.
+
+- [ ] Execute ember-field verification protocol across `Low`/`Standard`/`High`.
+
+- [ ] Verify visual readability and noise level under sustained fire events; adjust particle/effect thresholds if needed.
 
 - [ ] Record final default values in the change log with before/after rationale.
 
@@ -660,19 +699,19 @@ Sprint goal: move from implementation-complete behavior to validated, tuned, and
 
 #### Implementation order
 
-- Run baseline captures first (no tuning changes).
+- Implement dependency-light rules and tests first.
 
-- Adjust anti-thrash parameters second (stability first, then speed).
+- Wire runtime state and debug telemetry second.
 
-- Adjust faction asymmetry third (identity without overpowering).
+- Add visual adapters third.
 
 - Apply final profile-wide balancing pass last.
 
 #### Exit criteria for this next sprint
 
-- Both factions pass dual-front scenarios on `Low`/`Standard`/`High` with no obvious assignment thrash.
+- Ember-field spread passes verification scenarios on `Low`/`Standard`/`High` with no runaway propagation.
 
-- Response-state transitions are understandable and not spammy in long events.
+- Fire visual-state transitions are understandable and not spammy in long events.
 
 - Tuned defaults are documented in `DESIGN.md` change log and reflected in checklist completion.
 
@@ -680,23 +719,23 @@ Sprint goal: move from implementation-complete behavior to validated, tuned, and
 
 Focus: begin **Renewal and Controlled Burn Economy** work immediately after Phase 2 validation lock.
 
-- [ ] Define `Ashen Soil` runtime-state schema for duration, fertility bonus, growth bonus, and yield bonus (with debug visibility fields).
+- [ ] Define `Fertile Ash` as a recoverable resource state on burned vegetation and selected ruined structures, including source type, amount, and collection eligibility.
 
-- [ ] Add balancing envelope for controlled-burn reward versus catastrophic-fire reward (managed burns should be clearly superior).
+- [ ] Add balancing envelope for Fertile Ash rewards so contained burns are useful while escaped fires remain costly.
 
-- [ ] Specify controlled-burn enablement gates (technology/progression/safety prerequisites).
+- [ ] Specify firebreak construction, cleared-terrain containment, and any ignition/tool prerequisites.
 
-- [ ] Draft first implementation tasks for `FireRecoveryController`/`FireRecoveryEffectApplier` tuning pass against finalized Phase 2 fire intensity ranges.
+- [ ] Draft first implementation tasks for `FireRecoveryController`/`FireRecoveryEffectApplier` and forester collection integration against finalized Phase 2 fire intensity ranges.
 
-- [ ] Add Phase 3 acceptance test scenarios (planned burn near farms, failed burn containment, post-burn recovery payoff window).
+- [ ] Add Phase 3 acceptance test scenarios (firebreak blocks spread, cleared terrain containment, burned vegetation becomes collectible Fertile Ash, foresters collect it, escaped fires remain net-negative).
 
-- [ ] Add first Phase 3 UX tasks (player-facing status text/tooltips for ashen fertility lifecycle).
+- [ ] Add first Phase 3 UX tasks (player-facing status text/tooltips for Fertile Ash source and collection eligibility).
 
 ### Sprint close-out (2026-02-21)
 
 - Status: **Implementation complete; validation carryover active**
 - Scope result: all implementation checklist items were delivered.
-- Carryover blockers: requires in-game validation/tuning pass (dual-front + profile balancing).
+- Carryover blockers: requires in-game validation/tuning pass (ember-field + profile balancing).
 - Next sprint handoff: finish Phase 2/5 validation checklist, then start Phase 3 kickoff checklist.
 
 ### Change log
@@ -705,6 +744,7 @@ Active/planned entries only. Full historical log moved to `DESIGN_CHANGELOG_ARCH
 
 | Date | Phase | Update | Status |
 | --- | --- | --- | --- |
+| 2026-04-24 | Phase 2 Design | Reordered Phase 2 around ember-field cellular spread, moisture/steam dampening, fire-state visuals, charred presentation, and Fertile Ash before suppression/responder systems | Planned |
 | 2026-04-24 | Phase 2 UX | Added dedicated Timberborn-style gold outline goods/recipe icons for ash fertilizer, firefighting foam, fireworks crates, bucket brigade kits, and fire-control gear | In Validation |
 | 2026-04-24 | Phase 2 Architecture | Extracted faction quenching and dispatch lock/hysteresis decisions into dependency-light rules with regression coverage | Done |
 | 2026-04-24 | Phase 2 Architecture | Centralized Prometheus telemetry event names into an iterable registry and added a regression test for uniqueness/key coverage | Done |
@@ -713,9 +753,7 @@ Active/planned entries only. Full historical log moved to `DESIGN_CHANGELOG_ARCH
 | 2026-04-24 | Phase 2 | Added architecture rules for thin adapters, reset contracts, RuntimeState/Rules ownership, testable decisions, telemetry constants, and deferred stable identity | Done |
 | 2026-04-24 | Phase 2/5 | Added plain C# regression-test gate for gameplay decisions; Unity EditMode tests are deferred until the standalone dependency story is cleaner, and debug panel UI remains manual QA while it is actively evolving | Done |
 | 2026-04-24 | Phase 1 | Closed core fire simulation after live QA confirmed ignition/spread/extinguish/damage/dead-ash terminal behavior and `Reset Fire Sim` clean-slate recovery; deferred beaver/worker exposure inside burning buildings to Phase 2 | Done |
-| 2026-02-22 | Phase 2/3 | Added Emberpelts future extension concept (heat-adapted response, tail-stamp suppression style, charcoal salvage + ash-soil synergy, wet-fur breeding constraint awareness) | Planned |
-| 2026-02-21 | Phase 2/5 | Added quick-fill dual-front playtest result template and next sprint execution plan (validation, tuning sequence, and exit gates) | Planned |
-| 2026-02-21 | Phase 2/5 | Added detailed next-sprint Phase 2 delivery plan (faction logistics depth, dispatch scoring, hysteresis, telemetry, acceptance gates) and explicit sprint checklist | Planned |
+| 2026-02-22 | Phase 2/3 | Added Emberpelts future extension concept (heat-adapted response, tail-stamp suppression style, charcoal salvage + Fertile Ash synergy, wet-fur breeding constraint awareness) | Planned |
 
 ### How to use this section
 
@@ -732,7 +770,7 @@ Active/planned entries only. Full historical log moved to `DESIGN_CHANGELOG_ARCH
    - Mitigate with chunked updates, capped spread checks, and event-based evaluations.
 
 2. **Readability risk** (players confused by spread causes)
-   - Mitigate with clear status text, hazard overlays, and source attribution.
+   - Mitigate with clear status text, hazard overlays, source attribution, and in-world ember/spark cues around active fires.
 
 3. **Balance risk** (either irrelevant or oppressive)
    - Mitigate with preset tuning profiles and iterative playtest metrics.
