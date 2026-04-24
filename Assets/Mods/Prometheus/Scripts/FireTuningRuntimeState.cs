@@ -19,10 +19,8 @@ namespace Mods.Prometheus.Scripts {
     public float QuenchingMultiplier { get; }
     public float ImpactMultiplier { get; }
     public float DamageTickMultiplier { get; }
-    public float FestivalRiskMultiplier { get; }
     public float WeatherIgnitionMultiplier { get; }
     public float IndustrialIgnitionMultiplier { get; }
-    public float FireworksIgnitionMultiplier { get; }
     public float ControlledBurnIgnitionMultiplier { get; }
     public float NeighborIgnitionMultiplier { get; }
     public float ExplosionIgnitionMultiplier { get; }
@@ -38,10 +36,8 @@ namespace Mods.Prometheus.Scripts {
       float quenchingMultiplier,
       float impactMultiplier,
       float damageTickMultiplier,
-      float festivalRiskMultiplier,
       float weatherIgnitionMultiplier,
       float industrialIgnitionMultiplier,
-      float fireworksIgnitionMultiplier,
       float controlledBurnIgnitionMultiplier,
       float neighborIgnitionMultiplier,
       float explosionIgnitionMultiplier,
@@ -55,10 +51,8 @@ namespace Mods.Prometheus.Scripts {
       QuenchingMultiplier = quenchingMultiplier;
       ImpactMultiplier = impactMultiplier;
       DamageTickMultiplier = damageTickMultiplier;
-      FestivalRiskMultiplier = festivalRiskMultiplier;
       WeatherIgnitionMultiplier = weatherIgnitionMultiplier;
       IndustrialIgnitionMultiplier = industrialIgnitionMultiplier;
-      FireworksIgnitionMultiplier = fireworksIgnitionMultiplier;
       ControlledBurnIgnitionMultiplier = controlledBurnIgnitionMultiplier;
       NeighborIgnitionMultiplier = neighborIgnitionMultiplier;
       ExplosionIgnitionMultiplier = explosionIgnitionMultiplier;
@@ -79,10 +73,8 @@ namespace Mods.Prometheus.Scripts {
       1.2f,
       0.7f,
       0.75f,
-      0.65f,
       0.8f,
       0.75f,
-      0.8f,
       0.95f,
       0.85f,
       0.85f,
@@ -103,8 +95,6 @@ namespace Mods.Prometheus.Scripts {
       1f,
       1f,
       1f,
-      1f,
-      1f,
       ExplosionIgnitionMode.Off,
       1f,
       1f,
@@ -117,10 +107,8 @@ namespace Mods.Prometheus.Scripts {
       0.9f,
       1.3f,
       1.4f,
-      1.35f,
       1.25f,
       1.35f,
-      1.2f,
       0.9f,
       1.35f,
       1.25f,
@@ -167,10 +155,8 @@ namespace Mods.Prometheus.Scripts {
         baseSnapshot.QuenchingMultiplier,
         baseSnapshot.ImpactMultiplier,
         baseSnapshot.DamageTickMultiplier,
-        baseSnapshot.FestivalRiskMultiplier,
         baseSnapshot.WeatherIgnitionMultiplier,
         baseSnapshot.IndustrialIgnitionMultiplier,
-        baseSnapshot.FireworksIgnitionMultiplier,
         baseSnapshot.ControlledBurnIgnitionMultiplier,
         baseSnapshot.NeighborIgnitionMultiplier,
         baseSnapshot.ExplosionIgnitionMultiplier,

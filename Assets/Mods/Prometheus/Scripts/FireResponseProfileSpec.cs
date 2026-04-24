@@ -22,9 +22,6 @@ namespace Mods.Prometheus.Scripts {
     public float IndustrialIgnitionChance { get; init; }
 
     [Serialize]
-    public float FireworksIgnitionBonus { get; init; }
-
-    [Serialize]
     public bool SupportsControlledBurns { get; init; }
 
     [Serialize]

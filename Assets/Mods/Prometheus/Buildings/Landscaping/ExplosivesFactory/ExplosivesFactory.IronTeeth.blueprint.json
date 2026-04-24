@@ -6,7 +6,6 @@
     "WaterEfficiencyMultiplier": 1.02,
     "WeatherIgnitionChance": 0.005,
     "IndustrialIgnitionChance": 0.026,
-    "FireworksIgnitionBonus": 0.001,
     "SupportsControlledBurns": false,
     "ControlledBurnIgnitionChance": 0.0,
     "FuelSpreadMultiplier": 1.05,

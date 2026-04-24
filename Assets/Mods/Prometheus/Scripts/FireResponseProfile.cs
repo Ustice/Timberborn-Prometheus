@@ -19,8 +19,6 @@ namespace Mods.Prometheus.Scripts {
 
     public float IndustrialIgnitionChance => Mathf.Max(0f, _spec.IndustrialIgnitionChance);
 
-    public float FireworksIgnitionBonus => Mathf.Max(0f, _spec.FireworksIgnitionBonus);
-
     public bool SupportsControlledBurns => _spec.SupportsControlledBurns;
 
     public float ControlledBurnIgnitionChance => Mathf.Max(0f, _spec.ControlledBurnIgnitionChance);

@@ -35,12 +35,10 @@ namespace Mods.Prometheus.Scripts {
       Bind<FireDamageStateRuntimeState>().AsSingleton();
       Bind<FireWaterContextRuntimeState>().AsSingleton();
       Bind<FireRecoveryRuntimeState>().AsSingleton();
-      Bind<FireFestivalRuntimeState>().AsSingleton();
     }
 
     private void BindFireResponseComponents() {
       Bind<FireResponseProfile>().AsTransient();
-      Bind<FireFestivalRiskController>().AsTransient();
       Bind<FireWaterContextProbe>().AsTransient();
       Bind<FireSuppressionProfileApplier>().AsTransient();
       Bind<FireSimulationController>().AsTransient();
@@ -74,7 +72,6 @@ namespace Mods.Prometheus.Scripts {
 
     private static void AddFireResponseDecorators(TemplateModule.Builder builder) {
       builder.AddDecorator<FireResponseProfileSpec, FireResponseProfile>();
-      builder.AddDecorator<FireResponseProfileSpec, FireFestivalRiskController>();
       builder.AddDecorator<FireResponseProfileSpec, FireWaterContextProbe>();
       builder.AddDecorator<FireResponseProfileSpec, FireSuppressionProfileApplier>();
       builder.AddDecorator<FireResponseProfileSpec, FireSimulationController>();
@@ -190,7 +187,6 @@ namespace Mods.Prometheus.Scripts {
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
     private FireWaterContextRuntimeState _fireWaterContextRuntimeState;
     private FireRecoveryRuntimeState _fireRecoveryRuntimeState;
-    private FireFestivalRuntimeState _fireFestivalRuntimeState;
 
     [Inject]
     public void InjectDependencies(
@@ -201,8 +197,7 @@ namespace Mods.Prometheus.Scripts {
       FireImpactRuntimeState fireImpactRuntimeState,
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
       FireWaterContextRuntimeState fireWaterContextRuntimeState,
-      FireRecoveryRuntimeState fireRecoveryRuntimeState,
-      FireFestivalRuntimeState fireFestivalRuntimeState) {
+      FireRecoveryRuntimeState fireRecoveryRuntimeState) {
       _fireSuppressionRuntimeState = fireSuppressionRuntimeState;
       _fireSimulationRuntimeState = fireSimulationRuntimeState;
       _fireDispatchScoringRuntimeState = fireDispatchScoringRuntimeState;
@@ -211,7 +206,6 @@ namespace Mods.Prometheus.Scripts {
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
       _fireWaterContextRuntimeState = fireWaterContextRuntimeState;
       _fireRecoveryRuntimeState = fireRecoveryRuntimeState;
-      _fireFestivalRuntimeState = fireFestivalRuntimeState;
     }
 
     private void OnDestroy() {
@@ -222,8 +216,7 @@ namespace Mods.Prometheus.Scripts {
           || _fireImpactRuntimeState == null
           || _fireDamageStateRuntimeState == null
           || _fireWaterContextRuntimeState == null
-          || _fireRecoveryRuntimeState == null
-          || _fireFestivalRuntimeState == null) {
+          || _fireRecoveryRuntimeState == null) {
         return;
       }
 
@@ -236,7 +229,6 @@ namespace Mods.Prometheus.Scripts {
       _fireDamageStateRuntimeState.RemoveSnapshot(entityId);
       _fireWaterContextRuntimeState.RemoveSnapshot(entityId);
       _fireRecoveryRuntimeState.RemoveSnapshot(entityId);
-      _fireFestivalRuntimeState.RemoveSnapshot(entityId);
 
       FireTelemetry.Log($"event={FireTelemetryEvents.EntityDestroyCleanup} entity={GameObject.name} id={entityId}");
     }

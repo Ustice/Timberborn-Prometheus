@@ -28,7 +28,6 @@ namespace Mods.Prometheus.Scripts {
     private readonly FireEntityRegistryRuntimeState _fireEntityRegistryRuntimeState;
     private readonly FireDispatchScoringRuntimeState _fireDispatchScoringRuntimeState;
     private readonly FireWaterContextRuntimeState _fireWaterContextRuntimeState;
-    private readonly FireFestivalRuntimeState _fireFestivalRuntimeState;
     private readonly FireImpactRuntimeState _fireImpactRuntimeState;
     private readonly FireDamageStateRuntimeState _fireDamageStateRuntimeState;
     private readonly FireRecoveryRuntimeState _fireRecoveryRuntimeState;
@@ -66,7 +65,6 @@ namespace Mods.Prometheus.Scripts {
     private int _baselineSimulationSnapshotCount;
     private int _baselineDispatchSnapshotCount;
     private int _baselineWaterSnapshotCount;
-    private int _baselineFestivalSnapshotCount;
     private int _baselineImpactSnapshotCount;
     private int _baselineDamageSnapshotCount;
     private int _baselineRecoverySnapshotCount;
@@ -87,7 +85,6 @@ namespace Mods.Prometheus.Scripts {
       FireEntityRegistryRuntimeState fireEntityRegistryRuntimeState,
       FireDispatchScoringRuntimeState fireDispatchScoringRuntimeState,
       FireWaterContextRuntimeState fireWaterContextRuntimeState,
-      FireFestivalRuntimeState fireFestivalRuntimeState,
       FireImpactRuntimeState fireImpactRuntimeState,
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
       FireRecoveryRuntimeState fireRecoveryRuntimeState,
@@ -98,7 +95,6 @@ namespace Mods.Prometheus.Scripts {
       _fireEntityRegistryRuntimeState = fireEntityRegistryRuntimeState;
       _fireDispatchScoringRuntimeState = fireDispatchScoringRuntimeState;
       _fireWaterContextRuntimeState = fireWaterContextRuntimeState;
-      _fireFestivalRuntimeState = fireFestivalRuntimeState;
       _fireImpactRuntimeState = fireImpactRuntimeState;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
       _fireRecoveryRuntimeState = fireRecoveryRuntimeState;
@@ -521,10 +517,8 @@ namespace Mods.Prometheus.Scripts {
       stringBuilder.AppendLine($"- Quenching x{tuning.QuenchingMultiplier:0.00}");
       stringBuilder.AppendLine($"- Impact x{tuning.ImpactMultiplier:0.00}");
       stringBuilder.AppendLine($"- Damage ticks x{tuning.DamageTickMultiplier:0.00}");
-      stringBuilder.AppendLine($"- Festival risk x{tuning.FestivalRiskMultiplier:0.00}");
       stringBuilder.AppendLine($"- Ignition/weather x{tuning.WeatherIgnitionMultiplier:0.00}");
       _dataLabel.style.color = PanelTextColor;
-      stringBuilder.AppendLine($"- Ignition/fireworks x{tuning.FireworksIgnitionMultiplier:0.00}");
       stringBuilder.AppendLine($"- Ignition/controlled burn x{tuning.ControlledBurnIgnitionMultiplier:0.00}");
       stringBuilder.AppendLine($"- Ignition/neighbor x{tuning.NeighborIgnitionMultiplier:0.00}");
       stringBuilder.AppendLine($"- Ignition/explosion x{tuning.ExplosionIgnitionMultiplier:0.00} ({tuning.ExplosionIgnitionMode})");
@@ -539,7 +533,6 @@ namespace Mods.Prometheus.Scripts {
       AppendRuntimeCountLine(stringBuilder, "Simulation snapshots", _fireSimulationRuntimeState.SnapshotCount, _baselineSimulationSnapshotCount);
       AppendRuntimeCountLine(stringBuilder, "Dispatch snapshots", _fireDispatchScoringRuntimeState.SnapshotCount, _baselineDispatchSnapshotCount);
       AppendRuntimeCountLine(stringBuilder, "Water snapshots", _fireWaterContextRuntimeState.SnapshotCount, _baselineWaterSnapshotCount);
-      AppendRuntimeCountLine(stringBuilder, "Festival snapshots", _fireFestivalRuntimeState.SnapshotCount, _baselineFestivalSnapshotCount);
       AppendRuntimeCountLine(stringBuilder, "Impact snapshots", _fireImpactRuntimeState.SnapshotCount, _baselineImpactSnapshotCount);
       AppendRuntimeCountLine(stringBuilder, "Damage snapshots", _fireDamageStateRuntimeState.SnapshotCount, _baselineDamageSnapshotCount);
       AppendRuntimeCountLine(stringBuilder, "Recovery snapshots", _fireRecoveryRuntimeState.SnapshotCount, _baselineRecoverySnapshotCount);
@@ -624,18 +617,6 @@ namespace Mods.Prometheus.Scripts {
         AppendSnapshotUnavailableSection(stringBuilder, "Water context");
       }
 
-      if (_fireFestivalRuntimeState.TryGetSnapshot(_selectedEntityId, out var festival)) {
-        AppendSnapshotSection(stringBuilder, "Festival", festival, static (builder, snapshot) => {
-          builder.AppendLine($"- Active: {snapshot.FestivalActive}");
-          builder.AppendLine($"- Risk bonus: {snapshot.FestivalRiskBonus:0.000}");
-          builder.AppendLine($"- Safety prep: {snapshot.SafetyPreparation:0.000}");
-          builder.AppendLine($"- Hours to start: {snapshot.HoursUntilFestivalStart:0.0}");
-          builder.AppendLine($"- Festival hours left: {snapshot.FestivalHoursRemaining:0.0}");
-        });
-      } else {
-        AppendSnapshotUnavailableSection(stringBuilder, "Festival");
-      }
-
       if (_fireImpactRuntimeState.TryGetSnapshot(_selectedEntityId, out var impact)) {
         AppendSnapshotSection(stringBuilder, "Impact", impact, static (builder, snapshot) => {
           builder.AppendLine($"- Crop damage pressure: {snapshot.CropDamagePressure:0.000}");
@@ -663,7 +644,7 @@ namespace Mods.Prometheus.Scripts {
       if (_fireRecoveryRuntimeState.TryGetSnapshot(_selectedEntityId, out var recovery)) {
         AppendSnapshotSection(stringBuilder, "Recovery", recovery, static (builder, snapshot) => {
           builder.AppendLine($"- Controlled burn: {snapshot.ControlledBurn}");
-          builder.AppendLine($"- Ash fertility active: {snapshot.AshenFertilityActive}");
+          builder.AppendLine($"- Fertile ash available: {snapshot.FertileAshAvailable}");
           builder.AppendLine($"- Fertility boost: {snapshot.FertilityBoost:0.000}");
           builder.AppendLine($"- Growth speed bonus: {snapshot.GrowthSpeedBonus:0.000}");
           builder.AppendLine($"- Yield bonus: {snapshot.YieldBonus:0.000}");
@@ -695,7 +676,6 @@ namespace Mods.Prometheus.Scripts {
       _baselineSimulationSnapshotCount = _fireSimulationRuntimeState.SnapshotCount;
       _baselineDispatchSnapshotCount = _fireDispatchScoringRuntimeState.SnapshotCount;
       _baselineWaterSnapshotCount = _fireWaterContextRuntimeState.SnapshotCount;
-      _baselineFestivalSnapshotCount = _fireFestivalRuntimeState.SnapshotCount;
       _baselineImpactSnapshotCount = _fireImpactRuntimeState.SnapshotCount;
       _baselineDamageSnapshotCount = _fireDamageStateRuntimeState.SnapshotCount;
       _baselineRecoverySnapshotCount = _fireRecoveryRuntimeState.SnapshotCount;
@@ -984,7 +964,6 @@ namespace Mods.Prometheus.Scripts {
     private readonly FireDamageStateRuntimeState _fireDamageStateRuntimeState;
     private readonly FireWaterContextRuntimeState _fireWaterContextRuntimeState;
     private readonly FireRecoveryRuntimeState _fireRecoveryRuntimeState;
-    private readonly FireFestivalRuntimeState _fireFestivalRuntimeState;
     private readonly EntitySelectionService _entitySelectionService;
     private readonly Color _panelTextColor = new(0.84f, 0.92f, 0.83f, 1f);
     private readonly Color _panelMutedTextColor = new(0.60f, 0.74f, 0.64f, 1f);
@@ -1047,7 +1026,6 @@ namespace Mods.Prometheus.Scripts {
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
       FireWaterContextRuntimeState fireWaterContextRuntimeState,
       FireRecoveryRuntimeState fireRecoveryRuntimeState,
-      FireFestivalRuntimeState fireFestivalRuntimeState,
       EntitySelectionService entitySelectionService) {
       _uiLayout = uiLayout;
       _fireSuppressionRuntimeState = fireSuppressionRuntimeState;
@@ -1058,7 +1036,6 @@ namespace Mods.Prometheus.Scripts {
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
       _fireWaterContextRuntimeState = fireWaterContextRuntimeState;
       _fireRecoveryRuntimeState = fireRecoveryRuntimeState;
-      _fireFestivalRuntimeState = fireFestivalRuntimeState;
       _entitySelectionService = entitySelectionService;
     }
 
@@ -1725,7 +1702,6 @@ namespace Mods.Prometheus.Scripts {
       _fireDamageStateRuntimeState.ClearSnapshots();
       _fireWaterContextRuntimeState.ClearSnapshots();
       _fireRecoveryRuntimeState.ClearSnapshots();
-      _fireFestivalRuntimeState.ClearSnapshots();
     }
 
     private void ClearBeaverFireEffects() {
@@ -1783,7 +1759,6 @@ namespace Mods.Prometheus.Scripts {
       _fireDamageStateRuntimeState.RemoveSnapshot(entityId);
       _fireWaterContextRuntimeState.RemoveSnapshot(entityId);
       _fireRecoveryRuntimeState.RemoveSnapshot(entityId);
-      _fireFestivalRuntimeState.RemoveSnapshot(entityId);
     }
 
     private VisualElement BuildTypeSummaryRow() {

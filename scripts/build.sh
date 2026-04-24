@@ -75,6 +75,8 @@ compile_if_possible() {
     return 1
   fi
 
+  prune_stale_prometheus_compile_items
+
   echo "[build] Compiling project with dotnet build ($BUILD_CONFIGURATION)..."
   if ! dotnet build "$PROJECT_CSPROJ" -c "$BUILD_CONFIGURATION" >/tmp/build-dotnet.log 2>&1; then
     echo "[build] dotnet build failed. Tail of build output:" >&2
@@ -94,6 +96,21 @@ compile_if_possible() {
   fi
 
   echo "[build] Compile complete; refreshed $SRC_DLL"
+}
+
+prune_stale_prometheus_compile_items() {
+  local relative_source
+  while IFS= read -r relative_source; do
+    if [[ -z "$relative_source" ]]; then
+      continue
+    fi
+
+    if [[ -f "$BUILD_PROJECT_DIR/$relative_source" ]]; then
+      continue
+    fi
+
+    perl -0pi -e "s#\\s*<Compile Include=\"\\Q$relative_source\\E\" />\\r?\\n##g" "$PROJECT_CSPROJ"
+  done < <(grep -o 'Assets/Mods/Prometheus/Scripts/[^"]*\.cs' "$PROJECT_CSPROJ" | sort -u)
 }
 
 rebuild_symlinked_mod_directory() {

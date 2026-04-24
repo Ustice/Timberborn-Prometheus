@@ -6,7 +6,6 @@
     "WaterEfficiencyMultiplier": 1.25,
     "WeatherIgnitionChance": 0.009,
     "IndustrialIgnitionChance": 0.005,
-    "FireworksIgnitionBonus": 0.004,
     "SupportsControlledBurns": true,
     "ControlledBurnIgnitionChance": 0.006,
     "FuelSpreadMultiplier": 1.2,
@@ -15,8 +14,7 @@
   },
   "ManufactorySpec": {
     "ProductionRecipeIds#append": [
-      "BerryBun",
-      "BucketBrigadeKit"
+      "BerryBun"
     ]
   }
 }

@@ -347,11 +347,10 @@ Suggested difficulty presets:
 Implemented foundation in `Assets/Mods/Prometheus`:
 
 - mod script assembly and startup logger,
-- initial fire-economy goods (`AshFertilizer`, `FirefightingFoam`, `FireworksCrate`) from earlier scaffolding; current design is narrowing the core resource set to Fertile Ash,
-- initial recipes for those goods,
+- Fertile Ash good scaffold,
 - initial `HeatStress` need and faction need-collection wiring,
 - localization keys for new goods/status,
-- integration into existing Prometheus production chain.
+- pruned old bucket/foam/gear/fireworks goods and recipes from the active content path.
 
 This is a scaffolding milestone and not yet full wildfire simulation.
 
@@ -744,8 +743,8 @@ Active/planned entries only. Full historical log moved to `DESIGN_CHANGELOG_ARCH
 
 | Date | Phase | Update | Status |
 | --- | --- | --- | --- |
+| 2026-04-24 | Phase 2 Content | Pruned old bucket-kit, firefighting-foam, fire-control-gear, fireworks-crate, and festival-risk scaffolding; renamed ash fertilizer content to Fertile Ash | Done |
 | 2026-04-24 | Phase 2 Design | Reordered Phase 2 around ember-field cellular spread, moisture/steam dampening, fire-state visuals, charred presentation, and Fertile Ash before suppression/responder systems | Planned |
-| 2026-04-24 | Phase 2 UX | Added dedicated Timberborn-style gold outline goods/recipe icons for ash fertilizer, firefighting foam, fireworks crates, bucket brigade kits, and fire-control gear | In Validation |
 | 2026-04-24 | Phase 2 Architecture | Extracted faction quenching and dispatch lock/hysteresis decisions into dependency-light rules with regression coverage | Done |
 | 2026-04-24 | Phase 2 Architecture | Centralized Prometheus telemetry event names into an iterable registry and added a regression test for uniqueness/key coverage | Done |
 | 2026-04-24 | Phase 2 UX | Reorganized the Prometheus debug panel into Timberborn-style status, command, filter, selection, and log sections while keeping debug UI in the manual-QA lane | In Validation |

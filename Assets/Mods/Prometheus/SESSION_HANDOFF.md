@@ -75,7 +75,7 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
 - Current debug-panel UI pass reorganizes the global panel into Timberborn-style status, command, filter, selection, and log sections; the behavior is unchanged and still intentionally manual-QA'd.
 - Telemetry event names now live in `FireTelemetryEvents`, an iterable constant registry intended for future filters/docs/log tooling.
 - Earlier faction quenching and dispatch scoring/lock decisions live in `FireSimulationRules`; these remain useful patterns, but current Phase 2 priority has shifted to ember-field spread before responder behavior.
-- Custom Timberborn-style gold outline goods/recipe icons were added for earlier ash/fire-response concepts; current design narrows the core resource need to Fertile Ash, with other fire-response concepts treated as visual/building flavor unless promoted later.
+- Old bucket-kit, firefighting-foam, fire-control-gear, fireworks-crate, and festival-risk scaffolding was pruned from active content. Ash fertilizer content was renamed to Fertile Ash.
 
 ### Build/deploy verification
 

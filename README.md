@@ -80,6 +80,7 @@ Recommended guardrails:
   * Phase 2 design has been simplified around ember-field cellular spread: active fires, selected high-intensity buildings, fireworks, and unstable explosive events can emit ember pressure.
   * Fire presentation should map to runtime state with embers, smoke, active fire, steam from moisture, and charred material/shader treatment.
   * The only core post-fire resource is Fertile Ash; bucket/foam/gear loops and fire-brigade mechanics are deferred unless they prove necessary.
+  * Old bucket-kit, firefighting-foam, fire-control-gear, fireworks-crate, and festival-risk scaffolding has been pruned from active content.
 * Next steps:
   * Start Phase 2 implementation around ember-field rules, moisture dampening, visual effects, and Fertile Ash source tagging.
   * Re-run explosion request/apply lifecycle capture during Phase 2 validation if gaps reappear.

@@ -39,10 +39,7 @@
   },
   "ManufactorySpec": {
     "ProductionRecipeIds": [
-      "BerryJam",
-      "AshFertilizer",
-      "FirefightingFoam",
-      "FireworksCrate"
+      "BerryJam"
     ]
   },
   "WorkshopSpec": {},

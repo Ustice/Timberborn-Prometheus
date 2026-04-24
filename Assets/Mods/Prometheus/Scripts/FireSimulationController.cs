@@ -17,7 +17,6 @@ namespace Mods.Prometheus.Scripts {
     private FireSimulationRuntimeState _fireSimulationRuntimeState;
     private FireEntityRegistryRuntimeState _fireEntityRegistryRuntimeState;
     private FireWaterContextRuntimeState _fireWaterContextRuntimeState;
-    private FireFestivalRuntimeState _fireFestivalRuntimeState;
     private FireImpactRuntimeState _fireImpactRuntimeState;
     private FireDispatchScoringRuntimeState _fireDispatchScoringRuntimeState;
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
@@ -49,7 +48,6 @@ namespace Mods.Prometheus.Scripts {
       FireSimulationRuntimeState fireSimulationRuntimeState,
       FireEntityRegistryRuntimeState fireEntityRegistryRuntimeState,
       FireWaterContextRuntimeState fireWaterContextRuntimeState,
-      FireFestivalRuntimeState fireFestivalRuntimeState,
       FireImpactRuntimeState fireImpactRuntimeState,
       FireDispatchScoringRuntimeState fireDispatchScoringRuntimeState,
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
@@ -59,7 +57,6 @@ namespace Mods.Prometheus.Scripts {
       _fireSimulationRuntimeState = fireSimulationRuntimeState;
       _fireEntityRegistryRuntimeState = fireEntityRegistryRuntimeState;
       _fireWaterContextRuntimeState = fireWaterContextRuntimeState;
-      _fireFestivalRuntimeState = fireFestivalRuntimeState;
       _fireImpactRuntimeState = fireImpactRuntimeState;
       _fireDispatchScoringRuntimeState = fireDispatchScoringRuntimeState;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
@@ -121,11 +118,6 @@ namespace Mods.Prometheus.Scripts {
         localSpreadReduction = Mathf.Max(0f, waterContextSnapshot.SpreadReduction);
       }
 
-      var festivalRiskBonus = 0f;
-      if (_fireFestivalRuntimeState.TryGetSnapshot(entityId, out var festivalSnapshot)) {
-        festivalRiskBonus = festivalSnapshot.FestivalRiskBonus;
-      }
-
       var neighborSpreadPressure = _fireEntityRegistryRuntimeState.ComputeNeighborSpreadPressure(
         entityId,
         GameObject.transform.position,
@@ -143,10 +135,7 @@ namespace Mods.Prometheus.Scripts {
         * (1f - (heatMitigation * 0.45f))
         * ignitionSensitivity
         * tuning.IndustrialIgnitionMultiplier;
-      var fireworksIgnition = (festivalRiskBonus + _fireResponseProfile.FireworksIgnitionBonus)
-        * drynessFactor
-        * tuning.FireworksIgnitionMultiplier;
-
+      var fireworksIgnition = 0f;
       var controlledBurnReadiness = Mathf.Clamp01((suppressionPower * 0.45f) + (waterEfficiency * 0.2f) + localWaterExposure);
       var controlledBurnEnvelope = neighborSpreadPressure <= 0.02f && localWaterExposure >= 0.08f && localWaterExposure <= 0.95f;
       var controlledBurnIgnition = _fireResponseProfile.SupportsControlledBurns && controlledBurnEnvelope
@@ -156,7 +145,7 @@ namespace Mods.Prometheus.Scripts {
       var neighborSpreadIgnition = neighborSpreadPressure * 0.35f * tuning.NeighborIgnitionMultiplier;
       var explosionIgnition = 0f;
 
-      var ignitionChance = weatherIgnition + industrialIgnition + fireworksIgnition + controlledBurnIgnition + neighborSpreadIgnition;
+      var ignitionChance = weatherIgnition + industrialIgnition + controlledBurnIgnition + neighborSpreadIgnition;
       ignitionChance *= (1f - (localWaterExposure * 0.5f));
       ignitionChance *= tuning.IgnitionMultiplier;
       ignitionChance = Mathf.Clamp01(ignitionChance);

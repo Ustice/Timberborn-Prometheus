@@ -54,7 +54,7 @@ namespace Mods.Prometheus.Scripts {
         return;
       }
 
-      if (!recoverySnapshot.AshenFertilityActive || recoverySnapshot.GrowthSpeedBonus <= 0f) {
+      if (!recoverySnapshot.FertileAshAvailable || recoverySnapshot.GrowthSpeedBonus <= 0f) {
         RestoreBaseGrowthTimeIfNeeded();
         return;
       }

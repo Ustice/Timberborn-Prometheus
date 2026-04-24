@@ -2,7 +2,7 @@ namespace Mods.Prometheus.Scripts {
   internal readonly struct FireRecoverySnapshot {
 
     public bool ControlledBurn { get; }
-    public bool AshenFertilityActive { get; }
+    public bool FertileAshAvailable { get; }
     public float FertilityBoost { get; }
     public float GrowthSpeedBonus { get; }
     public float YieldBonus { get; }
@@ -10,13 +10,13 @@ namespace Mods.Prometheus.Scripts {
 
     public FireRecoverySnapshot(
       bool controlledBurn,
-      bool ashenFertilityActive,
+      bool fertileAshAvailable,
       float fertilityBoost,
       float growthSpeedBonus,
       float yieldBonus,
       float remainingHours) {
       ControlledBurn = controlledBurn;
-      AshenFertilityActive = ashenFertilityActive;
+      FertileAshAvailable = fertileAshAvailable;
       FertilityBoost = fertilityBoost;
       GrowthSpeedBonus = growthSpeedBonus;
       YieldBonus = yieldBonus;

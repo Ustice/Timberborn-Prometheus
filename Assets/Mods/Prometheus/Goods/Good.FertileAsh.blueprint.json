@@ -1,25 +1,25 @@
 {
   "GoodSpec": {
-    "Id": "FireworksCrate",
+    "Id": "FertileAsh",
     "BackwardCompatibleIds": [],
     "ConsumptionEffects": [],
     "GoodType": "Box",
     "StockpileVisualization": "Box",
     "VisibleContainer": "Box",
     "ContainerColor": {
-      "r": 0.78039217,
-      "g": 0.243137255,
-      "b": 0.137254909,
+      "r": 0.2901961,
+      "g": 0.2901961,
+      "b": 0.2901961,
       "a": 1.0
     },
     "ContainerMaterial": "",
     "CarryingAnimation": "CarryInHands",
     "Weight": 1,
     "GoodGroupId": "Materials",
-    "GoodOrder": 8080,
-    "Icon": "Sprites/Goods/FireworksCrateIcon",
+    "GoodOrder": 8060,
+    "Icon": "Sprites/Goods/FertileAshIcon",
     "ForceImport": true,
-    "DisplayNameLocKey": "Good.FireworksCrate.DisplayName",
-    "PluralDisplayNameLocKey": "Good.FireworksCrate.PluralDisplayName"
+    "DisplayNameLocKey": "Good.FertileAsh.DisplayName",
+    "PluralDisplayNameLocKey": "Good.FertileAsh.PluralDisplayName"
   }
 }
