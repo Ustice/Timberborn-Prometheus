@@ -52,15 +52,14 @@ Recommended guardrails:
 
 ## Latest session status
 
-* Last updated: 2026-02-22
+* Last updated: 2026-04-24
 * Current focus:
-  * Validate fire-system hardening changes in live gameplay (dead building suppression, preview exclusion, destroy cleanup).
-  * Validate new in-game fire debug UX (filters/search/colored log rows/entity jump).
+  * Phase 2 firefighting gameplay and faction identity.
+  * Fold beaver/worker exposure inside burning buildings into Phase 2 responder/workplace validation.
 * Latest verified results:
-  * Behavior fixes landed: dead buildings suppress workers + operational behaviors; placement previews excluded from ignition path; snapshots cleaned on entity destroy.
-  * Debug panel now includes runtime count deltas, minimizable scrollable fire log, severity filters, colored labels, search, and per-line `View` (entity focus) button.
+  * Phase 1 core fire loop is complete enough to close: ignition, spread, extinguish, damage, dead/ash terminal behavior, and reset-to-healthy flow have passed live QA.
+  * `Reset Fire Sim` now provides a clean-slate recovery path for loaded fire entities and clears stale fire/damage/recovery snapshots.
 * Next steps:
-  * Run one focused in-game pass to validate `View` button behavior across `id=`, `sourceId=`, and `targetId=` log lines.
-  * Re-run explosion request/apply lifecycle capture with one-ignite-per-window guidance and archive evidence from `Fire.log` + `Player.log`.
-  * Expand dead-building verification across additional building archetypes and tune if needed.
+  * Start Phase 2 validation/tuning around firefighting logistics, worker/building exposure, and faction identity.
+  * Re-run explosion request/apply lifecycle capture during Phase 2 validation if gaps reappear.
 * Full handoff: `Assets/Mods/Prometheus/SESSION_HANDOFF.md`

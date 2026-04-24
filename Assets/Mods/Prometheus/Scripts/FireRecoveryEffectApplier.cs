@@ -65,6 +65,10 @@ namespace Mods.Prometheus.Scripts {
       _hasModifiedGrowthTime = true;
     }
 
+    internal void DebugRestoreBaseRecoveryEffects() {
+      RestoreBaseGrowthTimeIfNeeded();
+    }
+
     private void RestoreBaseGrowthTimeIfNeeded() {
       if (!_hasModifiedGrowthTime || _growable is null || _growthTimeInDaysProperty is null) {
         return;

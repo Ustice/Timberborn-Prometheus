@@ -3,6 +3,10 @@ namespace Mods.Prometheus.Scripts {
 
     private readonly System.Collections.Generic.Dictionary<int, TSnapshot> _snapshotsByEntityId = new();
 
+    public System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<int, TSnapshot>> EnumerateSnapshots() {
+      return _snapshotsByEntityId;
+    }
+
     public void SetSnapshot(int entityId, TSnapshot snapshot) {
       _snapshotsByEntityId[entityId] = snapshot;
     }
@@ -15,6 +19,10 @@ namespace Mods.Prometheus.Scripts {
 
     public void RemoveSnapshot(int entityId) {
       _snapshotsByEntityId.Remove(entityId);
+    }
+
+    public void ClearSnapshots() {
+      _snapshotsByEntityId.Clear();
     }
 
   }

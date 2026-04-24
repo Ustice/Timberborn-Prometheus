@@ -31,7 +31,7 @@ namespace Mods.Prometheus.Scripts {
     private float _dispatchAssignmentLockRemainingSeconds;
     private string _responseState = "Idle";
     private float _responseNotificationCooldownRemainingSeconds;
-    private float _burningTelemetryLogCooldownRemainingSeconds;
+    private float _lastBurningTelemetryLogRealtime = -BurningTelemetryLogIntervalInSeconds;
     private GameObject _fireMarkerObject;
     private TextMesh _fireMarkerText;
     private float _fireMarkerBaseHeight = 2.25f;
@@ -39,6 +39,8 @@ namespace Mods.Prometheus.Scripts {
     private bool _explosionDetonatedDuringCurrentBurn;
     private float _explosionSuppressionDisruptionSecondsRemaining;
     private float _previewExclusionLogCooldownRemainingSeconds;
+    private bool _terminalDeadStateApplied;
+    private bool _demolitionSuppressed;
 
     [Inject]
     public void InjectDependencies(
@@ -77,6 +79,11 @@ namespace Mods.Prometheus.Scripts {
         return;
       }
 
+      if (_demolitionSuppressed) {
+        ResetSimulationForExcludedEntity(entityId);
+        return;
+      }
+
       var hasExistingSnapshot = _fireSimulationRuntimeState.TryGetSnapshot(entityId, out _);
 
       if (!TickGate.ShouldRun(ref _timeSinceLastUpdate, UpdateIntervalInSeconds, hasExistingSnapshot)) {
@@ -84,6 +91,13 @@ namespace Mods.Prometheus.Scripts {
       }
 
       AdvanceCooldownTimers();
+
+      if (IsDeadBuilding(entityId)) {
+        ApplyTerminalDeadBuildingState(entityId);
+        return;
+      }
+
+      _terminalDeadStateApplied = false;
 
       if (!_fireSuppressionRuntimeState.TryGetSnapshot(entityId, out var suppressionSnapshot)) {
         return;
@@ -167,6 +181,15 @@ namespace Mods.Prometheus.Scripts {
       if (forcedIgnition) {
         shouldIgnite = true;
         FireTelemetry.Log($"event=debug_ignite_request entity={GameObject.name} id={entityId}");
+      }
+
+      if (!forcedIgnition
+          && _currentIntensity <= 0f
+          && _fireSimulationRuntimeState.DebugIgnitionSuppressed
+          && (shouldIgnite || spreadIgnitionTriggered)) {
+        shouldIgnite = false;
+        spreadIgnitionTriggered = false;
+        ignitionChance = 0f;
       }
 
       if (spreadIgnitionTriggered && _currentIntensity <= 0f) {
@@ -467,12 +490,86 @@ namespace Mods.Prometheus.Scripts {
         FireTelemetry.Log($"event=extinguished entity={GameObject.name} id={entityId}");
       }
 
-      if (simulationSnapshot.Burning && _burningTelemetryLogCooldownRemainingSeconds <= 0f) {
+      if (simulationSnapshot.Burning
+          && Time.realtimeSinceStartup - _lastBurningTelemetryLogRealtime >= BurningTelemetryLogIntervalInSeconds) {
         FireTelemetry.Log($"event=burning_tick entity={GameObject.name} id={entityId} intensity={simulationSnapshot.Intensity:0.000} spread={simulationSnapshot.SpreadPressure:0.000} quench={simulationSnapshot.QuenchingPower:0.000} heat={simulationSnapshot.HeatExposure:0.000} response={responseState}");
-        _burningTelemetryLogCooldownRemainingSeconds = BurningTelemetryLogIntervalInSeconds;
+        _lastBurningTelemetryLogRealtime = Time.realtimeSinceStartup;
       }
 
       _wasBurning = simulationSnapshot.Burning;
+    }
+
+    internal bool DebugForceExtinguish() {
+      var entityId = GameObject.GetInstanceID();
+      var hadActiveFire = _currentIntensity > 0f || _wasBurning;
+
+      _currentIntensity = 0f;
+      _wasBurning = false;
+      _dispatchAssignedScore = 0f;
+      _dispatchAssignmentLockRemainingSeconds = 0f;
+      _responseState = "Idle";
+      _responseNotificationCooldownRemainingSeconds = 0f;
+      _lastBurningTelemetryLogRealtime = -BurningTelemetryLogIntervalInSeconds;
+      _explosionDetonatedDuringCurrentBurn = false;
+      _explosionSuppressionDisruptionSecondsRemaining = 0f;
+
+      if (_fireSimulationRuntimeState.TryGetSnapshot(entityId, out var snapshot)) {
+        _fireSimulationRuntimeState.SetSnapshot(
+          entityId,
+          new FireSimulationSnapshot(
+            false,
+            0f,
+            0f,
+            snapshot.QuenchingPower,
+            0f,
+            snapshot.NeighborSpreadPressure,
+            snapshot.IgnitionChance,
+            "DebugForceExtinguish",
+            snapshot.WeatherIgnitionContribution,
+            snapshot.IndustrialIgnitionContribution,
+            snapshot.FireworksIgnitionContribution,
+            snapshot.ControlledBurnIgnitionContribution,
+            snapshot.ExplosionIgnitionContribution,
+            snapshot.DrynessFactor,
+            snapshot.FuelFactor,
+            snapshot.BarrierFactor));
+      }
+
+      var registrySnapshot = new FireEntityRegistrySnapshot(
+        GameObject.transform.position,
+        false,
+        0f,
+        0f);
+      _fireEntityRegistryRuntimeState.SetSnapshot(entityId, registrySnapshot);
+
+      if (_fireMarkerObject != null && _fireMarkerObject.activeSelf) {
+        _fireMarkerObject.SetActive(false);
+      }
+
+      return hadActiveFire;
+    }
+
+    internal void DebugResetFireSimulationState() {
+      var entityId = GameObject.GetInstanceID();
+      _currentIntensity = 0f;
+      _wasBurning = false;
+      _dispatchAssignedScore = 0f;
+      _dispatchAssignmentLockRemainingSeconds = 0f;
+      _responseState = "Idle";
+      _responseNotificationCooldownRemainingSeconds = 0f;
+      _lastBurningTelemetryLogRealtime = -BurningTelemetryLogIntervalInSeconds;
+      _explosionDetonatedDuringCurrentBurn = false;
+      _explosionSuppressionDisruptionSecondsRemaining = 0f;
+      _terminalDeadStateApplied = false;
+      _demolitionSuppressed = false;
+
+      _fireSimulationRuntimeState.RemoveSnapshot(entityId);
+      _fireEntityRegistryRuntimeState.RemoveSnapshot(entityId);
+      _fireDispatchScoringRuntimeState.RemoveSnapshot(entityId);
+
+      if (_fireMarkerObject != null && _fireMarkerObject.activeSelf) {
+        _fireMarkerObject.SetActive(false);
+      }
     }
 
     private void ResetSimulationForExcludedEntity(int entityId) {
@@ -481,7 +578,7 @@ namespace Mods.Prometheus.Scripts {
       _dispatchAssignedScore = 0f;
       _dispatchAssignmentLockRemainingSeconds = 0f;
       _responseNotificationCooldownRemainingSeconds = 0f;
-      _burningTelemetryLogCooldownRemainingSeconds = 0f;
+      _lastBurningTelemetryLogRealtime = -BurningTelemetryLogIntervalInSeconds;
       _explosionDetonatedDuringCurrentBurn = false;
       _explosionSuppressionDisruptionSecondsRemaining = 0f;
 
@@ -497,9 +594,59 @@ namespace Mods.Prometheus.Scripts {
     private void AdvanceCooldownTimers() {
       _responseNotificationCooldownRemainingSeconds = Mathf.Max(0f, _responseNotificationCooldownRemainingSeconds - UpdateIntervalInSeconds);
       _dispatchAssignmentLockRemainingSeconds = Mathf.Max(0f, _dispatchAssignmentLockRemainingSeconds - UpdateIntervalInSeconds);
-      _burningTelemetryLogCooldownRemainingSeconds = Mathf.Max(0f, _burningTelemetryLogCooldownRemainingSeconds - UpdateIntervalInSeconds);
       _explosionSuppressionDisruptionSecondsRemaining = Mathf.Max(0f, _explosionSuppressionDisruptionSecondsRemaining - UpdateIntervalInSeconds);
       _previewExclusionLogCooldownRemainingSeconds = Mathf.Max(0f, _previewExclusionLogCooldownRemainingSeconds - UpdateIntervalInSeconds);
+    }
+
+    private bool IsDeadBuilding(int entityId) {
+      return _fireDamageStateRuntimeState.TryGetSnapshot(entityId, out var damageStateSnapshot)
+             && damageStateSnapshot.Category == FireDamageCategory.Building
+             && damageStateSnapshot.State == FireDamageState.Dead;
+    }
+
+    private void ApplyTerminalDeadBuildingState(int entityId) {
+      var hadActiveFire = _currentIntensity > 0f
+                          || _wasBurning
+                          || (_fireSimulationRuntimeState.TryGetSnapshot(entityId, out var previousSnapshot)
+                              && (previousSnapshot.Burning || previousSnapshot.Intensity > 0f));
+
+      _currentIntensity = 0f;
+      _wasBurning = false;
+      _dispatchAssignedScore = 0f;
+      _dispatchAssignmentLockRemainingSeconds = 0f;
+      _responseState = "Stabilized";
+      _explosionDetonatedDuringCurrentBurn = false;
+      _explosionSuppressionDisruptionSecondsRemaining = 0f;
+
+      _fireSimulationRuntimeState.RemoveSnapshot(entityId);
+      _fireSimulationRuntimeState.SetSnapshot(
+        entityId,
+        new FireSimulationSnapshot(
+          false,
+          0f,
+          0f,
+          0f,
+          0f,
+          0f,
+          0f,
+          "DeadBuilding",
+          0f,
+          0f,
+          0f,
+          0f,
+          0f,
+          0f,
+          0f,
+          0f));
+
+      _fireEntityRegistryRuntimeState.RemoveSnapshot(entityId);
+      _fireDispatchScoringRuntimeState.RemoveSnapshot(entityId);
+      UpdateFireMarker(false, 0f, true);
+
+      if (!_terminalDeadStateApplied) {
+        FireTelemetry.Log($"event=dead_building_fire_terminal entity={GameObject.name} id={entityId} extinguished={hadActiveFire}");
+        _terminalDeadStateApplied = true;
+      }
     }
 
     private static string DetermineDominantIgnitionSource(

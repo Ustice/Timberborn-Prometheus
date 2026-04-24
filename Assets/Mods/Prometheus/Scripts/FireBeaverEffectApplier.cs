@@ -12,17 +12,27 @@ namespace Mods.Prometheus.Scripts {
 
     private const float UpdateIntervalInSeconds = 1f;
     private const float NeedManagerRefreshIntervalInSeconds = 5f;
-    private const float EffectRadius = 18f;
+    private const float EffectRadius = 8f;
+    private const float TargetEffectCooldownInSeconds = 1f;
+    private const float MaxThirstPenaltyPerSecond = 0.0001f;
+    private const float MaxHeatStressPenaltyPerSecond = 0.0005f;
 
     private FireImpactRuntimeState _fireImpactRuntimeState;
     private QuickNotificationService _quickNotificationService;
 
-    private readonly List<Component> _cachedNeedManagers = new();
+    private static bool _loggedMissingNeedManagerApi;
+    private static bool _loggedNeedManagerApiResolved;
+    private static bool _loggedNeedManagerScanSummary;
+    private static readonly List<NeedManagerTarget> _cachedNeedManagers = new();
+    private static readonly Dictionary<object, float> _nextEffectTimeByNeedManager = new();
 
-    private MethodInfo _addPointsMethod;
+    private static MethodInfo _managerAddPointsMethod;
+    private static MethodInfo _getNeedMethod;
+    private static MethodInfo _tryGetNeedMethod;
+    private static MethodInfo _needAddPointsMethod;
+    private static MethodInfo _needSetPointsMethod;
+    private static float _lastNeedManagerRefreshTime = -NeedManagerRefreshIntervalInSeconds;
     private float _timeSinceLastUpdate;
-    private float _timeSinceLastNeedManagerRefresh;
-    private bool _loggedMissingNeedManagerApi;
 
     [Inject]
     public void InjectDependencies(
@@ -37,97 +47,369 @@ namespace Mods.Prometheus.Scripts {
         return;
       }
 
-      _timeSinceLastNeedManagerRefresh += UpdateIntervalInSeconds;
-      if (_timeSinceLastNeedManagerRefresh >= NeedManagerRefreshIntervalInSeconds || _cachedNeedManagers.Count == 0) {
+      if (Time.time - _lastNeedManagerRefreshTime >= NeedManagerRefreshIntervalInSeconds || _cachedNeedManagers.Count == 0) {
         RefreshNeedManagers();
-        _timeSinceLastNeedManagerRefresh = 0f;
+        _lastNeedManagerRefreshTime = Time.time;
       }
 
       if (!_fireImpactRuntimeState.TryGetSnapshot(GameObject.GetInstanceID(), out var impactSnapshot)) {
         return;
       }
 
-      if (_cachedNeedManagers.Count == 0 || _addPointsMethod is null) {
+      if (_cachedNeedManagers.Count == 0 || !HasNeedApplicationApi()) {
         return;
       }
 
-      var thirstPenalty = -Mathf.Clamp(impactSnapshot.DehydrationPressure * 0.03f, 0f, 0.03f);
-      var injuryPenalty = -Mathf.Clamp(impactSnapshot.InjuryPressure * 0.02f, 0f, 0.02f);
+      var thirstPenalty = -Mathf.Clamp(impactSnapshot.DehydrationPressure * MaxThirstPenaltyPerSecond, 0f, MaxThirstPenaltyPerSecond);
+      var heatStressPenalty = -Mathf.Clamp((impactSnapshot.DehydrationPressure + impactSnapshot.InjuryPressure) * MaxHeatStressPenaltyPerSecond * 0.5f, 0f, MaxHeatStressPenaltyPerSecond);
 
-      if (Mathf.Approximately(thirstPenalty, 0f) && Mathf.Approximately(injuryPenalty, 0f)) {
+      if (Mathf.Approximately(thirstPenalty, 0f)
+          && Mathf.Approximately(heatStressPenalty, 0f)) {
         return;
       }
 
-      var sourcePosition = GameObject.transform.position;
+      var sourceTransform = GameObject == null ? null : GameObject.transform;
+      if (sourceTransform == null) {
+        return;
+      }
+
+      var sourcePosition = sourceTransform.position;
 
       for (var i = _cachedNeedManagers.Count - 1; i >= 0; i--) {
-        var needManagerComponent = _cachedNeedManagers[i];
-        if (needManagerComponent is null) {
+        var needManagerTarget = _cachedNeedManagers[i];
+        if (needManagerTarget.NeedManager is null || needManagerTarget.Transform == null) {
           _cachedNeedManagers.RemoveAt(i);
           continue;
         }
 
-        var targetPosition = needManagerComponent.transform.position;
-        if (Vector3.Distance(sourcePosition, targetPosition) > EffectRadius) {
+        var targetPosition = needManagerTarget.Transform.position;
+        var distance = Vector3.Distance(sourcePosition, targetPosition);
+        if (distance > EffectRadius) {
           continue;
         }
 
-        TryApplyNeedPenalty(needManagerComponent, "Thirst", thirstPenalty);
-        TryApplyNeedPenalty(needManagerComponent, "Injury", injuryPenalty);
+        if (_nextEffectTimeByNeedManager.TryGetValue(needManagerTarget.NeedManager, out var nextEffectTime)
+            && Time.time < nextEffectTime) {
+          continue;
+        }
+        _nextEffectTimeByNeedManager[needManagerTarget.NeedManager] = Time.time + TargetEffectCooldownInSeconds;
+
+        var proximityMultiplier = Mathf.Clamp01(1f - (distance / EffectRadius));
+        TryApplyNeedDelta(needManagerTarget.NeedManager, "Thirst", thirstPenalty * proximityMultiplier);
+        TryApplyNeedDelta(needManagerTarget.NeedManager, "HeatStress", heatStressPenalty * proximityMultiplier);
       }
     }
 
-    private void RefreshNeedManagers() {
-      _cachedNeedManagers.Clear();
-      _addPointsMethod = null;
+    internal static int DebugClearFireNeedEffects() {
+      RefreshNeedManagersFromScene();
 
-      var components = UnityEngine.Object.FindObjectsByType<Component>(FindObjectsSortMode.None);
-      foreach (var component in components) {
-        if (component is null) {
+      var clearedCount = 0;
+      for (var i = _cachedNeedManagers.Count - 1; i >= 0; i--) {
+        var needManagerTarget = _cachedNeedManagers[i];
+        if (needManagerTarget.NeedManager is null || needManagerTarget.Transform == null) {
+          _cachedNeedManagers.RemoveAt(i);
           continue;
         }
 
-        var type = component.GetType();
-        if (type.Name != "NeedManager") {
-          continue;
-        }
-
-        _cachedNeedManagers.Add(component);
-
-        if (_addPointsMethod is null) {
-          var candidate = type.GetMethod(
-            "AddPoints",
-            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-
-          if (candidate is not null) {
-            var parameters = candidate.GetParameters();
-            if (parameters.Length == 2 && parameters[0].ParameterType == typeof(string) && parameters[1].ParameterType == typeof(float)) {
-              _addPointsMethod = candidate;
-            }
-          }
-        }
+        TrySetNeedPoints(needManagerTarget.NeedManager, "HeatStress", 0f);
+        TrySetNeedPoints(needManagerTarget.NeedManager, "Injury", 0f);
+        clearedCount++;
       }
 
-      if (_addPointsMethod is null && !_loggedMissingNeedManagerApi) {
+      _nextEffectTimeByNeedManager.Clear();
+      FireTelemetry.Log($"event=debug_clear_beaver_fire_effects count={clearedCount}");
+      return clearedCount;
+    }
+
+    private void RefreshNeedManagers() {
+      var scanSummary = RefreshNeedManagersFromScene();
+
+      if (!_loggedNeedManagerScanSummary) {
+        _loggedNeedManagerScanSummary = true;
+        FireTelemetry.Log($"event=beaver_effect_need_manager_scan componentCaches={scanSummary.ComponentCacheCount} cachedComponents={scanSummary.CachedComponentCount} needManagers={scanSummary.NeedManagerCount} apiBound={HasNeedApplicationApi()}");
+      }
+
+      if (!HasNeedApplicationApi() && !_loggedMissingNeedManagerApi) {
         _loggedMissingNeedManagerApi = true;
-        const string warning = "Prometheus: NeedManager AddPoints API not found; beaver fire effects disabled.";
+        const string warning = "Prometheus: compatible NeedManager API not found; beaver fire effects disabled.";
         _quickNotificationService.SendNotification(warning);
         FireTelemetry.LogWarning($"event=beaver_effect_api_missing message=\"{warning}\"");
       }
     }
 
-    private void TryApplyNeedPenalty(Component needManagerComponent, string needId, float pointsDelta) {
-      if (_addPointsMethod is null || Mathf.Approximately(pointsDelta, 0f)) {
+    private static NeedManagerScanSummary RefreshNeedManagersFromScene() {
+      _cachedNeedManagers.Clear();
+      _managerAddPointsMethod = null;
+      _getNeedMethod = null;
+      _tryGetNeedMethod = null;
+      _needAddPointsMethod = null;
+      _needSetPointsMethod = null;
+      _nextEffectTimeByNeedManager.Clear();
+      var componentCacheCount = 0;
+      var cachedComponentCount = 0;
+      var needManagerCount = 0;
+
+      var unityComponents = UnityEngine.Object.FindObjectsByType<Component>(FindObjectsSortMode.None);
+      foreach (var unityComponent in unityComponents) {
+        if (unityComponent is null) {
+          continue;
+        }
+
+        if (unityComponent.GetType().Name != "ComponentCache") {
+          continue;
+        }
+        componentCacheCount++;
+
+        if (!TryGetCachedComponents(unityComponent, out var cachedComponents)) {
+          continue;
+        }
+
+        foreach (var component in cachedComponents) {
+          cachedComponentCount++;
+          if (component is null || component.GetType().Name != "NeedManager") {
+            continue;
+          }
+          needManagerCount++;
+
+          _cachedNeedManagers.Add(new NeedManagerTarget(component, unityComponent.transform));
+
+          if (!HasNeedApplicationApi()) {
+            BindNeedApplicationApi(component.GetType());
+          }
+        }
+      }
+
+      return new NeedManagerScanSummary(componentCacheCount, cachedComponentCount, needManagerCount);
+    }
+
+    private static bool TryGetCachedComponents(Component componentCache, out System.Collections.IEnumerable cachedComponents) {
+      var componentCacheType = componentCache.GetType();
+      var componentsField = componentCacheType.GetField(
+        "_components",
+        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+
+      if (componentsField?.GetValue(componentCache) is System.Collections.IEnumerable components) {
+        cachedComponents = components;
+        return true;
+      }
+
+      var allComponentsProperty = componentCacheType.GetProperty(
+        "AllComponents",
+        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+      if (allComponentsProperty?.GetValue(componentCache) is System.Collections.IEnumerable allComponents) {
+        cachedComponents = allComponents;
+        return true;
+      }
+
+      cachedComponents = null;
+      return false;
+    }
+
+    private static bool HasNeedApplicationApi() {
+      return _managerAddPointsMethod is not null
+             || (_getNeedMethod is not null && _needAddPointsMethod is not null)
+             || (_tryGetNeedMethod is not null && _needAddPointsMethod is not null);
+    }
+
+    private static void BindNeedApplicationApi(Type needManagerType) {
+      var managerAddPointsCandidate = needManagerType.GetMethod(
+        "AddPoints",
+        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+
+      if (HasParameters(managerAddPointsCandidate, typeof(string), typeof(float))) {
+        _managerAddPointsMethod = managerAddPointsCandidate;
+        LogNeedManagerApiResolved("NeedManager.AddPoints(string,float)");
+        return;
+      }
+
+      var getNeedCandidate = needManagerType.GetMethod(
+        "GetNeed",
+        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+        null,
+        new[] { typeof(string) },
+        null);
+
+      if (getNeedCandidate is not null && TryBindNeedMethods(getNeedCandidate.ReturnType)) {
+        _getNeedMethod = getNeedCandidate;
+        LogNeedManagerApiResolved("NeedManager.GetNeed(string) + Need.AddPoints(float)");
+        return;
+      }
+
+      var tryGetNeedCandidate = needManagerType.GetMethod(
+        "TryGetNeed",
+        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+
+      if (tryGetNeedCandidate is null) {
+        return;
+      }
+
+      var parameters = tryGetNeedCandidate.GetParameters();
+      if (parameters.Length != 2
+          || parameters[0].ParameterType != typeof(string)
+          || !parameters[1].ParameterType.IsByRef) {
+        return;
+      }
+
+      var needType = parameters[1].ParameterType.GetElementType();
+      if (!TryBindNeedMethods(needType)) {
+        return;
+      }
+
+      _tryGetNeedMethod = tryGetNeedCandidate;
+      LogNeedManagerApiResolved("NeedManager.TryGetNeed + Need.AddPoints(float)");
+    }
+
+    private static bool TryBindNeedMethods(Type needType) {
+      var needAddPointsCandidate = needType?.GetMethod(
+        "AddPoints",
+        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+        null,
+        new[] { typeof(float) },
+        null);
+      var needSetPointsCandidate = needType?.GetMethod(
+        "SetPoints",
+        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+        null,
+        new[] { typeof(float) },
+        null);
+
+      if (needAddPointsCandidate is null) {
+        return false;
+      }
+
+      _needAddPointsMethod = needAddPointsCandidate;
+      _needSetPointsMethod = needSetPointsCandidate;
+      return true;
+    }
+
+    private static bool HasParameters(MethodInfo methodInfo, params Type[] parameterTypes) {
+      if (methodInfo is null) {
+        return false;
+      }
+
+      var parameters = methodInfo.GetParameters();
+      if (parameters.Length != parameterTypes.Length) {
+        return false;
+      }
+
+      for (var i = 0; i < parameterTypes.Length; i++) {
+        if (parameters[i].ParameterType != parameterTypes[i]) {
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    private static void LogNeedManagerApiResolved(string api) {
+      if (_loggedNeedManagerApiResolved) {
+        return;
+      }
+
+      _loggedNeedManagerApiResolved = true;
+      FireTelemetry.Log($"event=beaver_effect_api_resolved api=\"{api}\"");
+    }
+
+    private static void TryApplyNeedDelta(object needManager, string needId, float pointsDelta) {
+      if (Mathf.Approximately(pointsDelta, 0f)) {
         return;
       }
 
       try {
-        _addPointsMethod.Invoke(needManagerComponent, new object[] { needId, pointsDelta });
+        if (_managerAddPointsMethod is not null) {
+          _managerAddPointsMethod.Invoke(needManager, new object[] { needId, pointsDelta });
+          return;
+        }
+
+        if (_tryGetNeedMethod is null || _needAddPointsMethod is null) {
+          if (_getNeedMethod is null || _needAddPointsMethod is null) {
+            return;
+          }
+
+          var need = _getNeedMethod.Invoke(needManager, new object[] { needId });
+          if (need is null) {
+            return;
+          }
+
+          _needAddPointsMethod.Invoke(need, new object[] { pointsDelta });
+          return;
+        }
+
+        var tryGetNeedArguments = new object[] { needId, null };
+        var foundNeed = (bool)_tryGetNeedMethod.Invoke(needManager, tryGetNeedArguments);
+        if (!foundNeed || tryGetNeedArguments[1] is null) {
+          return;
+        }
+
+        _needAddPointsMethod.Invoke(tryGetNeedArguments[1], new object[] { pointsDelta });
       } catch (TargetInvocationException) {
         // Intentionally ignored: some need managers may reject a need id for current worker type.
       } catch (ArgumentException) {
         // Intentionally ignored: fallback for unexpected signature drift.
       }
+    }
+
+    private static void TrySetNeedPoints(object needManager, string needId, float points) {
+      if (_needSetPointsMethod is null) {
+        TryApplyNeedDelta(needManager, needId, 10f);
+        return;
+      }
+
+      try {
+        var need = TryGetNeed(needManager, needId);
+        if (need is null) {
+          return;
+        }
+
+        _needSetPointsMethod.Invoke(need, new object[] { points });
+      } catch (TargetInvocationException) {
+        // Intentionally ignored: some need managers may reject a need id for current worker type.
+      } catch (ArgumentException) {
+        // Intentionally ignored: fallback for unexpected signature drift.
+      }
+    }
+
+    private static object TryGetNeed(object needManager, string needId) {
+      if (_getNeedMethod is not null) {
+        return _getNeedMethod.Invoke(needManager, new object[] { needId });
+      }
+
+      if (_tryGetNeedMethod is null) {
+        return null;
+      }
+
+      var tryGetNeedArguments = new object[] { needId, null };
+      var foundNeed = (bool)_tryGetNeedMethod.Invoke(needManager, tryGetNeedArguments);
+      return foundNeed ? tryGetNeedArguments[1] : null;
+    }
+
+    private readonly struct NeedManagerTarget {
+
+      public readonly object NeedManager;
+      public readonly Transform Transform;
+
+      public NeedManagerTarget(object needManager, Transform transform) {
+        NeedManager = needManager;
+        Transform = transform;
+      }
+
+    }
+
+    private readonly struct NeedManagerScanSummary {
+
+      public readonly int ComponentCacheCount;
+      public readonly int CachedComponentCount;
+      public readonly int NeedManagerCount;
+
+      public NeedManagerScanSummary(
+        int componentCacheCount,
+        int cachedComponentCount,
+        int needManagerCount) {
+        ComponentCacheCount = componentCacheCount;
+        CachedComponentCount = cachedComponentCount;
+        NeedManagerCount = needManagerCount;
+      }
+
     }
 
   }

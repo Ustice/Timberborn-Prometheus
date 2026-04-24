@@ -8,7 +8,9 @@ Validate:
 
 - Prometheus runtime load + blueprint type resolution,
 - Fire debug instrumentation visibility/copy workflow,
+- Phase 1 regression safety after closure,
 - Phase 2 dispatch stability and faction asymmetry,
+- Phase 2 worker/beaver exposure inside burning buildings,
 - Carryover Phase 5 balancing gates.
 
 ## Preflight checklist
@@ -26,11 +28,13 @@ Validate:
 - [ ] `Player.log` contains `- Prometheus (v0.2)` (or newer).
 - [ ] No startup exception containing `No type found for key FireResponseProfileSpec`.
 
-### B. Entity panel instrumentation
+### B. Prometheus panel instrumentation
 
-- [ ] Selecting a Prometheus-profiled entity (e.g., Bakery override target) shows `Prometheus Fire Debug`.
-- [ ] Debug output is selectable.
-- [ ] **Copy** button copies full snapshot text.
+- [ ] Bottom-left `Prometheus Debug` panel opens above the Timberborn bottom bar without overlapping the selected-building details panel.
+- [ ] Selecting a Prometheus-profiled entity (e.g., Bakery or Explosives Factory) updates the panel `Selection` section.
+- [ ] The selected-building details panel does not show a separate Prometheus debug fragment.
+- [ ] `Copy` in the panel selection section copies the full selected-entity snapshot text.
+- [ ] `Ignite` in the panel selection section queues ignition for the selected fire-profiled entity.
 
 ## Core gameplay validation sequence
 
@@ -57,10 +61,26 @@ Pass criteria:
 - [ ] Lock/hysteresis reduces micro-retargeting.
 - [ ] State transitions are sensible (`Overwhelmed` -> `Contained` -> `Stabilized`, where applicable).
 
+### 2a) Phase 1 regression check
+
+- [ ] Ignite one fire-profiled building.
+- [ ] Confirm fire can spread or apply pressure to a nearby valid target.
+- [ ] Confirm `Stop All Fires` extinguishes active fire.
+- [ ] Drive one building to dead/ash.
+- [ ] Confirm dead/ash does not keep burning.
+- [ ] Click `Reset Fire Sim`.
+- [ ] Confirm the entity is healthy/functioning again and can be re-ignited.
+
 ### 3) Faction asymmetry pass (short)
 
 - [ ] Folktails: weaker suppression on farther/low-water front versus near-water front.
 - [ ] Ironteeth: stronger suppression as fire intensity rises.
+
+### 3a) Worker/beaver exposure pass
+
+- [ ] Confirm assigned workers inside burning buildings receive the intended Phase 2 exposure effects.
+- [ ] Confirm nearby beavers are affected by proximity without colony-wide spillover.
+- [ ] Confirm workers recover after fire pressure clears or `Reset Fire Sim` is used.
 
 ### 4) Dual-front validation pass (carryover gate)
 

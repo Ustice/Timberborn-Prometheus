@@ -295,7 +295,7 @@ Delivered:
 - collection/localization wiring,
 - script assembly entry point for future systems.
 
-## Phase 1 — Core Fire Simulation (In Progress)
+## Phase 1 — Core Fire Simulation (Done)
 
 **Goal:** implement functional fire behavior.
 
@@ -305,11 +305,16 @@ Scope:
 - spread rules,
 - quenching by water,
 - damage ticks for crops/trees/buildings,
-- beaver heat exposure interaction.
+- beaver heat exposure interaction *(deferred to Phase 2 for beavers/workers inside burning buildings)*.
 
 Exit criteria:
 
 - Fires can start, spread, be extinguished, and cause/avoid losses predictably.
+
+Status:
+
+- Core ignition, spread, quenching, damage, terminal dead/ash behavior, and reset-to-healthy debug recovery have passed live QA.
+- Remaining beaver/worker exposure behavior is owned by Phase 2 because it depends on workplace occupancy and responder gameplay.
 
 ## Phase 2 — Firefighting Gameplay and Faction Identity
 
@@ -517,7 +522,7 @@ Use that file as the source of truth for smoke checks, dual-front validation mat
 
 ### Milestone checklist
 
-- [ ] Phase 1 — Core Fire Simulation (In Progress)
+- [x] Phase 1 — Core Fire Simulation (Done)
 - [ ] Phase 2 — Firefighting Gameplay and Faction Identity (In Progress)
 - [ ] Phase 3 — Renewal and Controlled Burn Economy
 - [ ] Phase 4 — Fireworks and Festival Systems
@@ -663,6 +668,7 @@ Active/planned entries only. Full historical log moved to `DESIGN_CHANGELOG_ARCH
 
 | Date | Phase | Update | Status |
 | --- | --- | --- | --- |
+| 2026-04-24 | Phase 1 | Closed core fire simulation after live QA confirmed ignition/spread/extinguish/damage/dead-ash terminal behavior and `Reset Fire Sim` clean-slate recovery; deferred beaver/worker exposure inside burning buildings to Phase 2 | Done |
 | 2026-02-22 | Phase 2/3 | Added Emberpelts future extension concept (heat-adapted response, tail-stamp suppression style, charcoal salvage + ash-soil synergy, wet-fur breeding constraint awareness) | Planned |
 | 2026-02-21 | Phase 2/5 | Added quick-fill dual-front playtest result template and next sprint execution plan (validation, tuning sequence, and exit gates) | Planned |
 | 2026-02-21 | Phase 2/5 | Added detailed next-sprint Phase 2 delivery plan (faction logistics depth, dispatch scoring, hysteresis, telemetry, acceptance gates) and explicit sprint checklist | Planned |

@@ -61,12 +61,23 @@ namespace Mods.Prometheus.Scripts {
       _lastAppliedState = snapshot.State;
     }
 
+    internal void DebugRestoreHealthyState() {
+      if (!_initialized) {
+        BindTargetComponents();
+        _initialized = true;
+      }
+
+      ApplyState(FireDamageState.Healthy);
+      _lastAppliedState = FireDamageState.Healthy;
+    }
+
     private void ApplyState(FireDamageState state) {
       switch (state) {
         case FireDamageState.Healthy:
           InvokeIfAvailable(_setDeteriorationToZeroMethod, _deteriorableComponent);
           InvokeIfAvailable(_resumeGrowingMethod, _growableComponent);
           SetBoolIfAvailable(_isDyingProperty, _livingNaturalResourceComponent, false);
+          SetBoolIfAvailable(_isDeadProperty, _livingNaturalResourceComponent, false);
           break;
         case FireDamageState.Scorched:
         case FireDamageState.Burning:

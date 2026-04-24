@@ -17,12 +17,9 @@
     "FavorableWellbeing": 0,
     "UnfavorableWellbeing": -2
   },
-  "NeedPreventingWorkSpec": {
-    "WorkRefusalWarningLocKey": "Work.WorkRefusalWarning"
-  },
   "CriticalNeedSpec": {
     "CriticalNeedType": "Alert",
-    "SpriteName": "Injury",
+    "SpriteName": "Thirst",
     "DescriptionLocKey": "Status.Need.HeatStress",
     "DescriptionShortLocKey": "Status.Need.HeatStress.Short"
   },

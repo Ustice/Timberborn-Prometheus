@@ -1,8 +1,12 @@
 using System;
+using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 using Timberborn.BaseComponentSystem;
 using Timberborn.CoreUI;
+using Timberborn.Demolishing;
 using Timberborn.EntityPanelSystem;
+using Timberborn.SelectionSystem;
 using Timberborn.SingletonSystem;
 using Timberborn.UILayoutSystem;
 using UnityEngine;
@@ -28,6 +32,7 @@ namespace Mods.Prometheus.Scripts {
     private readonly FireImpactRuntimeState _fireImpactRuntimeState;
     private readonly FireDamageStateRuntimeState _fireDamageStateRuntimeState;
     private readonly FireRecoveryRuntimeState _fireRecoveryRuntimeState;
+    private readonly PrometheusDebugPanel _prometheusDebugPanel;
 
     private VisualElement _root;
     private Label _titleLabel;
@@ -85,7 +90,8 @@ namespace Mods.Prometheus.Scripts {
       FireFestivalRuntimeState fireFestivalRuntimeState,
       FireImpactRuntimeState fireImpactRuntimeState,
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
-      FireRecoveryRuntimeState fireRecoveryRuntimeState) {
+      FireRecoveryRuntimeState fireRecoveryRuntimeState,
+      PrometheusDebugPanel prometheusDebugPanel) {
       _fireTuningRuntimeState = fireTuningRuntimeState;
       _fireSuppressionRuntimeState = fireSuppressionRuntimeState;
       _fireSimulationRuntimeState = fireSimulationRuntimeState;
@@ -96,12 +102,12 @@ namespace Mods.Prometheus.Scripts {
       _fireImpactRuntimeState = fireImpactRuntimeState;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
       _fireRecoveryRuntimeState = fireRecoveryRuntimeState;
+      _prometheusDebugPanel = prometheusDebugPanel;
     }
 
     public VisualElement InitializeFragment() {
       _root = new VisualElement();
-      _root.style.display = DisplayStyle.None;
-      _root.style.overflow = Overflow.Visible;
+      ApplyHiddenSelectionBridgeRootStyle();
       _root.style.marginTop = 4;
       _root.style.marginBottom = 4;
       _root.style.paddingLeft = 8;
@@ -333,8 +339,34 @@ namespace Mods.Prometheus.Scripts {
 
       UpdateDetailsVisibility(_detailsFoldout.value);
       UpdateFireLogVisibility(_fireLogFoldout.value);
+      ApplyHiddenSelectionBridgeRootStyle();
 
       return _root;
+    }
+
+    private void ApplyHiddenSelectionBridgeRootStyle() {
+      if (_root == null) {
+        return;
+      }
+
+      _root.style.display = DisplayStyle.None;
+      _root.style.visibility = Visibility.Hidden;
+      _root.style.overflow = Overflow.Hidden;
+      _root.style.width = 0;
+      _root.style.height = 0;
+      _root.style.minWidth = 0;
+      _root.style.minHeight = 0;
+      _root.style.maxWidth = 0;
+      _root.style.maxHeight = 0;
+      _root.style.marginLeft = 0;
+      _root.style.marginRight = 0;
+      _root.style.marginTop = 0;
+      _root.style.marginBottom = 0;
+      _root.style.paddingLeft = 0;
+      _root.style.paddingRight = 0;
+      _root.style.paddingTop = 0;
+      _root.style.paddingBottom = 0;
+      _root.pickingMode = PickingMode.Ignore;
     }
 
     private void UpdateDetailsVisibility(bool showDetails) {
@@ -444,7 +476,7 @@ namespace Mods.Prometheus.Scripts {
       _copyButton.style.color = PanelTextColor;
 
       CaptureRuntimeCountBaselines();
-      _root.style.display = DisplayStyle.Flex;
+      ApplyHiddenSelectionBridgeRootStyle();
       UpdateFragment();
     }
 
@@ -464,7 +496,8 @@ namespace Mods.Prometheus.Scripts {
       _fireLogLinesContainer?.Clear();
       UpdateDetailsVisibility(false);
       UpdateFireLogVisibility(false);
-      _root.style.display = DisplayStyle.None;
+      _prometheusDebugPanel.ClearSelectedEntityDebug();
+      ApplyHiddenSelectionBridgeRootStyle();
     }
 
     public void UpdateFragment() {
@@ -641,7 +674,15 @@ namespace Mods.Prometheus.Scripts {
       }
 
       _latestDebugText = stringBuilder.ToString();
-      _dataLabel.text = _latestDebugText;
+      if (_dataLabel != null) {
+        _dataLabel.text = _latestDebugText;
+      }
+      _prometheusDebugPanel.SetSelectedEntityDebug(
+        _selectedEntityId,
+        _titleLabel.text,
+        _latestDebugText,
+        _selectedEntityHasFireProfile,
+        _selectedEntityHasSimulationController);
       UpdateInGameFireLogPanel();
       if (!_copyFeedbackActive) {
         _copyStatusLabel.text = string.Empty;
@@ -824,7 +865,7 @@ namespace Mods.Prometheus.Scripts {
       }
     }
 
-    private static bool TryExtractEntityId(string message, out int entityId) {
+    internal static bool TryExtractEntityId(string message, out int entityId) {
       entityId = 0;
       if (string.IsNullOrWhiteSpace(message)) {
         return false;
@@ -844,18 +885,23 @@ namespace Mods.Prometheus.Scripts {
 
       var start = tokenIndex + token.Length;
       var end = start;
+      if (end < message.Length && message[end] == '-') {
+        end++;
+      }
+
+      var digitStart = end;
       while (end < message.Length && char.IsDigit(message[end])) {
         end++;
       }
 
-      if (end <= start) {
+      if (end <= digitStart) {
         return false;
       }
 
       return int.TryParse(message.Substring(start, end - start), out value) && value != 0;
     }
 
-    private static bool TryFocusCameraOnEntity(int entityId, out string entityName) {
+    internal static bool TryFocusCameraOnEntity(int entityId, out string entityName) {
       entityName = string.Empty;
       var allObjects = Resources.FindObjectsOfTypeAll<GameObject>();
       for (var i = 0; i < allObjects.Length; i++) {
@@ -927,10 +973,21 @@ namespace Mods.Prometheus.Scripts {
 
   }
 
-  internal class PrometheusFireLogPanel : ILoadableSingleton {
+  internal class PrometheusDebugPanel : ILoadableSingleton {
 
     private readonly UILayout _uiLayout;
+    private readonly FireSuppressionRuntimeState _fireSuppressionRuntimeState;
+    private readonly FireSimulationRuntimeState _fireSimulationRuntimeState;
+    private readonly FireDispatchScoringRuntimeState _fireDispatchScoringRuntimeState;
+    private readonly FireEntityRegistryRuntimeState _fireEntityRegistryRuntimeState;
+    private readonly FireImpactRuntimeState _fireImpactRuntimeState;
+    private readonly FireDamageStateRuntimeState _fireDamageStateRuntimeState;
+    private readonly FireWaterContextRuntimeState _fireWaterContextRuntimeState;
+    private readonly FireRecoveryRuntimeState _fireRecoveryRuntimeState;
+    private readonly FireFestivalRuntimeState _fireFestivalRuntimeState;
+    private readonly EntitySelectionService _entitySelectionService;
     private readonly Color _panelTextColor = new(0.84f, 0.92f, 0.83f, 1f);
+    private const float DebugStopAllFiresIgnitionSuppressionSeconds = 60f;
 
     public event Action<bool> OpenStateChanged;
     public event Action<int> UnreadCountChanged;
@@ -940,7 +997,7 @@ namespace Mods.Prometheus.Scripts {
     private VisualElement _root;
     private Foldout _panelFoldout;
     private ScrollView _logScrollView;
-    private TextField _logTextField;
+    private VisualElement _logLinesContainer;
     private TextField _searchField;
     private Toggle _autoScrollToggle;
     private Button _allFilterButton;
@@ -952,21 +1009,55 @@ namespace Mods.Prometheus.Scripts {
     private Label _errorsSummaryLabel;
     private Label _assertsSummaryLabel;
     private Label _exceptionsSummaryLabel;
+    private Label _adminFeedbackLabel;
+    private Foldout _selectionFoldout;
+    private VisualElement _selectionContainer;
+    private Label _selectionTitleLabel;
+    private Label _selectionFeedbackLabel;
+    private Label _selectionDebugLabel;
+    private Button _selectionCopyButton;
+    private Button _selectionIgniteButton;
+    private int _selectedEntityId;
+    private bool _selectedEntityHasFireProfile;
+    private bool _selectedEntityHasSimulationController;
+    private string _selectedEntityTitle = "No selected fire entity";
+    private string _selectedEntityDebugText = "Select a fire-profiled building to inspect Prometheus runtime details.";
 
     private bool _autoScroll = true;
     private FireLogFilter _filter = FireLogFilter.All;
     private string _searchText = string.Empty;
-    private int _lastRenderedEntryCount = -1;
+    private string _lastRenderedEntrySignature = string.Empty;
     private int _lastObservedEntryCount;
     private int _unreadCount;
 
-    public PrometheusFireLogPanel(UILayout uiLayout) {
+    public PrometheusDebugPanel(
+      UILayout uiLayout,
+      FireSuppressionRuntimeState fireSuppressionRuntimeState,
+      FireSimulationRuntimeState fireSimulationRuntimeState,
+      FireDispatchScoringRuntimeState fireDispatchScoringRuntimeState,
+      FireEntityRegistryRuntimeState fireEntityRegistryRuntimeState,
+      FireImpactRuntimeState fireImpactRuntimeState,
+      FireDamageStateRuntimeState fireDamageStateRuntimeState,
+      FireWaterContextRuntimeState fireWaterContextRuntimeState,
+      FireRecoveryRuntimeState fireRecoveryRuntimeState,
+      FireFestivalRuntimeState fireFestivalRuntimeState,
+      EntitySelectionService entitySelectionService) {
       _uiLayout = uiLayout;
+      _fireSuppressionRuntimeState = fireSuppressionRuntimeState;
+      _fireSimulationRuntimeState = fireSimulationRuntimeState;
+      _fireDispatchScoringRuntimeState = fireDispatchScoringRuntimeState;
+      _fireEntityRegistryRuntimeState = fireEntityRegistryRuntimeState;
+      _fireImpactRuntimeState = fireImpactRuntimeState;
+      _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
+      _fireWaterContextRuntimeState = fireWaterContextRuntimeState;
+      _fireRecoveryRuntimeState = fireRecoveryRuntimeState;
+      _fireFestivalRuntimeState = fireFestivalRuntimeState;
+      _entitySelectionService = entitySelectionService;
     }
 
     public void Load() {
       _root = BuildPanelRoot();
-      _uiLayout.AddBottomRight(_root, 5);
+      _uiLayout.AddBottomLeft(_root, 5);
       UpdateFilterButtonStyles();
 
       _lastObservedEntryCount = FireTelemetry.GetRecentInGameLogEntries().Length;
@@ -1002,7 +1093,7 @@ namespace Mods.Prometheus.Scripts {
       root.style.width = 460;
       root.style.maxWidth = 560;
       root.style.marginRight = 8;
-      root.style.marginBottom = 8;
+      root.style.marginBottom = 76;
       root.style.paddingLeft = 8;
       root.style.paddingRight = 8;
       root.style.paddingTop = 6;
@@ -1023,7 +1114,7 @@ namespace Mods.Prometheus.Scripts {
       root.style.overflow = Overflow.Visible;
 
       _panelFoldout = new Foldout {
-        text = "Prometheus Fire Log",
+        text = "Prometheus Debug",
         value = false
       };
       _panelFoldout.style.color = _panelTextColor;
@@ -1042,6 +1133,7 @@ namespace Mods.Prometheus.Scripts {
       }
 
       _panelFoldout.Add(BuildToolbar());
+      _panelFoldout.Add(BuildSelectionPanel());
       _panelFoldout.Add(BuildTypeSummaryRow());
 
       _logScrollView = new ScrollView(ScrollViewMode.Vertical);
@@ -1063,39 +1155,13 @@ namespace Mods.Prometheus.Scripts {
       _logScrollView.style.borderBottomColor = new Color(0.22f, 0.33f, 0.27f, 1f);
       _logScrollView.style.borderLeftColor = new Color(0.22f, 0.33f, 0.27f, 1f);
 
-      _logTextField = new TextField {
-        value = string.Empty,
-        multiline = true,
-        isReadOnly = true
-      };
-      _logTextField.style.whiteSpace = WhiteSpace.PreWrap;
-      _logTextField.style.fontSize = 10;
-      _logTextField.style.unityTextAlign = TextAnchor.UpperLeft;
-      _logTextField.style.minWidth = 0;
-      _logTextField.style.marginBottom = 2;
-      _logTextField.style.color = _panelTextColor;
-      _logTextField.style.backgroundColor = new Color(0f, 0f, 0f, 0f);
-      _logTextField.style.borderTopWidth = 0;
-      _logTextField.style.borderRightWidth = 0;
-      _logTextField.style.borderBottomWidth = 0;
-      _logTextField.style.borderLeftWidth = 0;
-
-      var logInput = _logTextField.Q(className: "unity-text-field__input");
-      if (logInput is not null) {
-        logInput.style.whiteSpace = WhiteSpace.PreWrap;
-        logInput.style.unityTextAlign = TextAnchor.UpperLeft;
-        logInput.style.paddingLeft = 0;
-        logInput.style.paddingRight = 0;
-        logInput.style.paddingTop = 0;
-        logInput.style.paddingBottom = 0;
-        logInput.style.backgroundColor = new Color(0f, 0f, 0f, 0f);
-        logInput.style.borderTopWidth = 0;
-        logInput.style.borderRightWidth = 0;
-        logInput.style.borderBottomWidth = 0;
-        logInput.style.borderLeftWidth = 0;
-      }
-
-      _logScrollView.Add(_logTextField);
+      _logLinesContainer = new VisualElement();
+      _logLinesContainer.style.paddingLeft = 6;
+      _logLinesContainer.style.paddingRight = 6;
+      _logLinesContainer.style.paddingTop = 6;
+      _logLinesContainer.style.paddingBottom = 6;
+      _logLinesContainer.style.minWidth = 0;
+      _logScrollView.Add(_logLinesContainer);
 
       _panelFoldout.Add(_logScrollView);
       UpdateFoldoutTitle(_panelFoldout.value);
@@ -1108,7 +1174,7 @@ namespace Mods.Prometheus.Scripts {
         return;
       }
 
-      _panelFoldout.text = isOpen ? "Prometheus Fire Log ▾" : "Prometheus Fire Log ▸";
+      _panelFoldout.text = isOpen ? "Prometheus Debug ▾" : "Prometheus Debug ▸";
     }
 
     private void HandlePanelFoldoutChanged(bool isOpen) {
@@ -1152,6 +1218,7 @@ namespace Mods.Prometheus.Scripts {
     private VisualElement BuildToolbar() {
       var toolbar = new VisualElement();
       toolbar.style.flexDirection = FlexDirection.Row;
+      toolbar.style.flexWrap = Wrap.Wrap;
       toolbar.style.alignItems = Align.Center;
       toolbar.style.marginBottom = 4;
 
@@ -1169,8 +1236,9 @@ namespace Mods.Prometheus.Scripts {
         value = string.Empty,
         label = "Search"
       };
-      _searchField.style.minWidth = 190;
+      _searchField.style.minWidth = 120;
       _searchField.style.marginLeft = 6;
+      _searchField.style.marginBottom = 4;
       _searchField.style.color = _panelTextColor;
       _searchField.RegisterValueChangedCallback(evt => {
         _searchText = evt.newValue ?? string.Empty;
@@ -1182,6 +1250,7 @@ namespace Mods.Prometheus.Scripts {
         value = _autoScroll
       };
       _autoScrollToggle.style.marginLeft = 6;
+      _autoScrollToggle.style.marginBottom = 4;
       _autoScrollToggle.style.color = _panelTextColor;
       _autoScrollToggle.style.fontSize = 11;
       _autoScrollToggle.RegisterValueChangedCallback(evt => _autoScroll = evt.newValue);
@@ -1200,10 +1269,475 @@ namespace Mods.Prometheus.Scripts {
       clearButton.style.unityFontStyleAndWeight = FontStyle.Bold;
       clearButton.style.unityBackgroundImageTintColor = new Color(0.93f, 0.72f, 0.38f, 1f);
       clearButton.style.marginLeft = 6;
+      clearButton.style.marginBottom = 4;
       clearButton.tooltip = "Clear all in-game fire log entries.";
       toolbar.Add(clearButton);
 
+      var stopAllFiresButton = new Button(ExtinguishAllFires) {
+        text = "Stop All Fires"
+      };
+      stopAllFiresButton.style.height = 20;
+      stopAllFiresButton.style.fontSize = 11;
+      stopAllFiresButton.style.unityFontStyleAndWeight = FontStyle.Bold;
+      stopAllFiresButton.style.unityBackgroundImageTintColor = new Color(0.96f, 0.66f, 0.44f, 1f);
+      stopAllFiresButton.style.marginLeft = 6;
+      stopAllFiresButton.style.marginBottom = 4;
+      stopAllFiresButton.tooltip = "Immediately extinguish all currently burning entities tracked by Prometheus.";
+      toolbar.Add(stopAllFiresButton);
+
+      var resetFireSimulationButton = new Button(ResetAllFireSimulation) {
+        text = "Reset Fire Sim"
+      };
+      resetFireSimulationButton.style.height = 20;
+      resetFireSimulationButton.style.fontSize = 11;
+      resetFireSimulationButton.style.unityFontStyleAndWeight = FontStyle.Bold;
+      resetFireSimulationButton.style.unityBackgroundImageTintColor = new Color(0.82f, 0.56f, 0.34f, 1f);
+      resetFireSimulationButton.style.marginLeft = 6;
+      resetFireSimulationButton.style.marginBottom = 4;
+      resetFireSimulationButton.tooltip = "Reset Prometheus fire simulation, damage, ash/dead state, workplace suppression, and runtime snapshots for all loaded fire entities.";
+      toolbar.Add(resetFireSimulationButton);
+
+      var clearBeaverEffectsButton = new Button(ClearBeaverFireEffects) {
+        text = "Clear Beavers"
+      };
+      clearBeaverEffectsButton.style.height = 20;
+      clearBeaverEffectsButton.style.fontSize = 11;
+      clearBeaverEffectsButton.style.unityFontStyleAndWeight = FontStyle.Bold;
+      clearBeaverEffectsButton.style.unityBackgroundImageTintColor = new Color(0.63f, 0.78f, 0.98f, 1f);
+      clearBeaverEffectsButton.style.marginLeft = 6;
+      clearBeaverEffectsButton.style.marginBottom = 4;
+      clearBeaverEffectsButton.tooltip = "Clear Prometheus HeatStress and mod-applied Injury debt from currently loaded beavers.";
+      toolbar.Add(clearBeaverEffectsButton);
+
+      _adminFeedbackLabel = new Label();
+      _adminFeedbackLabel.style.marginLeft = 6;
+      _adminFeedbackLabel.style.marginBottom = 4;
+      _adminFeedbackLabel.style.fontSize = 11;
+      _adminFeedbackLabel.style.color = new Color(0.72f, 0.93f, 0.72f, 1f);
+      toolbar.Add(_adminFeedbackLabel);
+
       return toolbar;
+    }
+
+    private VisualElement BuildSelectionPanel() {
+      _selectionFoldout = new Foldout {
+        text = "Selection",
+        value = true
+      };
+      _selectionFoldout.style.color = _panelTextColor;
+      _selectionFoldout.style.marginBottom = 4;
+      _selectionFoldout.RegisterValueChangedCallback(_ => RefreshSelectionPanel());
+
+      var foldoutToggle = _selectionFoldout.Q<Toggle>();
+      if (foldoutToggle is not null) {
+        foldoutToggle.style.color = _panelTextColor;
+        foldoutToggle.style.unityBackgroundImageTintColor = _panelTextColor;
+      }
+
+      var foldoutCheckmark = _selectionFoldout.Q<VisualElement>(className: "unity-foldout__checkmark");
+      if (foldoutCheckmark is not null) {
+        foldoutCheckmark.style.unityBackgroundImageTintColor = _panelTextColor;
+      }
+
+      _selectionContainer = new VisualElement();
+      _selectionContainer.style.marginBottom = 4;
+
+      var selectionToolbar = new VisualElement();
+      selectionToolbar.style.flexDirection = FlexDirection.Row;
+      selectionToolbar.style.flexWrap = Wrap.Wrap;
+      selectionToolbar.style.alignItems = Align.Center;
+      selectionToolbar.style.marginBottom = 4;
+
+      _selectionTitleLabel = new Label(_selectedEntityTitle);
+      _selectionTitleLabel.style.flexGrow = 1;
+      _selectionTitleLabel.style.minWidth = 0;
+      _selectionTitleLabel.style.marginRight = 6;
+      _selectionTitleLabel.style.fontSize = 11;
+      _selectionTitleLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+      _selectionTitleLabel.style.color = _panelTextColor;
+      selectionToolbar.Add(_selectionTitleLabel);
+
+      _selectionCopyButton = new Button(CopySelectedEntityDebugText) {
+        text = "Copy"
+      };
+      _selectionCopyButton.style.height = 20;
+      _selectionCopyButton.style.fontSize = 11;
+      _selectionCopyButton.style.unityFontStyleAndWeight = FontStyle.Bold;
+      _selectionCopyButton.style.marginRight = 4;
+      selectionToolbar.Add(_selectionCopyButton);
+
+      _selectionIgniteButton = new Button(RequestSelectedDebugIgnition) {
+        text = "Ignite"
+      };
+      _selectionIgniteButton.style.height = 20;
+      _selectionIgniteButton.style.fontSize = 11;
+      _selectionIgniteButton.style.unityFontStyleAndWeight = FontStyle.Bold;
+      _selectionIgniteButton.style.unityBackgroundImageTintColor = new Color(0.93f, 0.72f, 0.38f, 1f);
+      selectionToolbar.Add(_selectionIgniteButton);
+
+      _selectionFeedbackLabel = new Label();
+      _selectionFeedbackLabel.style.marginLeft = 6;
+      _selectionFeedbackLabel.style.fontSize = 10;
+      _selectionFeedbackLabel.style.color = new Color(0.72f, 0.93f, 0.72f, 1f);
+      selectionToolbar.Add(_selectionFeedbackLabel);
+
+      _selectionContainer.Add(selectionToolbar);
+
+      var selectionScrollView = new ScrollView(ScrollViewMode.Vertical);
+      selectionScrollView.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+      selectionScrollView.verticalScrollerVisibility = ScrollerVisibility.Auto;
+      selectionScrollView.style.minHeight = 110;
+      selectionScrollView.style.maxHeight = 210;
+      selectionScrollView.style.backgroundColor = new Color(0.08f, 0.16f, 0.12f, 0.9f);
+      selectionScrollView.style.borderTopLeftRadius = 3;
+      selectionScrollView.style.borderTopRightRadius = 3;
+      selectionScrollView.style.borderBottomLeftRadius = 3;
+      selectionScrollView.style.borderBottomRightRadius = 3;
+      selectionScrollView.style.borderTopWidth = 1;
+      selectionScrollView.style.borderRightWidth = 1;
+      selectionScrollView.style.borderBottomWidth = 1;
+      selectionScrollView.style.borderLeftWidth = 1;
+      selectionScrollView.style.borderTopColor = new Color(0.22f, 0.38f, 0.29f, 1f);
+      selectionScrollView.style.borderRightColor = new Color(0.22f, 0.38f, 0.29f, 1f);
+      selectionScrollView.style.borderBottomColor = new Color(0.22f, 0.38f, 0.29f, 1f);
+      selectionScrollView.style.borderLeftColor = new Color(0.22f, 0.38f, 0.29f, 1f);
+
+      _selectionDebugLabel = new Label(_selectedEntityDebugText);
+      _selectionDebugLabel.style.whiteSpace = WhiteSpace.PreWrap;
+      _selectionDebugLabel.style.fontSize = 10;
+      _selectionDebugLabel.style.unityTextAlign = TextAnchor.UpperLeft;
+      _selectionDebugLabel.style.color = _panelTextColor;
+      _selectionDebugLabel.style.paddingLeft = 6;
+      _selectionDebugLabel.style.paddingRight = 6;
+      _selectionDebugLabel.style.paddingTop = 6;
+      _selectionDebugLabel.style.paddingBottom = 6;
+      selectionScrollView.Add(_selectionDebugLabel);
+
+      _selectionContainer.Add(selectionScrollView);
+      _selectionFoldout.Add(_selectionContainer);
+      RefreshSelectionPanel();
+      return _selectionFoldout;
+    }
+
+    internal void SetSelectedEntityDebug(
+      int selectedEntityId,
+      string title,
+      string debugText,
+      bool hasFireProfile,
+      bool hasSimulationController) {
+      _selectedEntityId = selectedEntityId;
+      _selectedEntityTitle = string.IsNullOrWhiteSpace(title) ? "Selected entity" : title;
+      _selectedEntityDebugText = string.IsNullOrWhiteSpace(debugText) ? "No selected entity details available." : debugText;
+      _selectedEntityHasFireProfile = hasFireProfile;
+      _selectedEntityHasSimulationController = hasSimulationController;
+      RefreshSelectionPanel();
+    }
+
+    internal void ClearSelectedEntityDebug() {
+      _selectedEntityId = 0;
+      _selectedEntityHasFireProfile = false;
+      _selectedEntityHasSimulationController = false;
+      _selectedEntityTitle = "No selected fire entity";
+      _selectedEntityDebugText = "Select a fire-profiled building to inspect Prometheus runtime details.";
+      RefreshSelectionPanel();
+    }
+
+    private void RefreshSelectionPanel() {
+      if (_selectionTitleLabel != null) {
+        _selectionTitleLabel.text = _selectedEntityTitle;
+      }
+
+      if (_selectionDebugLabel != null) {
+        _selectionDebugLabel.text = _selectedEntityDebugText;
+      }
+
+      if (_selectionIgniteButton != null) {
+        _selectionIgniteButton.SetEnabled(_selectedEntityId != 0 && _selectedEntityHasFireProfile && _selectedEntityHasSimulationController);
+      }
+
+      if (_selectionCopyButton != null) {
+        _selectionCopyButton.SetEnabled(!string.IsNullOrWhiteSpace(_selectedEntityDebugText));
+      }
+    }
+
+    private void CopySelectedEntityDebugText() {
+      if (string.IsNullOrWhiteSpace(_selectedEntityDebugText)) {
+        SetSelectionFeedback("Nothing to copy.", new Color(0.96f, 0.74f, 0.40f, 1f));
+        return;
+      }
+
+      GUIUtility.systemCopyBuffer = _selectedEntityDebugText;
+      SetSelectionFeedback("Copied selection details.", new Color(0.72f, 0.93f, 0.72f, 1f));
+    }
+
+    private void RequestSelectedDebugIgnition() {
+      if (_selectedEntityId == 0 || !_selectedEntityHasFireProfile || !_selectedEntityHasSimulationController) {
+        SetSelectionFeedback("Cannot ignite selected entity.", new Color(0.96f, 0.74f, 0.40f, 1f));
+        return;
+      }
+
+      _fireSimulationRuntimeState.RequestForcedIgnition(_selectedEntityId);
+      SetSelectionFeedback("Ignition request queued.", new Color(0.72f, 0.93f, 0.72f, 1f));
+    }
+
+    private void SetSelectionFeedback(string message, Color color) {
+      if (_selectionFeedbackLabel == null) {
+        return;
+      }
+
+      _selectionFeedbackLabel.text = message;
+      _selectionFeedbackLabel.style.color = color;
+    }
+
+    private void ExtinguishAllFires() {
+      _fireSimulationRuntimeState.SuppressDebugIgnitionsForSeconds(DebugStopAllFiresIgnitionSuppressionSeconds);
+      var liveExtinguishedCount = 0;
+      foreach (var simulationController in FindLoadedFireSimulationControllers()) {
+        if (simulationController.DebugForceExtinguish()) {
+          liveExtinguishedCount++;
+        }
+      }
+
+      var simulationExtinguishedCount = _fireSimulationRuntimeState.ExtinguishAllBurning();
+      var registryExtinguishedCount = _fireEntityRegistryRuntimeState.ExtinguishAllBurning();
+
+      var effectiveCount = simulationExtinguishedCount > registryExtinguishedCount
+        ? simulationExtinguishedCount
+        : registryExtinguishedCount;
+      effectiveCount = effectiveCount > liveExtinguishedCount
+        ? effectiveCount
+        : liveExtinguishedCount;
+
+      FireTelemetry.Log($"event=debug_stop_all_fires liveExtinguished={liveExtinguishedCount} simulationExtinguished={simulationExtinguishedCount} registryExtinguished={registryExtinguishedCount} ignitionSuppressionSeconds={DebugStopAllFiresIgnitionSuppressionSeconds:0}");
+      FireTelemetry.Log(effectiveCount > 0
+        ? $"event=debug_stop_all_fires_result result=success count={effectiveCount}"
+        : "event=debug_stop_all_fires_result result=no_active_fires");
+
+      _lastObservedEntryCount = FireTelemetry.GetRecentInGameLogEntries().Length;
+      RefreshLogPanel(force: true);
+    }
+
+    private static IEnumerable<FireSimulationController> FindLoadedFireSimulationControllers() {
+      var unityComponents = UnityEngine.Object.FindObjectsByType<Component>(FindObjectsSortMode.None);
+      for (var i = 0; i < unityComponents.Length; i++) {
+        var unityComponent = unityComponents[i];
+        if (unityComponent == null || unityComponent.GetType().Name != "ComponentCache") {
+          continue;
+        }
+
+        if (!TryGetCachedComponents(unityComponent, out var cachedComponents)) {
+          continue;
+        }
+
+        foreach (var component in cachedComponents) {
+          if (component is FireSimulationController fireSimulationController) {
+            yield return fireSimulationController;
+          }
+        }
+      }
+    }
+
+    private static bool TryGetCachedComponents(Component componentCache, out System.Collections.IEnumerable cachedComponents) {
+      var componentCacheType = componentCache.GetType();
+      var componentsField = componentCacheType.GetField(
+        "_components",
+        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+
+      if (componentsField?.GetValue(componentCache) is System.Collections.IEnumerable components) {
+        cachedComponents = components;
+        return true;
+      }
+
+      var allComponentsProperty = componentCacheType.GetProperty(
+        "AllComponents",
+        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+      if (allComponentsProperty?.GetValue(componentCache) is System.Collections.IEnumerable allComponents) {
+        cachedComponents = allComponents;
+        return true;
+      }
+
+      cachedComponents = null;
+      return false;
+    }
+
+    private void ResetAllFireSimulation() {
+      var resetEntityCount = 0;
+      foreach (var gameObject in FindLoadedFireEntityGameObjects()) {
+        ResetLoadedFireEntity(gameObject);
+        resetEntityCount++;
+      }
+
+      ClearAllRuntimeStores();
+      FireBeaverEffectApplier.DebugClearFireNeedEffects();
+
+      FireTelemetry.Log($"event=debug_reset_fire_simulation result=success loadedEntities={resetEntityCount}");
+      SetAdminFeedback($"Reset fire sim for {resetEntityCount} entities");
+      _lastObservedEntryCount = FireTelemetry.GetRecentInGameLogEntries().Length;
+      RefreshLogPanel(force: true);
+      RefreshSelectionPanel();
+    }
+
+    private static IEnumerable<GameObject> FindLoadedFireEntityGameObjects() {
+      var allObjects = Resources.FindObjectsOfTypeAll<GameObject>();
+      for (var i = 0; i < allObjects.Length; i++) {
+        var gameObject = allObjects[i];
+        if (gameObject == null || !gameObject.scene.IsValid() || !gameObject.scene.isLoaded) {
+          continue;
+        }
+
+        if (HasFireResetComponent(gameObject)) {
+          yield return gameObject;
+        }
+      }
+    }
+
+    private static bool HasFireResetComponent(GameObject gameObject) {
+      if (gameObject.GetComponent<FireSimulationController>() is not null
+          || gameObject.GetComponent<FireDamageStateController>() is not null
+          || gameObject.GetComponent<FireDamageEffectApplier>() is not null
+          || gameObject.GetComponent<FireWorkplaceEffectApplier>() is not null
+          || gameObject.GetComponent<FireRecoveryController>() is not null
+          || gameObject.GetComponent<FireRecoveryEffectApplier>() is not null) {
+        return true;
+      }
+
+      var componentCache = gameObject.GetComponent<ComponentCache>();
+      return componentCache is not null
+             && (componentCache.TryGetCachedComponent<FireSimulationController>(out _)
+                 || componentCache.TryGetCachedComponent<FireDamageStateController>(out _)
+                 || componentCache.TryGetCachedComponent<FireDamageEffectApplier>(out _)
+                 || componentCache.TryGetCachedComponent<FireWorkplaceEffectApplier>(out _)
+                 || componentCache.TryGetCachedComponent<FireRecoveryController>(out _)
+                 || componentCache.TryGetCachedComponent<FireRecoveryEffectApplier>(out _));
+    }
+
+    private static void ResetLoadedFireEntity(GameObject gameObject) {
+      var componentCache = gameObject.GetComponent<ComponentCache>();
+      if (componentCache is not null) {
+        if (componentCache.TryGetCachedComponent<FireSimulationController>(out var cachedFireSimulationController)) {
+          cachedFireSimulationController.DebugResetFireSimulationState();
+        }
+
+        if (componentCache.TryGetCachedComponent<FireDamageStateController>(out var cachedFireDamageStateController)) {
+          cachedFireDamageStateController.DebugResetDamageStateToHealthy();
+        }
+
+        if (componentCache.TryGetCachedComponent<FireDamageEffectApplier>(out var cachedFireDamageEffectApplier)) {
+          cachedFireDamageEffectApplier.DebugRestoreHealthyState();
+        }
+
+        if (componentCache.TryGetCachedComponent<FireWorkplaceEffectApplier>(out var cachedFireWorkplaceEffectApplier)) {
+          cachedFireWorkplaceEffectApplier.DebugResetFireEffects();
+        }
+
+        if (componentCache.TryGetCachedComponent<FireRecoveryController>(out var cachedFireRecoveryController)) {
+          cachedFireRecoveryController.DebugResetRecoveryState();
+        }
+
+        if (componentCache.TryGetCachedComponent<FireRecoveryEffectApplier>(out var cachedFireRecoveryEffectApplier)) {
+          cachedFireRecoveryEffectApplier.DebugRestoreBaseRecoveryEffects();
+        }
+      }
+
+      var fireSimulationController = gameObject.GetComponent<FireSimulationController>();
+      if (fireSimulationController is not null) {
+        fireSimulationController.DebugResetFireSimulationState();
+      }
+
+      var fireDamageStateController = gameObject.GetComponent<FireDamageStateController>();
+      if (fireDamageStateController is not null) {
+        fireDamageStateController.DebugResetDamageStateToHealthy();
+      }
+
+      var fireDamageEffectApplier = gameObject.GetComponent<FireDamageEffectApplier>();
+      if (fireDamageEffectApplier is not null) {
+        fireDamageEffectApplier.DebugRestoreHealthyState();
+      }
+
+      var fireWorkplaceEffectApplier = gameObject.GetComponent<FireWorkplaceEffectApplier>();
+      if (fireWorkplaceEffectApplier is not null) {
+        fireWorkplaceEffectApplier.DebugResetFireEffects();
+      }
+
+      var fireRecoveryController = gameObject.GetComponent<FireRecoveryController>();
+      if (fireRecoveryController is not null) {
+        fireRecoveryController.DebugResetRecoveryState();
+      }
+
+      var fireRecoveryEffectApplier = gameObject.GetComponent<FireRecoveryEffectApplier>();
+      if (fireRecoveryEffectApplier is not null) {
+        fireRecoveryEffectApplier.DebugRestoreBaseRecoveryEffects();
+      }
+    }
+
+    private void ClearAllRuntimeStores() {
+      _fireSuppressionRuntimeState.ClearSnapshots();
+      _fireSimulationRuntimeState.ClearSnapshotsAndIgnitionRequests();
+      _fireDispatchScoringRuntimeState.ClearSnapshots();
+      _fireEntityRegistryRuntimeState.ClearSnapshots();
+      _fireImpactRuntimeState.ClearSnapshots();
+      _fireDamageStateRuntimeState.ClearSnapshots();
+      _fireWaterContextRuntimeState.ClearSnapshots();
+      _fireRecoveryRuntimeState.ClearSnapshots();
+      _fireFestivalRuntimeState.ClearSnapshots();
+    }
+
+    private void ClearBeaverFireEffects() {
+      var clearedCount = FireBeaverEffectApplier.DebugClearFireNeedEffects();
+      FireTelemetry.Log(clearedCount > 0
+        ? $"event=debug_clear_beaver_fire_effects_result result=success count={clearedCount}"
+        : "event=debug_clear_beaver_fire_effects_result result=none_found");
+      SetAdminFeedback(clearedCount > 0
+        ? $"Cleared {clearedCount} beavers"
+        : "No beavers found");
+
+      _lastObservedEntryCount = FireTelemetry.GetRecentInGameLogEntries().Length;
+      RefreshLogPanel(force: true);
+    }
+
+    private void SetAdminFeedback(string message) {
+      if (_adminFeedbackLabel == null) {
+        return;
+      }
+
+      _adminFeedbackLabel.text = message;
+    }
+
+    private static Dictionary<int, GameObject> BuildLoadedSceneGameObjectIndexByEntityId() {
+      var loadedObjectsByEntityId = new Dictionary<int, GameObject>();
+      var allObjects = Resources.FindObjectsOfTypeAll<GameObject>();
+
+      for (var i = 0; i < allObjects.Length; i++) {
+        var gameObject = allObjects[i];
+        if (gameObject == null) {
+          continue;
+        }
+
+        if (!gameObject.scene.IsValid() || !gameObject.scene.isLoaded) {
+          continue;
+        }
+
+        var entityId = gameObject.GetInstanceID();
+        if (entityId == 0 || loadedObjectsByEntityId.ContainsKey(entityId)) {
+          continue;
+        }
+
+        loadedObjectsByEntityId[entityId] = gameObject;
+      }
+
+      return loadedObjectsByEntityId;
+    }
+
+    private void RemoveEntityFromRuntimeStores(int entityId) {
+      _fireSuppressionRuntimeState.RemoveSnapshot(entityId);
+      _fireSimulationRuntimeState.RemoveSnapshot(entityId);
+      _fireDispatchScoringRuntimeState.RemoveSnapshot(entityId);
+      _fireEntityRegistryRuntimeState.RemoveSnapshot(entityId);
+      _fireImpactRuntimeState.RemoveSnapshot(entityId);
+      _fireDamageStateRuntimeState.RemoveSnapshot(entityId);
+      _fireWaterContextRuntimeState.RemoveSnapshot(entityId);
+      _fireRecoveryRuntimeState.RemoveSnapshot(entityId);
+      _fireFestivalRuntimeState.RemoveSnapshot(entityId);
     }
 
     private VisualElement BuildTypeSummaryRow() {
@@ -1337,13 +1871,13 @@ namespace Mods.Prometheus.Scripts {
 
       var entries = FireTelemetry.GetRecentInGameLogEntries();
       UpdateTypeSummary(entries);
-      if (!force && entries.Length == _lastRenderedEntryCount) {
+      var entrySignature = CreateEntrySignature(entries);
+      if (!force && entrySignature == _lastRenderedEntrySignature) {
         return;
       }
 
-      _lastRenderedEntryCount = entries.Length;
-
-      var visibleLinesBuilder = new StringBuilder();
+      _lastRenderedEntrySignature = entrySignature;
+      _logLinesContainer.Clear();
 
       var filteredCount = 0;
       for (var i = 0; i < entries.Length; i++) {
@@ -1353,16 +1887,14 @@ namespace Mods.Prometheus.Scripts {
         }
 
         filteredCount++;
-        AppendEntryLine(visibleLinesBuilder, entry);
+        _logLinesContainer.Add(CreatePanelLogEntryRow(entry));
       }
 
       if (filteredCount == 0) {
-        _logTextField.value = "No log entries for current filter.";
-      } else {
-        _logTextField.value = visibleLinesBuilder.ToString();
+        _logLinesContainer.Add(CreateEmptyLogLabel("No log entries for current filter."));
       }
 
-      if (_autoScroll) {
+      if (_autoScroll && _logScrollView != null) {
         _logScrollView.scrollOffset = new Vector2(_logScrollView.scrollOffset.x, float.MaxValue);
       }
     }
@@ -1390,7 +1922,38 @@ namespace Mods.Prometheus.Scripts {
       return entry.Message.Contains(needle, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static void AppendEntryLine(StringBuilder stringBuilder, FireInGameLogEntry entry) {
+    private VisualElement CreatePanelLogEntryRow(FireInGameLogEntry entry) {
+      var row = new VisualElement();
+      row.style.flexDirection = FlexDirection.Row;
+      row.style.alignItems = Align.FlexStart;
+      row.style.marginBottom = 4;
+      row.style.minWidth = 0;
+
+      var viewButton = new Button(() => ViewPanelLogEntry(entry)) {
+        text = "View"
+      };
+      viewButton.style.width = 44;
+      viewButton.style.minWidth = 44;
+      viewButton.style.maxWidth = 44;
+      viewButton.style.height = 18;
+      viewButton.style.fontSize = 10;
+      viewButton.style.flexShrink = 0;
+      viewButton.style.unityFontStyleAndWeight = FontStyle.Bold;
+      viewButton.style.unityBackgroundImageTintColor = new Color(0.55f, 0.70f, 0.92f, 1f);
+      viewButton.style.marginRight = 6;
+      viewButton.SetEnabled(PrometheusFireDebugFragment.TryExtractEntityId(entry.Message, out _));
+      row.Add(viewButton);
+
+      var label = CreatePanelLogEntryLabel(entry);
+      label.style.flexGrow = 1;
+      label.style.flexShrink = 1;
+      label.style.minWidth = 0;
+      row.Add(label);
+
+      return row;
+    }
+
+    private static Label CreatePanelLogEntryLabel(FireInGameLogEntry entry) {
       var severityToken = entry.LogType switch {
         LogType.Warning => "▲ WARN",
         LogType.Error => "✖ ERROR",
@@ -1399,11 +1962,96 @@ namespace Mods.Prometheus.Scripts {
         _ => "● EVENT",
       };
 
-      if (stringBuilder.Length > 0) {
-        stringBuilder.AppendLine();
+      var label = new Label($"[{entry.Timestamp}] [{severityToken}] {entry.Message}");
+      label.style.whiteSpace = WhiteSpace.PreWrap;
+      label.style.fontSize = 10;
+      label.style.unityTextAlign = TextAnchor.UpperLeft;
+      label.style.marginBottom = 2;
+      label.style.color = entry.LogType switch {
+        LogType.Warning => new Color(0.98f, 0.78f, 0.40f, 1f),
+        LogType.Error => new Color(0.96f, 0.47f, 0.47f, 1f),
+        LogType.Assert => new Color(0.96f, 0.47f, 0.47f, 1f),
+        LogType.Exception => new Color(0.96f, 0.47f, 0.47f, 1f),
+        _ => new Color(0.76f, 0.93f, 0.76f, 1f),
+      };
+
+      return label;
+    }
+
+    private static Label CreateEmptyLogLabel(string message) {
+      var label = new Label(message);
+      label.style.whiteSpace = WhiteSpace.PreWrap;
+      label.style.fontSize = 10;
+      label.style.color = new Color(0.96f, 0.74f, 0.40f, 1f);
+      return label;
+    }
+
+    private void ViewPanelLogEntry(FireInGameLogEntry entry) {
+      if (!PrometheusFireDebugFragment.TryExtractEntityId(entry.Message, out var entityId)) {
+        SetAdminFeedback("No entity id in this log line.");
+        return;
       }
 
-      stringBuilder.Append($"[{entry.Timestamp}] [{severityToken}] {entry.Message}");
+      if (TrySelectAndFocusEntity(entityId, out var entityName)
+          || PrometheusFireDebugFragment.TryFocusCameraOnEntity(entityId, out entityName)) {
+        SetAdminFeedback($"Viewing {entityName} (id={entityId})");
+      } else {
+        SetAdminFeedback($"Entity id {entityId} not found");
+      }
+    }
+
+    private bool TrySelectAndFocusEntity(int entityId, out string entityName) {
+      entityName = string.Empty;
+      if (!TryFindLoadedGameObject(entityId, out var gameObject)) {
+        return false;
+      }
+
+      var componentCache = gameObject.GetComponent<ComponentCache>();
+      if (componentCache is not null && componentCache.TryGetCachedComponent<FireSimulationController>(out var cachedFireSimulationController)) {
+        _entitySelectionService.SelectAndFocusOn(cachedFireSimulationController);
+        entityName = gameObject.name;
+        FireTelemetry.Log($"event=debug_view_focus entity={entityName} id={entityId} method=selection_service_cached");
+        return true;
+      }
+
+      var fireSimulationController = gameObject.GetComponent<FireSimulationController>();
+      if (fireSimulationController is not null) {
+        _entitySelectionService.SelectAndFocusOn(fireSimulationController);
+        entityName = gameObject.name;
+        FireTelemetry.Log($"event=debug_view_focus entity={entityName} id={entityId} method=selection_service_component");
+        return true;
+      }
+
+      return false;
+    }
+
+    private static bool TryFindLoadedGameObject(int entityId, out GameObject loadedGameObject) {
+      var allObjects = Resources.FindObjectsOfTypeAll<GameObject>();
+      for (var i = 0; i < allObjects.Length; i++) {
+        var gameObject = allObjects[i];
+        if (gameObject == null || gameObject.GetInstanceID() != entityId) {
+          continue;
+        }
+
+        if (!gameObject.scene.IsValid() || !gameObject.scene.isLoaded) {
+          continue;
+        }
+
+        loadedGameObject = gameObject;
+        return true;
+      }
+
+      loadedGameObject = null;
+      return false;
+    }
+
+    private static string CreateEntrySignature(ReadOnlySpan<FireInGameLogEntry> entries) {
+      if (entries.Length == 0) {
+        return "0";
+      }
+
+      var lastEntry = entries[^1];
+      return $"{entries.Length}|{lastEntry.Timestamp}|{lastEntry.LogType}|{lastEntry.Message}";
     }
 
   }

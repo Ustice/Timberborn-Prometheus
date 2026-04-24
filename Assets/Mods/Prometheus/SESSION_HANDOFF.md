@@ -2,75 +2,141 @@
 
 ## Last updated
 
-2026-02-22
+2026-04-24
 
 ## Why we are doing this
 
-Current objective is to harden the fire system so gameplay behavior is consistent and debugging is fast.
-Recent work prioritized two outcomes:
+Current objective is to move from Phase 1 core fire simulation into Phase 2 firefighting gameplay and faction identity.
+Recent work closed the early fire-spread proof of concept and prioritized three outcomes:
 
-1. Correctness fixes for burn lifecycle edge cases (dead buildings, placement previews, destroy cleanup).
+1. Correctness fixes for burn lifecycle edge cases (dead buildings, placement previews, destroy cleanup, reset-to-healthy recovery).
 2. Strong in-game observability (scrollable fire log, filters, colored severity rows, and entity jump helpers).
+3. Compatibility fixes against the current installed Timberborn assemblies.
 
 ## What we are actively working on
 
-1. Verify new debug UX end-to-end in live gameplay (search/filter/view flow under active fire).
-2. Validate dead-building shutdown behavior across more production building variants.
-3. Continue explosion request/apply lifecycle investigation with improved panel/log tooling.
+1. Begin Phase 2 firefighting gameplay and faction identity validation.
+2. Validate worker/building exposure inside burning buildings as part of Phase 2 workplace/responder behavior.
+3. Continue explosion request/apply lifecycle investigation with improved panel/log tooling if gaps reappear.
 
 ## Confirmed results so far
 
 ### Behavior fixes
 
 - Fully burned (`Dead`) buildings now suppress workplace support and production-related operational behaviors.
+- Dead/ash buildings are terminal for active fire and cannot continue burning.
 - Placement previews/ghost entities are excluded from simulation ignition path.
 - Fire runtime snapshots are purged on entity destroy via lifecycle cleanup component.
+- `Reset Fire Sim` restores loaded fire entities to healthy/functioning Prometheus state and clears stale simulation, damage, recovery, registry, and pending ignition snapshots.
+- Timberborn 1.0.13 compatibility pass removed stale `WorkplaceLightingSpec` from the Jam Stove blueprint; the save now loads again.
+- Beaver fire effects now bind the current `NeedManager.GetNeed(string)` + `Need.AddPoints(float)` API.
+- Beaver fire effects now use a shared scene-wide need-manager cache and apply nearby-fire `HeatStress`, moderate thirst pressure, and only slow high-pressure injury.
+- Beaver fire effects use distance falloff; beavers near the edge of the radius receive less pressure.
+- Nearby fire no longer applies vanilla `Injury`; the debug cleanup clears `HeatStress`/legacy injury debt from loaded beavers.
+- Workplace fire slowdown now binds the current `Worker` + `BonusManager(WorkingSpeed)` API instead of the removed `WorkplaceBonuses.WorkingSpeedMultiplier` API.
+- Worker slowdown validation initially showed no visible slowdown on a burning/dead Bakery because damage category detection returned `Unknown` for current cached Timberborn building components. Category detection now recognizes cached `Workplace`/building components, workplace-bearing entities are treated as buildings for dead-state shutdown, and worker slowdown sets `Worker.WorkingSpeedMultiplier` directly while preserving/restoring original values.
+- Workplace slowdown telemetry now emits `workplace_speed_penalty_state` with assigned worker count, applied worker count, and penalty delta.
+- Follow-up Bakery validation confirmed slowdown/shutdown path: burning Bakery logged `assignedWorkers=1 appliedWorkers=1`, penalty ramped to `-1.000`, then `workplace_support_suppressed` and `building_operations_suppressed` fired when the Bakery reached `Dead`.
+- `Stop All Fires` after the Bakery was dead extinguished live fire and returned response state to `Stabilized`; full revive/healthy recovery is handled by `Reset Fire Sim`.
+- `workplace_speed_penalty_state` logging is now thresholded to reduce per-tick spam while preserving key penalty changes and restore/dead milestones.
+- `Clear Burned` crash was reproduced: raw `UnityEngine.Object.Destroy(gameObject)` removed live Timberborn entities while they remained in tick buckets, causing `Exception thrown while ticking entity ... '(destroyed)'`.
+- The unsafe destroy path has been removed. The former burned-building demolition helper was replaced by `Reset Fire Sim`, which is the preferred QA clean-slate tool.
+- Spread ignition was observed live with `spread_ignite_applied`.
+- The latest QA screenshot cycle confirmed:
+  - initial load showed no injured/overheated colony alerts,
+  - `Clear Beavers` showed visible `Cleared 24 beavers` feedback,
+  - unpausing did not immediately reintroduce visible injured/overheated alerts.
 
 ### Debug UX / observability
 
-- Entity panel fire debug section supports:
-  - collapsible details,
-  - copy output,
-  - debug ignite request,
+- The Prometheus debug UI is consolidated into one bottom-left panel, raised above the Timberborn bottom bar.
+- The entity panel fragment is hidden and only forwards selection state into the global panel.
+- The global panel supports:
+  - selected-entity runtime details,
+  - selected-entity copy output,
+  - selected-entity debug ignite request,
   - runtime snapshot counts + **delta since selection**,
-  - in-game fire log foldout (scrollable, minimizable),
+  - in-game fire log (scrollable, minimizable),
   - auto-scroll toggle,
   - severity filters (`All`/`Events`/`Warnings`/`Errors`),
   - colored severity labels,
-  - search box,
-  - per-line **View** button to focus camera on parsed entity ID (`id=`, `sourceId=`, `targetId=`).
+  - search box.
+- Prometheus debug panel admin buttons:
+  - `Stop All Fires`,
+  - `Reset Fire Sim`,
+  - `Clear Beavers`.
+- `Stop All Fires` resets live fire controllers, clears runtime stores, and suppresses ambient re-ignition for 60 real seconds while preserving manual debug ignition.
+- `Reset Fire Sim` clears fire/damage/recovery state and restores loaded entities to healthy/functioning state for fast QA loops.
+- `burning_tick` telemetry is throttled by real time, not game simulation time, so high-speed gameplay does not flood the panel as aggressively.
 
 ### Build/deploy verification
 
 - Repeated `bash scripts/build.sh` runs completed successfully after each incremental change.
+- Latest resume build initially hit a missing VS Tools Unity analyzer path after VS Code updated `visualstudiotoolsforunity.vstuc` from `1.2.1` to `1.2.2`; adding a local compatibility symlink restored `dotnet build`.
+- Latest `bash scripts/build.sh --launch` completed successfully, cleared fresh logs, deployed the symlinked payload, and launched Timberborn.
+- Fresh startup logs confirmed `Prometheus (v0.2)` load, the Prometheus test autosave opened, and no exception/error lines were present in the scanned startup window.
+- Fresh live logs confirmed current Timberborn API bindings:
+  - `workplace_speed_api_resolved` via `Worker.BonusManager(WorkingSpeed)`,
+  - `beaver_effect_api_resolved` via `NeedManager.GetNeed(string) + Need.AddPoints(float)`,
+  - `beaver_effect_need_manager_scan` found 24 loaded need managers.
+- Fresh explosion validation observed one complete request/apply chain:
+  - `debug_ignite_applied` on Explosives Factory `-221754`,
+  - `explosion_ignition_request_queued` for target `-236742`,
+  - `explosion_ignition_request_consumed`,
+  - `explosion_ignite_applied` on target `-236742`.
+- User screenshot confirmed the global panel selection/copy/ignite flow works, but the `View` button was missing because the consolidated panel rendered logs as a multiline text field; this was fixed by switching the global log area to per-entry rows with `View` buttons and by refreshing capped 250-entry logs via content signature instead of entry count only.
+- Follow-up screenshot confirmed row rendering loaded but the right-side `View` button was clipped by long wrapped log labels; the button is now a fixed-width leading control on each row.
+- Follow-up validation showed the visible `View` button did not center the affected building when it used raw `Camera.main` transforms; `View` now calls Timberborn's `EntitySelectionService.SelectAndFocusOn(...)` for the target entity's `FireSimulationController`, with telemetry `debug_view_focus method=selection_service_*`.
+- Latest post-fix `bash scripts/build.sh` completed successfully and deployed the refreshed DLL; a game restart/reload is needed for the running Timberborn process to use that DLL.
 - Runtime payload symlinks (`dll`/`pdb`) refreshed successfully each run.
+- Unity Hub and Unity `6000.3.6f1` are installed locally.
+- Imported Timberborn assets and publicized DLLs were refreshed from the installed Steam game after discovering stale February DLLs in `../timberborn-modding`.
+- `bash scripts/build.sh --launch` loaded the Prometheus test save and ran through autosave without a startup crash.
 
 ## Open issues / hypotheses
 
-1. **Explosion apply path still needs focused re-validation**
-   - Previous sessions noted missing/rare `explosion_ignite_applied` in some windows despite queued requests.
-   - Hypothesis: target eligibility/timing/state interaction under spread request consumption.
+1. **Explosion apply path still needs broader focused re-validation**
+   - Latest resume observed a complete `explosion_ignite_applied` chain in one fresh window.
+   - Previous sessions still noted missing/rare `explosion_ignite_applied` in some windows despite queued requests.
+   - Hypothesis if gaps return: target eligibility/timing/state interaction under spread request consumption.
 
 2. **View button relies on camera + loaded scene availability**
    - If ID is stale/unloaded or camera is unavailable, fallback status message is shown.
+   - Parser now supports negative Unity instance IDs.
 
-3. **Operational behavior suppression uses type-name matching**
+3. **Worker/building exposure needs Phase 2 validation**
+   - API binding resolves in live logs as `workplace_speed_api_resolved`.
+   - Beavers do not currently burn just because they are inside burning buildings.
+   - Validate worker production slowdown, worker exposure, and recovery together with Phase 2 responder/workplace behavior.
+
+4. **Beaver fire effects need Phase 2 balance validation**
+   - First live pass injured the whole colony, confirming the API worked but the numbers were too hot.
+   - Current tuning is much gentler, no longer applies vanilla `Injury`, and uses distance falloff.
+   - Continue with Phase 2 checks for nearby exposure and beavers/workers inside burning buildings.
+
+5. **Operational behavior suppression uses type-name matching**
    - Conservative and practical, but additional production component names may surface in future content.
+
+6. **Unity asset import workflow still needs attention**
+   - Unity batchmode import is blocked until the editor has an active license.
+   - Manual refresh worked for blueprints/UI/DLLs, but should become a documented script or be replaced by the official importer once Unity is activated.
 
 ## Next steps (priority order)
 
-1. Run one focused gameplay validation pass for the new debug panel workflow:
-   - generate events,
-   - filter/search in panel,
-   - click `View` on multiple rows,
-   - confirm camera focus behavior.
-2. Validate dead-building behavior on at least 3 production archetypes (e.g., Bakery/JamStove/Explosives Factory):
+1. Run Phase 2 validation around active firefighting and faction identity:
+   - Folktails near-water vs far-front response,
+   - Ironteeth high-heat response,
+   - response-state readability.
+2. Validate worker/building exposure on at least 3 production archetypes (e.g., Bakery/JamStove/Explosives Factory):
+   - assigned workers slow under heat pressure,
+   - beavers/workers inside burning buildings receive appropriate effects,
+   - worker speed recovers after fire pressure clears,
    - workers suppressed,
    - production halted,
    - restored correctly when no longer dead.
-3. Re-run explosion request/apply trace with one-ignite-per-window guidance and capture both logs.
-4. If `explosion_ignite_applied` gaps persist, add targeted telemetry for request-consume decision reasons.
-5. After lifecycle correctness is stable, start controlled tuning pass (`Low`/`Standard`/`High`).
+3. Re-run explosion request/apply trace across multiple one-ignite windows and capture both logs if gaps reappear.
+4. Add a repeatable setup refresh script or documentation for importing current game assets and publicized DLLs.
+5. Run controlled tuning pass (`Low`/`Standard`/`High`) once Phase 2 behavior is coherent.
 
 ## How to quickly resume
 

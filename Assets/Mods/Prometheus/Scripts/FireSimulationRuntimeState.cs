@@ -82,10 +82,13 @@ namespace Mods.Prometheus.Scripts {
     private readonly Dictionary<int, FireSimulationSnapshot> _snapshotsByEntityId = new();
     private readonly HashSet<int> _forcedIgnitionEntityIds = new();
     private readonly Dictionary<int, SpreadIgnitionRequest> _spreadIgnitionRequestsByEntityId = new();
+    private float _debugIgnitionSuppressedUntilRealtime;
 
     public int SnapshotCount => _snapshotsByEntityId.Count;
     public int PendingForcedIgnitionCount => _forcedIgnitionEntityIds.Count;
     public int PendingSpreadIgnitionCount => _spreadIgnitionRequestsByEntityId.Count;
+    public bool DebugIgnitionSuppressed => UnityEngine.Time.realtimeSinceStartup < _debugIgnitionSuppressedUntilRealtime;
+    public float DebugIgnitionSuppressionRemainingSeconds => UnityEngine.Mathf.Max(0f, _debugIgnitionSuppressedUntilRealtime - UnityEngine.Time.realtimeSinceStartup);
 
     public void SetSnapshot(int entityId, FireSimulationSnapshot snapshot) {
       _snapshotsByEntityId[entityId] = snapshot;
@@ -99,6 +102,12 @@ namespace Mods.Prometheus.Scripts {
       _snapshotsByEntityId.Remove(entityId);
       _forcedIgnitionEntityIds.Remove(entityId);
       _spreadIgnitionRequestsByEntityId.Remove(entityId);
+    }
+
+    public void ClearSnapshotsAndIgnitionRequests() {
+      _snapshotsByEntityId.Clear();
+      _forcedIgnitionEntityIds.Clear();
+      _spreadIgnitionRequestsByEntityId.Clear();
     }
 
     public void RequestForcedIgnition(int entityId) {
@@ -151,6 +160,49 @@ namespace Mods.Prometheus.Scripts {
 
       request = default;
       return false;
+    }
+
+    public int ExtinguishAllBurning() {
+      var extinguishedCount = 0;
+      var entityIds = new List<int>(_snapshotsByEntityId.Keys);
+
+      for (var i = 0; i < entityIds.Count; i++) {
+        var entityId = entityIds[i];
+        var snapshot = _snapshotsByEntityId[entityId];
+        if (!snapshot.Burning && snapshot.Intensity <= 0f) {
+          continue;
+        }
+
+        _snapshotsByEntityId[entityId] = new FireSimulationSnapshot(
+          false,
+          0f,
+          0f,
+          snapshot.QuenchingPower,
+          0f,
+          snapshot.NeighborSpreadPressure,
+          snapshot.IgnitionChance,
+          "ForcedExtinguish",
+          snapshot.WeatherIgnitionContribution,
+          snapshot.IndustrialIgnitionContribution,
+          snapshot.FireworksIgnitionContribution,
+          snapshot.ControlledBurnIgnitionContribution,
+          snapshot.ExplosionIgnitionContribution,
+          snapshot.DrynessFactor,
+          snapshot.FuelFactor,
+          snapshot.BarrierFactor);
+        extinguishedCount++;
+      }
+
+      _forcedIgnitionEntityIds.Clear();
+      _spreadIgnitionRequestsByEntityId.Clear();
+      return extinguishedCount;
+    }
+
+    public void SuppressDebugIgnitionsForSeconds(float durationInSeconds) {
+      _debugIgnitionSuppressedUntilRealtime = UnityEngine.Mathf.Max(
+        _debugIgnitionSuppressedUntilRealtime,
+        UnityEngine.Time.realtimeSinceStartup + UnityEngine.Mathf.Max(0f, durationInSeconds));
+      _spreadIgnitionRequestsByEntityId.Clear();
     }
 
   }

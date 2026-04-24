@@ -205,7 +205,6 @@
     "FlavorDescriptionLocKey": "Building.JamStove.FlavorDescription",
     "Icon": "Buildings/Food/JamStove/JamStoveIcon"
   },
-  "WorkplaceLightingSpec": {},
   "WorkshopParticleControllerSpec": {
     "AttachmentIds": [
       "Smoke"

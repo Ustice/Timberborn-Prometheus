@@ -1,5 +1,6 @@
 using Bindito.Core;
 using Timberborn.BaseComponentSystem;
+using Timberborn.WorkSystem;
 using UnityEngine;
 
 namespace Mods.Prometheus.Scripts {
@@ -73,6 +74,16 @@ namespace Mods.Prometheus.Scripts {
       _fireDamageStateRuntimeState.SetSnapshot(entityId, snapshot);
     }
 
+    internal void DebugResetDamageStateToHealthy() {
+      var entityId = GameObject.GetInstanceID();
+      _severity = 0f;
+      _tickProgress = 0f;
+      _damageTicksApplied = 0;
+      _fireDamageStateRuntimeState.SetSnapshot(
+        entityId,
+        new FireDamageStateSnapshot(_category, FireDamageState.Healthy, 0f, 0f, 0));
+    }
+
     private static float GetTickRate(FireDamageCategory category) {
       return category switch {
         FireDamageCategory.Crop => 1.25f,
@@ -117,6 +128,28 @@ namespace Mods.Prometheus.Scripts {
     }
 
     private FireDamageCategory DetectCategory() {
+      var componentCache = GameObject.GetComponent<ComponentCache>();
+      if (componentCache is not null) {
+        if (componentCache.TryGetCachedComponent<Workplace>(out _)) {
+          return FireDamageCategory.Building;
+        }
+
+        if (HasCachedComponentNamed(componentCache, "TreeComponent")) {
+          return FireDamageCategory.Tree;
+        }
+
+        if (HasCachedComponentNamed(componentCache, "Growable")) {
+          return FireDamageCategory.Crop;
+        }
+
+        if (HasCachedComponentNamed(componentCache, "Deteriorable")
+            || HasCachedComponentNamed(componentCache, "WorkplaceBonuses")
+            || HasCachedComponentNamed(componentCache, "Manufactory")
+            || HasCachedComponentNamed(componentCache, "Workshop")) {
+          return FireDamageCategory.Building;
+        }
+      }
+
       if (GameObject.GetComponent("TreeComponent") is not null) {
         return FireDamageCategory.Tree;
       }
@@ -130,6 +163,20 @@ namespace Mods.Prometheus.Scripts {
       }
 
       return FireDamageCategory.Unknown;
+    }
+
+    private static bool HasCachedComponentNamed(ComponentCache componentCache, string componentTypeName) {
+      foreach (var component in componentCache.AllComponents) {
+        if (component is null) {
+          continue;
+        }
+
+        if (component.GetType().Name == componentTypeName) {
+          return true;
+        }
+      }
+
+      return false;
     }
 
   }

@@ -63,6 +63,10 @@ namespace Mods.Prometheus.Scripts {
       _snapshotsByEntityId.Remove(entityId);
     }
 
+    public void ClearSnapshots() {
+      _snapshotsByEntityId.Clear();
+    }
+
     public bool TryGetNearestSpreadTarget(int sourceEntityId, Vector3 sourcePosition, float radius, out int targetEntityId, out float normalizedDistance) {
       var radiusSquared = radius * radius;
       var bestDistanceSquared = float.MaxValue;
@@ -97,6 +101,24 @@ namespace Mods.Prometheus.Scripts {
       targetEntityId = bestTargetEntityId;
       normalizedDistance = Mathf.Clamp01(Mathf.Sqrt(bestDistanceSquared) / radius);
       return true;
+    }
+
+    public int ExtinguishAllBurning() {
+      var extinguishedCount = 0;
+      var entityIds = new List<int>(_snapshotsByEntityId.Keys);
+
+      for (var i = 0; i < entityIds.Count; i++) {
+        var entityId = entityIds[i];
+        var snapshot = _snapshotsByEntityId[entityId];
+        if (!snapshot.Burning && snapshot.Intensity <= 0f) {
+          continue;
+        }
+
+        _snapshotsByEntityId[entityId] = new FireEntityRegistrySnapshot(snapshot.Position, false, 0f, 0f);
+        extinguishedCount++;
+      }
+
+      return extinguishedCount;
     }
 
     private static bool TryGetDistanceSquaredWithinRadius(Vector3 sourcePosition, Vector3 targetPosition, float radiusSquared, out float distanceSquared) {

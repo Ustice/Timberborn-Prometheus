@@ -16,9 +16,9 @@ namespace Mods.Prometheus.Scripts {
       BindRuntimeStates();
       BindFireResponseComponents();
       Bind<PrometheusFireDebugFragment>().AsSingleton();
-      Bind<PrometheusFireLogPanel>().AsSingleton();
-      Bind<PrometheusFireLogBottomBarButton>().AsSingleton();
-      MultiBind<ILoadableSingleton>().To<PrometheusFireLogPanel>().AsSingleton();
+      Bind<PrometheusDebugPanel>().AsSingleton();
+      Bind<PrometheusDebugBottomBarButton>().AsSingleton();
+      MultiBind<ILoadableSingleton>().ToProvider<PrometheusDebugPanelLoadableProvider>().AsSingleton();
 
       RegisterBottomBarModule();
       RegisterEntityPanelModule();
@@ -106,44 +106,58 @@ namespace Mods.Prometheus.Scripts {
 
     private class BottomBarModuleProvider : IProvider<BottomBarModule> {
 
-      private readonly PrometheusFireLogBottomBarButton _prometheusFireLogBottomBarButton;
+      private readonly PrometheusDebugBottomBarButton _prometheusDebugBottomBarButton;
 
-      public BottomBarModuleProvider(PrometheusFireLogBottomBarButton prometheusFireLogBottomBarButton) {
-        _prometheusFireLogBottomBarButton = prometheusFireLogBottomBarButton;
+      public BottomBarModuleProvider(PrometheusDebugBottomBarButton prometheusDebugBottomBarButton) {
+        _prometheusDebugBottomBarButton = prometheusDebugBottomBarButton;
       }
 
       public BottomBarModule Get() {
         var builder = new BottomBarModule.Builder();
-        builder.AddLeftSectionElement(_prometheusFireLogBottomBarButton, 180);
+        builder.AddLeftSectionElement(_prometheusDebugBottomBarButton, 180);
         return builder.Build();
+      }
+
+    }
+
+    private class PrometheusDebugPanelLoadableProvider : IProvider<ILoadableSingleton> {
+
+      private readonly PrometheusDebugPanel _prometheusDebugPanel;
+
+      public PrometheusDebugPanelLoadableProvider(PrometheusDebugPanel prometheusDebugPanel) {
+        _prometheusDebugPanel = prometheusDebugPanel;
+      }
+
+      public ILoadableSingleton Get() {
+        return _prometheusDebugPanel;
       }
 
     }
 
   }
 
-  internal class PrometheusFireLogBottomBarButton : IBottomBarElementsProvider {
+  internal class PrometheusDebugBottomBarButton : IBottomBarElementsProvider {
 
-    private readonly PrometheusFireLogPanel _prometheusFireLogPanel;
+    private readonly PrometheusDebugPanel _prometheusDebugPanel;
     private Button _button;
 
-    public PrometheusFireLogBottomBarButton(PrometheusFireLogPanel prometheusFireLogPanel) {
-      _prometheusFireLogPanel = prometheusFireLogPanel;
-      _prometheusFireLogPanel.OpenStateChanged += UpdateButtonState;
-      _prometheusFireLogPanel.UnreadCountChanged += _ => UpdateButtonState(_prometheusFireLogPanel.IsOpen);
+    public PrometheusDebugBottomBarButton(PrometheusDebugPanel prometheusDebugPanel) {
+      _prometheusDebugPanel = prometheusDebugPanel;
+      _prometheusDebugPanel.OpenStateChanged += UpdateButtonState;
+      _prometheusDebugPanel.UnreadCountChanged += _ => UpdateButtonState(_prometheusDebugPanel.IsOpen);
     }
 
     public IEnumerable<BottomBarElement> GetElements() {
-      _button = new Button(_prometheusFireLogPanel.ToggleOpenClose) {
-        text = "Fire Log"
+      _button = new Button(_prometheusDebugPanel.ToggleOpenClose) {
+        text = "Debug"
       };
       _button.style.height = 24;
       _button.style.minWidth = 92;
       _button.style.unityFontStyleAndWeight = FontStyle.Bold;
       _button.style.unityTextAlign = TextAnchor.MiddleCenter;
-      _button.tooltip = "Toggle the standalone Prometheus Fire Log panel.";
+      _button.tooltip = "Toggle the standalone Prometheus Debug panel.";
 
-      UpdateButtonState(_prometheusFireLogPanel.IsOpen);
+      UpdateButtonState(_prometheusDebugPanel.IsOpen);
 
       yield return BottomBarElement.CreateSingleLevel(_button);
     }
@@ -153,10 +167,10 @@ namespace Mods.Prometheus.Scripts {
         return;
       }
 
-      var unreadCount = _prometheusFireLogPanel.UnreadCount;
+      var unreadCount = _prometheusDebugPanel.UnreadCount;
       var unreadSuffix = unreadCount <= 0 ? string.Empty : unreadCount > 99 ? " (99+)" : $" ({unreadCount})";
 
-      _button.text = isOpen ? "Fire Log ●" : $"Fire Log{unreadSuffix}";
+      _button.text = isOpen ? "Debug ●" : $"Debug{unreadSuffix}";
       _button.style.unityBackgroundImageTintColor = isOpen
         ? new Color(0.33f, 0.57f, 0.40f, 1f)
         : unreadCount > 0

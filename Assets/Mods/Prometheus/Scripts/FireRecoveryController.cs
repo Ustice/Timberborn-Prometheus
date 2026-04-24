@@ -74,6 +74,14 @@ namespace Mods.Prometheus.Scripts {
       _fireRecoveryRuntimeState.SetSnapshot(entityId, recoverySnapshot);
     }
 
+    internal void DebugResetRecoveryState() {
+      _sawBurnPhase = false;
+      _peakIntensityDuringBurn = 0f;
+      _recoveryHoursRemaining = 0f;
+      _lastControlledBurn = false;
+      _fireRecoveryRuntimeState.RemoveSnapshot(GameObject.GetInstanceID());
+    }
+
     private bool IsControlledBurn(FireSimulationSnapshot simulationSnapshot, int entityId) {
       var waterExposure = 0f;
       if (_fireWaterContextRuntimeState.TryGetSnapshot(entityId, out var waterSnapshot)) {
