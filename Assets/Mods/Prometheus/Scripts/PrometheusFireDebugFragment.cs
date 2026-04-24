@@ -1392,6 +1392,13 @@ namespace Mods.Prometheus.Scripts {
       });
       controlRow.Add(textMarkerToggle);
 
+      var copyButton = new Button(CopyVisualTuningSettings) {
+        text = "Copy Visuals"
+      };
+      ApplyCommandButtonStyle(copyButton, new Color(0.76f, 0.86f, 0.68f, 1f), 104);
+      copyButton.tooltip = "Copy current visual tuning values to the clipboard.";
+      controlRow.Add(copyButton);
+
       var resetButton = new Button(() => {
         _fireVisualEffectRuntimeState.ResetDefaults();
         SetVisualTuningFeedback("Visuals reset. Reopen panel to refresh sliders.");
@@ -1411,6 +1418,20 @@ namespace Mods.Prometheus.Scripts {
 
       visualSection.Add(controlRow);
       return visualSection;
+    }
+
+    private void CopyVisualTuningSettings() {
+      var tuning = _fireVisualEffectRuntimeState.CurrentTuning;
+      var settings = "Prometheus visual tuning: "
+                     + $"embers={tuning.EmberScale:0.00}, "
+                     + $"smoke={tuning.SmokeScale:0.00}, "
+                     + $"fire={tuning.FireScale:0.00}, "
+                     + $"steam={tuning.SteamScale:0.00}, "
+                     + $"char={tuning.CharScale:0.00}, "
+                     + $"textMarkers={_fireVisualEffectRuntimeState.TextMarkersEnabled}, "
+                     + $"textMarkerScale={_fireVisualEffectRuntimeState.TextMarkerScale:0.00}";
+      GUIUtility.systemCopyBuffer = settings;
+      SetVisualTuningFeedback("Copied visual tuning.");
     }
 
     private VisualElement CreateVisualSliderRow(string labelText, float initialValue, Action<float> setter) {
