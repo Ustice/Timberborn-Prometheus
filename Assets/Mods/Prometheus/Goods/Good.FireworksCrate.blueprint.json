@@ -17,7 +17,7 @@
     "Weight": 1,
     "GoodGroupId": "Materials",
     "GoodOrder": 8080,
-    "Icon": "Sprites/Goods/ExplosivesIcon",
+    "Icon": "Sprites/Goods/FireworksCrateIcon",
     "ForceImport": true,
     "DisplayNameLocKey": "Good.FireworksCrate.DisplayName",
     "PluralDisplayNameLocKey": "Good.FireworksCrate.PluralDisplayName"

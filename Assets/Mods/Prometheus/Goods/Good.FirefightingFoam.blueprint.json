@@ -17,7 +17,7 @@
     "Weight": 1,
     "GoodGroupId": "Materials",
     "GoodOrder": 8070,
-    "Icon": "Sprites/Goods/ExtractIcon",
+    "Icon": "Sprites/Goods/FirefightingFoamIcon",
     "ForceImport": true,
     "DisplayNameLocKey": "Good.FirefightingFoam.DisplayName",
     "PluralDisplayNameLocKey": "Good.FirefightingFoam.PluralDisplayName"

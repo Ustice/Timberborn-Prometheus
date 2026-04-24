@@ -25,6 +25,6 @@
     "CyclesFuelLasts": 8,
     "FuelCapacity": 5,
     "CyclesCapacity": 20,
-    "Icon": "Sprites/Goods/DirtIcon"
+    "Icon": "Sprites/Goods/AshFertilizerIcon"
   }
 }

@@ -17,7 +17,7 @@
     "Weight": 2,
     "GoodGroupId": "Materials",
     "GoodOrder": 8090,
-    "Icon": "Sprites/Goods/WaterIcon",
+    "Icon": "Sprites/Goods/BucketBrigadeKitIcon",
     "ForceImport": true,
     "DisplayNameLocKey": "Good.BucketBrigadeKit.DisplayName",
     "PluralDisplayNameLocKey": "Good.BucketBrigadeKit.PluralDisplayName"

@@ -72,6 +72,7 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
 - Current debug-panel UI pass reorganizes the global panel into Timberborn-style status, command, filter, selection, and log sections; the behavior is unchanged and still intentionally manual-QA'd.
 - Telemetry event names now live in `FireTelemetryEvents`, an iterable constant registry intended for future filters/docs/log tooling.
 - Faction quenching and dispatch scoring/lock decisions now live in `FireSimulationRules`, keeping `FireSimulationController` thinner and making Phase 2 tuning decisions regression-testable.
+- Custom goods/recipe icons were added for ash fertilizer, firefighting foam, fireworks crates, bucket brigade kits, and fire-control gear; in-game asset import still needs visual QA.
 
 ### Build/deploy verification
 

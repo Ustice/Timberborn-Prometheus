@@ -52,6 +52,11 @@ Unity EditMode tests are deferred until the standalone repo has a clean Timberbo
 - [ ] `Copy` in the panel selection section copies the full selected-entity snapshot text.
 - [ ] `Ignite` in the panel selection section queues ignition for the selected fire-profiled entity.
 
+### C. Prometheus icon/assets pass
+
+- [ ] Prometheus goods/recipes display custom icons instead of borrowed placeholder stock icons.
+- [ ] Asset import shows no missing sprite/icon warnings for ash fertilizer, firefighting foam, fireworks crates, bucket brigade kits, or fire-control gear.
+
 ## Core gameplay validation sequence
 
 ### 1) Smoke pass (single settlement)
