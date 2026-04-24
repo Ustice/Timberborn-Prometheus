@@ -1217,7 +1217,7 @@ namespace Mods.Prometheus.Scripts {
       button.style.minWidth = minWidth;
       button.style.fontSize = 11;
       button.style.unityFontStyleAndWeight = FontStyle.Bold;
-      button.style.color = PrometheusDebugPalette.TextDark;
+      button.style.color = PrometheusDebugPalette.Text;
       button.style.backgroundColor = tintColor;
       button.style.unityBackgroundImageTintColor = tintColor;
       button.style.marginRight = 5;
@@ -1346,7 +1346,7 @@ namespace Mods.Prometheus.Scripts {
       button.style.backgroundColor = color;
       button.style.unityBackgroundImageTintColor = color;
       button.style.color = selected
-        ? PrometheusDebugPalette.TextDark
+        ? PrometheusDebugPalette.Text
         : PrometheusDebugPalette.Text;
     }
 
@@ -2137,7 +2137,7 @@ namespace Mods.Prometheus.Scripts {
         ? PrometheusDebugPalette.Gold
         : PrometheusDebugPalette.Button;
       button.style.color = selected
-        ? PrometheusDebugPalette.TextDark
+        ? PrometheusDebugPalette.Text
         : PrometheusDebugPalette.Text;
     }
 

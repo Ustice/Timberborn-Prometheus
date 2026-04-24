@@ -5,7 +5,6 @@ namespace Mods.Prometheus.Scripts {
 
     public static readonly Color Text = new(0.84f, 0.92f, 0.83f, 0.92f);
     public static readonly Color TextMuted = new(0.60f, 0.74f, 0.64f, 0.88f);
-    public static readonly Color TextDark = new(0.10f, 0.08f, 0.06f, 1f);
     public static readonly Color Gold = new(0.72f, 0.58f, 0.30f, 1f);
     public static readonly Color GoldLight = new(1.00f, 0.86f, 0.52f, 1f);
     public static readonly Color Frame = new(0.18f, 0.35f, 0.28f, 1f);
