@@ -321,5 +321,173 @@ namespace Mods.Prometheus.Scripts {
       return quenchingPower + 0.0001f >= (spreadPressure * 1.2f) && intensity <= 0.45f ? "Contained" : "Stabilized";
     }
 
+    internal static float ComputeQuenchingPower(
+      bool burning,
+      float suppressionPower,
+      float waterEfficiency,
+      float localQuenchingBonus,
+      string factionApproach,
+      float intensity,
+      float localWaterExposure,
+      float quenchingMultiplier,
+      bool explosionDisrupted) {
+      if (!burning) {
+        return 0f;
+      }
+
+      var quenchingPower = (UnityEngine.Mathf.Max(0f, suppressionPower) * 0.035f)
+                           + (UnityEngine.Mathf.Max(0f, waterEfficiency) * 0.02f)
+                           + UnityEngine.Mathf.Max(0f, localQuenchingBonus);
+      var normalizedFactionApproach = factionApproach ?? string.Empty;
+      if (normalizedFactionApproach.Contains("Folktails", System.StringComparison.OrdinalIgnoreCase)
+          || normalizedFactionApproach.Contains("BucketBrigade", System.StringComparison.OrdinalIgnoreCase)) {
+        var relayDistancePenalty = UnityEngine.Mathf.Clamp01(1f - localWaterExposure);
+        var relayEfficiency = UnityEngine.Mathf.Clamp(1f - (relayDistancePenalty * 0.45f), 0.55f, 1.2f);
+        quenchingPower *= relayEfficiency;
+      } else if (normalizedFactionApproach.Contains("Ironteeth", System.StringComparison.OrdinalIgnoreCase)
+                 || normalizedFactionApproach.Contains("IronTeeth", System.StringComparison.OrdinalIgnoreCase)
+                 || normalizedFactionApproach.Contains("IndustrialControl", System.StringComparison.OrdinalIgnoreCase)) {
+        var highHeatSuppressionBonus = UnityEngine.Mathf.Clamp01(intensity * 1.1f) * 0.35f;
+        quenchingPower *= 1f + highHeatSuppressionBonus;
+      }
+
+      quenchingPower *= UnityEngine.Mathf.Max(0f, quenchingMultiplier);
+      return explosionDisrupted ? quenchingPower * 0.65f : quenchingPower;
+    }
+
+    internal static FireDispatchDecision ComputeDispatchDecision(
+      float intensity,
+      float spreadPressure,
+      float heatExposure,
+      float neighborSpreadPressure,
+      float impactPressure,
+      float localWaterExposure,
+      float waterEfficiency,
+      float drynessFactor,
+      float dispatchSeverityWeight,
+      float dispatchAssetRiskWeight,
+      float dispatchTravelCostWeight,
+      float dispatchContainmentLeverageWeight,
+      float assignedScore,
+      float assignmentLockRemainingSeconds,
+      float assignmentLockDurationInSeconds,
+      float hysteresisThreshold) {
+      var severityFactor = UnityEngine.Mathf.Clamp01((intensity * 0.65f) + (spreadPressure * 0.35f));
+      var assetRiskFactor = UnityEngine.Mathf.Clamp01((impactPressure * 0.8f) + (heatExposure * 0.2f));
+      var travelCostFactor = UnityEngine.Mathf.Clamp01((1f - localWaterExposure) * 0.55f + (1f - UnityEngine.Mathf.Clamp01(waterEfficiency)) * 0.45f);
+      var containmentLeverageFactor = UnityEngine.Mathf.Clamp01((neighborSpreadPressure * 0.7f) + (drynessFactor * 0.3f));
+
+      NormalizeDispatchWeights(
+        ref dispatchSeverityWeight,
+        ref dispatchAssetRiskWeight,
+        ref dispatchTravelCostWeight,
+        ref dispatchContainmentLeverageWeight);
+
+      var candidateScore =
+        (severityFactor * dispatchSeverityWeight)
+        + (assetRiskFactor * dispatchAssetRiskWeight)
+        + (containmentLeverageFactor * dispatchContainmentLeverageWeight)
+        - (travelCostFactor * dispatchTravelCostWeight);
+      candidateScore = UnityEngine.Mathf.Max(0f, candidateScore);
+
+      var clampedAssignedScore = UnityEngine.Mathf.Max(0f, assignedScore);
+      var clampedHysteresisThreshold = UnityEngine.Mathf.Max(0f, hysteresisThreshold);
+      var clampedAssignmentLockDuration = UnityEngine.Mathf.Max(0f, assignmentLockDurationInSeconds);
+      var assignmentLocked = assignmentLockRemainingSeconds > 0f;
+      var scoreDelta = candidateScore - clampedAssignedScore;
+      var retargetSuppressed = false;
+      var nextAssignedScore = clampedAssignedScore;
+      var nextAssignmentLockRemainingSeconds = assignmentLockRemainingSeconds;
+
+      if (nextAssignedScore <= 0.0001f) {
+        nextAssignedScore = candidateScore;
+        nextAssignmentLockRemainingSeconds = clampedAssignmentLockDuration;
+      } else if (assignmentLocked) {
+        retargetSuppressed = scoreDelta >= clampedHysteresisThreshold;
+        nextAssignedScore = UnityEngine.Mathf.Lerp(nextAssignedScore, candidateScore, 0.08f);
+      } else if (scoreDelta >= clampedHysteresisThreshold) {
+        nextAssignedScore = candidateScore;
+        nextAssignmentLockRemainingSeconds = clampedAssignmentLockDuration;
+      } else {
+        retargetSuppressed = scoreDelta > 0f;
+        nextAssignedScore = UnityEngine.Mathf.Lerp(nextAssignedScore, candidateScore, 0.12f);
+      }
+
+      return new FireDispatchDecision(
+        candidateScore,
+        UnityEngine.Mathf.Max(0f, nextAssignedScore),
+        nextAssignmentLockRemainingSeconds,
+        clampedHysteresisThreshold,
+        assignmentLocked,
+        retargetSuppressed,
+        severityFactor,
+        assetRiskFactor,
+        travelCostFactor,
+        containmentLeverageFactor);
+    }
+
+    private static void NormalizeDispatchWeights(
+      ref float severityWeight,
+      ref float assetRiskWeight,
+      ref float travelCostWeight,
+      ref float containmentLeverageWeight) {
+      severityWeight = UnityEngine.Mathf.Max(0f, severityWeight);
+      assetRiskWeight = UnityEngine.Mathf.Max(0f, assetRiskWeight);
+      travelCostWeight = UnityEngine.Mathf.Max(0f, travelCostWeight);
+      containmentLeverageWeight = UnityEngine.Mathf.Max(0f, containmentLeverageWeight);
+
+      var weightSum = severityWeight + assetRiskWeight + travelCostWeight + containmentLeverageWeight;
+      if (weightSum < 0.001f) {
+        severityWeight = 0.4f;
+        assetRiskWeight = 0.3f;
+        travelCostWeight = 0.2f;
+        containmentLeverageWeight = 0.25f;
+        weightSum = severityWeight + assetRiskWeight + travelCostWeight + containmentLeverageWeight;
+      }
+
+      severityWeight /= weightSum;
+      assetRiskWeight /= weightSum;
+      travelCostWeight /= weightSum;
+      containmentLeverageWeight /= weightSum;
+    }
+
+  }
+
+  internal readonly struct FireDispatchDecision {
+
+    public float CandidateScore { get; }
+    public float AssignedScore { get; }
+    public float AssignmentLockRemainingSeconds { get; }
+    public float HysteresisThreshold { get; }
+    public bool AssignmentLocked { get; }
+    public bool RetargetSuppressed { get; }
+    public float SeverityFactor { get; }
+    public float AssetRiskFactor { get; }
+    public float TravelCostFactor { get; }
+    public float ContainmentLeverageFactor { get; }
+
+    public FireDispatchDecision(
+      float candidateScore,
+      float assignedScore,
+      float assignmentLockRemainingSeconds,
+      float hysteresisThreshold,
+      bool assignmentLocked,
+      bool retargetSuppressed,
+      float severityFactor,
+      float assetRiskFactor,
+      float travelCostFactor,
+      float containmentLeverageFactor) {
+      CandidateScore = candidateScore;
+      AssignedScore = assignedScore;
+      AssignmentLockRemainingSeconds = assignmentLockRemainingSeconds;
+      HysteresisThreshold = hysteresisThreshold;
+      AssignmentLocked = assignmentLocked;
+      RetargetSuppressed = retargetSuppressed;
+      SeverityFactor = severityFactor;
+      AssetRiskFactor = assetRiskFactor;
+      TravelCostFactor = travelCostFactor;
+      ContainmentLeverageFactor = containmentLeverageFactor;
+    }
+
   }
 }

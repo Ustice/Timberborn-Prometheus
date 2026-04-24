@@ -77,6 +77,7 @@ Recommended guardrails:
   * `Reset Fire Sim` now provides a clean-slate recovery path for loaded fire entities and clears stale fire/damage/recovery snapshots.
   * The Prometheus debug panel has been reorganized into Timberborn-style status, command, filter, selection, and log sections for manual QA.
   * Telemetry event names are centralized in an iterable registry and covered by a uniqueness regression test.
+  * Phase 2 response decisions for faction quenching and dispatch lock/hysteresis are extracted into test-backed rules.
 * Next steps:
   * Start Phase 2 validation/tuning around firefighting logistics, worker/building exposure, and faction identity.
   * Re-run explosion request/apply lifecycle capture during Phase 2 validation if gaps reappear.

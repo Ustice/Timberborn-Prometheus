@@ -44,6 +44,12 @@ namespace Prometheus.Tests {
     public void ResponseStateThresholds_EncodeDispatchReadability_Test() => ResponseStateThresholdsEncodeDispatchReadability();
 
     [Fact]
+    public void QuenchingRules_EncodeFactionResponseIdentity_Test() => QuenchingRulesEncodeFactionResponseIdentity();
+
+    [Fact]
+    public void DispatchDecisionRules_EncodeLockAndHysteresis_Test() => DispatchDecisionRulesEncodeLockAndHysteresis();
+
+    [Fact]
     public void WorkplaceSupportComponentClassification_PreservesSuppressionBoundary_Test() => WorkplaceSupportComponentClassificationPreservesSuppressionBoundary();
 
     [Fact]
@@ -205,6 +211,69 @@ namespace Prometheus.Tests {
       Equal("Overwhelmed", FireSimulationRules.DetermineResponseState(true, 0.7f, 0.3f, 0.2f));
       Equal("Contained", FireSimulationRules.DetermineResponseState(true, 0.4f, 0.1f, 0.12f));
       Equal("Stabilized", FireSimulationRules.DetermineResponseState(true, 0.5f, 0.1f, 0.12f));
+    }
+
+    private static void QuenchingRulesEncodeFactionResponseIdentity() {
+      var baseQuenching = FireSimulationRules.ComputeQuenchingPower(true, 1f, 1f, 0f, "Neutral", 0.8f, 0.2f, 1f, false);
+      var folktailsFarWater = FireSimulationRules.ComputeQuenchingPower(true, 1f, 1f, 0f, "BucketBrigade", 0.8f, 0.2f, 1f, false);
+      var folktailsNearWater = FireSimulationRules.ComputeQuenchingPower(true, 1f, 1f, 0f, "BucketBrigade", 0.8f, 0.95f, 1f, false);
+      var ironteethHighHeat = FireSimulationRules.ComputeQuenchingPower(true, 1f, 1f, 0f, "IndustrialControl", 0.8f, 0.2f, 1f, false);
+      var disrupted = FireSimulationRules.ComputeQuenchingPower(true, 1f, 1f, 0f, "IndustrialControl", 0.8f, 0.2f, 1f, true);
+
+      True(folktailsFarWater < baseQuenching);
+      True(folktailsNearWater > folktailsFarWater);
+      True(ironteethHighHeat > baseQuenching);
+      NearlyEqual(ironteethHighHeat * 0.65f, disrupted, 0.000001f);
+      NearlyEqual(0f, FireSimulationRules.ComputeQuenchingPower(false, 1f, 1f, 1f, "IndustrialControl", 1f, 1f, 1f, false));
+    }
+
+    private static void DispatchDecisionRulesEncodeLockAndHysteresis() {
+      var firstDecision = FireSimulationRules.ComputeDispatchDecision(
+        0.8f,
+        0.25f,
+        0.4f,
+        0.3f,
+        0.5f,
+        0.2f,
+        0.8f,
+        0.7f,
+        0.45f,
+        0.35f,
+        0.15f,
+        0.25f,
+        0f,
+        0f,
+        7f,
+        0.09f);
+
+      True(firstDecision.CandidateScore > 0f);
+      NearlyEqual(firstDecision.CandidateScore, firstDecision.AssignedScore, 0.000001f);
+      NearlyEqual(7f, firstDecision.AssignmentLockRemainingSeconds);
+      False(firstDecision.AssignmentLocked);
+      False(firstDecision.RetargetSuppressed);
+
+      var lockedDecision = FireSimulationRules.ComputeDispatchDecision(
+        1f,
+        0.4f,
+        0.6f,
+        0.5f,
+        0.8f,
+        0f,
+        0.6f,
+        0.9f,
+        0.45f,
+        0.35f,
+        0.15f,
+        0.25f,
+        firstDecision.AssignedScore,
+        5f,
+        7f,
+        0.02f);
+
+      True(lockedDecision.AssignmentLocked);
+      True(lockedDecision.RetargetSuppressed);
+      True(lockedDecision.AssignedScore > firstDecision.AssignedScore);
+      True(lockedDecision.AssignedScore < lockedDecision.CandidateScore);
     }
 
     private static void WorkplaceSupportComponentClassificationPreservesSuppressionBoundary() {

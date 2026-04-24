@@ -234,24 +234,16 @@ namespace Mods.Prometheus.Scripts {
       var spreadPressure = burning ? Mathf.Max(0f, ((baseSpread + neighborSpreadPressure) * drynessSpreadFactor) - barrierFactor) : 0f;
       spreadPressure *= tuning.SpreadMultiplier;
 
-      var quenchingPower = burning ? ((suppressionPower * 0.035f) + (waterEfficiency * 0.02f) + localQuenchingBonus) : 0f;
-
-      var factionApproach = suppressionSnapshot.FactionApproach ?? string.Empty;
-      if (factionApproach.Contains("Folktails", System.StringComparison.OrdinalIgnoreCase)) {
-        var relayDistancePenalty = Mathf.Clamp01(1f - localWaterExposure);
-        var relayEfficiency = Mathf.Clamp(1f - (relayDistancePenalty * 0.45f), 0.55f, 1.2f);
-        quenchingPower *= relayEfficiency;
-      } else if (factionApproach.Contains("Ironteeth", System.StringComparison.OrdinalIgnoreCase)
-                 || factionApproach.Contains("IronTeeth", System.StringComparison.OrdinalIgnoreCase)) {
-        var highHeatSuppressionBonus = Mathf.Clamp01(_currentIntensity * 1.1f) * 0.35f;
-        quenchingPower *= 1f + highHeatSuppressionBonus;
-      }
-
-      quenchingPower *= tuning.QuenchingMultiplier;
-
-      if (_explosionSuppressionDisruptionSecondsRemaining > 0f) {
-        quenchingPower *= 0.65f;
-      }
+      var quenchingPower = FireSimulationRules.ComputeQuenchingPower(
+        burning,
+        suppressionPower,
+        waterEfficiency,
+        localQuenchingBonus,
+        suppressionSnapshot.FactionApproach,
+        _currentIntensity,
+        localWaterExposure,
+        tuning.QuenchingMultiplier,
+        _explosionSuppressionDisruptionSecondsRemaining > 0f);
 
       if (burning) {
         _currentIntensity = Mathf.Clamp01(_currentIntensity + spreadPressure - quenchingPower);
@@ -376,58 +368,25 @@ namespace Mods.Prometheus.Scripts {
           + (impactSnapshot.InjuryPressure * 0.75f));
       }
 
-      var dispatchSeverityFactor = Mathf.Clamp01((simulationSnapshot.Intensity * 0.65f) + (simulationSnapshot.SpreadPressure * 0.35f));
-      var dispatchAssetRiskFactor = Mathf.Clamp01((impactPressure * 0.8f) + (simulationSnapshot.HeatExposure * 0.2f));
-      var dispatchTravelCostFactor = Mathf.Clamp01((1f - localWaterExposure) * 0.55f + (1f - Mathf.Clamp01(waterEfficiency)) * 0.45f);
-      var dispatchContainmentLeverageFactor = Mathf.Clamp01((simulationSnapshot.NeighborSpreadPressure * 0.7f) + (drynessFactor * 0.3f));
-
-      var dispatchSeverityWeight = Mathf.Max(0f, _fireResponseProfile.DispatchSeverityWeight);
-      var dispatchAssetRiskWeight = Mathf.Max(0f, _fireResponseProfile.DispatchAssetRiskWeight);
-      var dispatchTravelCostWeight = Mathf.Max(0f, _fireResponseProfile.DispatchTravelCostWeight);
-      var dispatchContainmentLeverageWeight = Mathf.Max(0f, _fireResponseProfile.DispatchContainmentLeverageWeight);
-
-      var dispatchWeightSum = dispatchSeverityWeight + dispatchAssetRiskWeight + dispatchTravelCostWeight + dispatchContainmentLeverageWeight;
-      if (dispatchWeightSum < 0.001f) {
-        dispatchSeverityWeight = 0.4f;
-        dispatchAssetRiskWeight = 0.3f;
-        dispatchTravelCostWeight = 0.2f;
-        dispatchContainmentLeverageWeight = 0.25f;
-        dispatchWeightSum = dispatchSeverityWeight + dispatchAssetRiskWeight + dispatchTravelCostWeight + dispatchContainmentLeverageWeight;
-      }
-
-      dispatchSeverityWeight /= dispatchWeightSum;
-      dispatchAssetRiskWeight /= dispatchWeightSum;
-      dispatchTravelCostWeight /= dispatchWeightSum;
-      dispatchContainmentLeverageWeight /= dispatchWeightSum;
-
-      var dispatchTotalScore =
-        (dispatchSeverityFactor * dispatchSeverityWeight)
-        + (dispatchAssetRiskFactor * dispatchAssetRiskWeight)
-        + (dispatchContainmentLeverageFactor * dispatchContainmentLeverageWeight)
-        - (dispatchTravelCostFactor * dispatchTravelCostWeight);
-      dispatchTotalScore = Mathf.Max(0f, dispatchTotalScore);
-
-      var hysteresisThreshold = Mathf.Max(0f, suppressionSnapshot.RetargetHysteresisThreshold);
-      var assignmentLockDurationInSeconds = Mathf.Max(0f, suppressionSnapshot.AssignmentLockDurationInSeconds);
-      var scoreDelta = dispatchTotalScore - _dispatchAssignedScore;
-      var assignmentLocked = _dispatchAssignmentLockRemainingSeconds > 0f;
-      var retargetSuppressed = false;
-
-      if (_dispatchAssignedScore <= 0.0001f) {
-        _dispatchAssignedScore = dispatchTotalScore;
-        _dispatchAssignmentLockRemainingSeconds = assignmentLockDurationInSeconds;
-      } else if (assignmentLocked) {
-        retargetSuppressed = scoreDelta >= hysteresisThreshold;
-        _dispatchAssignedScore = Mathf.Lerp(_dispatchAssignedScore, dispatchTotalScore, 0.08f);
-      } else if (scoreDelta >= hysteresisThreshold) {
-        _dispatchAssignedScore = dispatchTotalScore;
-        _dispatchAssignmentLockRemainingSeconds = assignmentLockDurationInSeconds;
-      } else {
-        retargetSuppressed = scoreDelta > 0f;
-        _dispatchAssignedScore = Mathf.Lerp(_dispatchAssignedScore, dispatchTotalScore, 0.12f);
-      }
-
-      _dispatchAssignedScore = Mathf.Max(0f, _dispatchAssignedScore);
+      var dispatchDecision = FireSimulationRules.ComputeDispatchDecision(
+        simulationSnapshot.Intensity,
+        simulationSnapshot.SpreadPressure,
+        simulationSnapshot.HeatExposure,
+        simulationSnapshot.NeighborSpreadPressure,
+        impactPressure,
+        localWaterExposure,
+        waterEfficiency,
+        drynessFactor,
+        _fireResponseProfile.DispatchSeverityWeight,
+        _fireResponseProfile.DispatchAssetRiskWeight,
+        _fireResponseProfile.DispatchTravelCostWeight,
+        _fireResponseProfile.DispatchContainmentLeverageWeight,
+        _dispatchAssignedScore,
+        _dispatchAssignmentLockRemainingSeconds,
+        suppressionSnapshot.AssignmentLockDurationInSeconds,
+        suppressionSnapshot.RetargetHysteresisThreshold);
+      _dispatchAssignedScore = dispatchDecision.AssignedScore;
+      _dispatchAssignmentLockRemainingSeconds = dispatchDecision.AssignmentLockRemainingSeconds;
 
       var responseState = FireSimulationRules.DetermineResponseState(burning, _currentIntensity, spreadPressure, quenchingPower);
 
@@ -450,22 +409,22 @@ namespace Mods.Prometheus.Scripts {
       _responseState = responseState;
 
       var topDispatchFactor = DetermineTopDispatchFactor(
-        dispatchSeverityFactor,
-        dispatchAssetRiskFactor,
-        dispatchTravelCostFactor,
-        dispatchContainmentLeverageFactor);
+        dispatchDecision.SeverityFactor,
+        dispatchDecision.AssetRiskFactor,
+        dispatchDecision.TravelCostFactor,
+        dispatchDecision.ContainmentLeverageFactor);
 
       var dispatchScoringSnapshot = new FireDispatchScoringSnapshot(
-        dispatchTotalScore,
+        dispatchDecision.CandidateScore,
         _dispatchAssignedScore,
-        dispatchSeverityFactor,
-        dispatchAssetRiskFactor,
-        dispatchTravelCostFactor,
-        dispatchContainmentLeverageFactor,
+        dispatchDecision.SeverityFactor,
+        dispatchDecision.AssetRiskFactor,
+        dispatchDecision.TravelCostFactor,
+        dispatchDecision.ContainmentLeverageFactor,
         _dispatchAssignmentLockRemainingSeconds,
-        hysteresisThreshold,
-        _dispatchAssignmentLockRemainingSeconds > 0f,
-        retargetSuppressed,
+        dispatchDecision.HysteresisThreshold,
+        dispatchDecision.AssignmentLocked,
+        dispatchDecision.RetargetSuppressed,
         responseState,
         topDispatchFactor);
 
