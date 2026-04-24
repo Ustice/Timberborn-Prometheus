@@ -147,7 +147,7 @@ namespace Mods.Prometheus.Scripts {
       }
 
       _nextEffectTimeByNeedManager.Clear();
-      FireTelemetry.Log($"event=debug_clear_beaver_fire_effects count={clearedCount}");
+      FireTelemetry.Log($"event={FireTelemetryEvents.DebugClearBeaverFireEffects} count={clearedCount}");
       return clearedCount;
     }
 
@@ -156,14 +156,14 @@ namespace Mods.Prometheus.Scripts {
 
       if (!_loggedNeedManagerScanSummary) {
         _loggedNeedManagerScanSummary = true;
-        FireTelemetry.Log($"event=beaver_effect_need_manager_scan componentCaches={scanSummary.ComponentCacheCount} cachedComponents={scanSummary.CachedComponentCount} needManagers={scanSummary.NeedManagerCount} apiBound={HasNeedApplicationApi()}");
+        FireTelemetry.Log($"event={FireTelemetryEvents.BeaverEffectNeedManagerScan} componentCaches={scanSummary.ComponentCacheCount} cachedComponents={scanSummary.CachedComponentCount} needManagers={scanSummary.NeedManagerCount} apiBound={HasNeedApplicationApi()}");
       }
 
       if (!HasNeedApplicationApi() && !_loggedMissingNeedManagerApi) {
         _loggedMissingNeedManagerApi = true;
         const string warning = "Prometheus: compatible NeedManager API not found; beaver fire effects disabled.";
         _quickNotificationService.SendNotification(warning);
-        FireTelemetry.LogWarning($"event=beaver_effect_api_missing message=\"{warning}\"");
+        FireTelemetry.LogWarning($"event={FireTelemetryEvents.BeaverEffectApiMissing} message=\"{warning}\"");
       }
     }
 
@@ -337,7 +337,7 @@ namespace Mods.Prometheus.Scripts {
       }
 
       _loggedNeedManagerApiResolved = true;
-      FireTelemetry.Log($"event=beaver_effect_api_resolved api=\"{api}\"");
+      FireTelemetry.Log($"event={FireTelemetryEvents.BeaverEffectApiResolved} api=\"{api}\"");
     }
 
     private static void TryApplyNeedDelta(object needManager, string needId, float pointsDelta) {

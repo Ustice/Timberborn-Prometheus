@@ -238,7 +238,7 @@ namespace Mods.Prometheus.Scripts {
       _fireRecoveryRuntimeState.RemoveSnapshot(entityId);
       _fireFestivalRuntimeState.RemoveSnapshot(entityId);
 
-      FireTelemetry.Log($"event=entity_destroy_cleanup entity={GameObject.name} id={entityId}");
+      FireTelemetry.Log($"event={FireTelemetryEvents.EntityDestroyCleanup} entity={GameObject.name} id={entityId}");
     }
 
   }

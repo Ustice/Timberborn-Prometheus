@@ -31,6 +31,7 @@ Validate:
 - [ ] Coverage output is available under `TestResults/*/coverage.cobertura.xml`.
 - [ ] Any new real system decision has a corresponding regression test where feasible.
 - [ ] Unity-specific components stay thin; dependency-light rule/runtime classes carry testable decisions where feasible.
+- [ ] Telemetry event-name constants remain unique and iterable for docs, filters, and future log tooling.
 - [ ] Debug panel UI changes are manually QA'd; automated UI tests are intentionally out of scope for now.
 
 Unity EditMode tests are deferred until the standalone repo has a clean Timberborn/Unity dependency story. The first automated lane is plain C# regression coverage because it catches decision drift without loading the full game assembly graph.

@@ -180,7 +180,7 @@ namespace Mods.Prometheus.Scripts {
       }
 
       if (exposedWorkerCount > 0 && exposedWorkerCount != _lastLoggedIndoorExposedWorkerCount) {
-        FireTelemetry.Log($"event=workplace_indoor_exposure entity={GameObject.name} id={GameObject.GetInstanceID()} exposedWorkers={exposedWorkerCount}");
+        FireTelemetry.Log($"event={FireTelemetryEvents.WorkplaceIndoorExposure} entity={GameObject.name} id={GameObject.GetInstanceID()} exposedWorkers={exposedWorkerCount}");
       }
 
       _lastLoggedIndoorExposedWorkerCount = exposedWorkerCount;
@@ -224,7 +224,7 @@ namespace Mods.Prometheus.Scripts {
       }
 
       _loggedWorkplaceSpeedApiResolved = true;
-      FireTelemetry.Log($"event=workplace_speed_api_resolved entity={GameObject.name} id={GameObject.GetInstanceID()} api=\"Worker.BonusManager({Worker.WorkingSpeedBonusId})\"");
+      FireTelemetry.Log($"event={FireTelemetryEvents.WorkplaceSpeedApiResolved} entity={GameObject.name} id={GameObject.GetInstanceID()} api=\"Worker.BonusManager({Worker.WorkingSpeedBonusId})\"");
     }
 
     private void LogWorkerPenaltyState(int assignedWorkerCount, float penaltyDelta, int appliedCount) {
@@ -235,7 +235,7 @@ namespace Mods.Prometheus.Scripts {
 
       _lastLoggedAssignedWorkerCount = assignedWorkerCount;
       _lastLoggedPenaltyDelta = penaltyDelta;
-      FireTelemetry.Log($"event=workplace_speed_penalty_state entity={GameObject.name} id={GameObject.GetInstanceID()} assignedWorkers={assignedWorkerCount} appliedWorkers={appliedCount} penaltyDelta={penaltyDelta:0.000}");
+      FireTelemetry.Log($"event={FireTelemetryEvents.WorkplaceSpeedPenaltyState} entity={GameObject.name} id={GameObject.GetInstanceID()} assignedWorkers={assignedWorkerCount} appliedWorkers={appliedCount} penaltyDelta={penaltyDelta:0.000}");
     }
 
     private static bool ShouldLogPenaltyDeltaChange(float previousPenaltyDelta, float currentPenaltyDelta) {
@@ -293,7 +293,7 @@ namespace Mods.Prometheus.Scripts {
       }
 
       _workplaceSupportSuppressed = true;
-      FireTelemetry.Log($"event=workplace_support_suppressed entity={GameObject.name} id={GameObject.GetInstanceID()} reason=building_dead components={_workplaceSupportBehaviours.Count}");
+      FireTelemetry.Log($"event={FireTelemetryEvents.WorkplaceSupportSuppressed} entity={GameObject.name} id={GameObject.GetInstanceID()} reason=building_dead components={_workplaceSupportBehaviours.Count}");
     }
 
     private void RestoreWorkplaceSupport() {
@@ -311,7 +311,7 @@ namespace Mods.Prometheus.Scripts {
       }
 
       _workplaceSupportSuppressed = false;
-      FireTelemetry.Log($"event=workplace_support_restored entity={GameObject.name} id={GameObject.GetInstanceID()} components={_workplaceSupportOriginalEnabledState.Count}");
+      FireTelemetry.Log($"event={FireTelemetryEvents.WorkplaceSupportRestored} entity={GameObject.name} id={GameObject.GetInstanceID()} components={_workplaceSupportOriginalEnabledState.Count}");
     }
 
     private void EnsureOperationalBehavioursBound() {
@@ -352,7 +352,7 @@ namespace Mods.Prometheus.Scripts {
       }
 
       _operationalSuppressed = true;
-      FireTelemetry.Log($"event=building_operations_suppressed entity={GameObject.name} id={GameObject.GetInstanceID()} reason=building_dead components={_operationalBehaviours.Count}");
+      FireTelemetry.Log($"event={FireTelemetryEvents.BuildingOperationsSuppressed} entity={GameObject.name} id={GameObject.GetInstanceID()} reason=building_dead components={_operationalBehaviours.Count}");
     }
 
     private void RestoreOperationalBehaviours() {
@@ -370,7 +370,7 @@ namespace Mods.Prometheus.Scripts {
       }
 
       _operationalSuppressed = false;
-      FireTelemetry.Log($"event=building_operations_restored entity={GameObject.name} id={GameObject.GetInstanceID()} components={_operationalOriginalEnabledState.Count}");
+      FireTelemetry.Log($"event={FireTelemetryEvents.BuildingOperationsRestored} entity={GameObject.name} id={GameObject.GetInstanceID()} components={_operationalOriginalEnabledState.Count}");
     }
 
   }

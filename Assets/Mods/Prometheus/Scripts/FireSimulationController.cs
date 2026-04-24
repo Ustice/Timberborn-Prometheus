@@ -71,7 +71,7 @@ namespace Mods.Prometheus.Scripts {
 
       if (TryGetPlacementPreviewExclusionReason(GameObject, out var exclusionReason)) {
         if (_previewExclusionLogCooldownRemainingSeconds <= 0f) {
-          FireTelemetry.Log($"event=preview_excluded entity={GameObject.name} id={entityId} reason={exclusionReason}");
+          FireTelemetry.Log($"event={FireTelemetryEvents.PreviewExcluded} entity={GameObject.name} id={entityId} reason={exclusionReason}");
           _previewExclusionLogCooldownRemainingSeconds = PreviewExclusionLogIntervalInSeconds;
         }
 
@@ -174,13 +174,15 @@ namespace Mods.Prometheus.Scripts {
         spreadIgnitionSourceKind = spreadIgnitionRequest.SourceKind;
 
         var spreadSourceKindText = spreadIgnitionSourceKind == PropagationIgnitionSourceKind.Explosion ? "Explosion" : "Spread";
-        var consumeEvent = spreadIgnitionSourceKind == PropagationIgnitionSourceKind.Explosion ? "explosion_ignition_request_consumed" : "spread_ignition_request_consumed";
+        var consumeEvent = spreadIgnitionSourceKind == PropagationIgnitionSourceKind.Explosion
+          ? FireTelemetryEvents.ExplosionIgnitionRequestConsumed
+          : FireTelemetryEvents.SpreadIgnitionRequestConsumed;
         FireTelemetry.Log($"event={consumeEvent} entity={GameObject.name} id={entityId} sourceId={spreadIgnitionSourceEntityId} sourceKind={spreadSourceKindText} chance={spreadIgnitionPropagationChance:0.000} burningBeforeConsume={(_currentIntensity > 0f)}");
       }
 
       if (forcedIgnition) {
         shouldIgnite = true;
-        FireTelemetry.Log($"event=debug_ignite_request entity={GameObject.name} id={entityId}");
+        FireTelemetry.Log($"event={FireTelemetryEvents.DebugIgniteRequest} entity={GameObject.name} id={entityId}");
       }
 
       if (!forcedIgnition
@@ -199,7 +201,7 @@ namespace Mods.Prometheus.Scripts {
           explosionIgnition = Mathf.Max(explosionIgnition, spreadIgnitionPropagationChance);
         }
       } else if (spreadIgnitionTriggered && spreadIgnitionSourceKind == PropagationIgnitionSourceKind.Explosion) {
-        FireTelemetry.Log($"event=explosion_ignite_not_applied entity={GameObject.name} id={entityId} sourceId={spreadIgnitionSourceEntityId} reason=already_burning intensity={_currentIntensity:0.000} chance={spreadIgnitionPropagationChance:0.000}");
+        FireTelemetry.Log($"event={FireTelemetryEvents.ExplosionIgniteNotApplied} entity={GameObject.name} id={entityId} sourceId={spreadIgnitionSourceEntityId} reason=already_burning intensity={_currentIntensity:0.000} chance={spreadIgnitionPropagationChance:0.000}");
       }
 
       if (shouldIgnite) {
@@ -211,12 +213,14 @@ namespace Mods.Prometheus.Scripts {
 
         if (forcedIgnition) {
           _quickNotificationService.SendNotification($"Prometheus: debug ignition triggered at {GameObject.name}.");
-          FireTelemetry.Log($"event=debug_ignite_applied entity={GameObject.name} id={entityId} intensity={_currentIntensity:0.000}");
+          FireTelemetry.Log($"event={FireTelemetryEvents.DebugIgniteApplied} entity={GameObject.name} id={entityId} intensity={_currentIntensity:0.000}");
         }
 
         if (spreadIgnitionTriggered) {
           var spreadSourceKindText = spreadIgnitionSourceKind == PropagationIgnitionSourceKind.Explosion ? "Explosion" : "Spread";
-          var igniteEvent = spreadIgnitionSourceKind == PropagationIgnitionSourceKind.Explosion ? "explosion_ignite_applied" : "spread_ignite_applied";
+          var igniteEvent = spreadIgnitionSourceKind == PropagationIgnitionSourceKind.Explosion
+            ? FireTelemetryEvents.ExplosionIgniteApplied
+            : FireTelemetryEvents.SpreadIgniteApplied;
           FireTelemetry.Log($"event={igniteEvent} entity={GameObject.name} id={entityId} sourceId={spreadIgnitionSourceEntityId} sourceKind={spreadSourceKindText} chance={spreadIgnitionPropagationChance:0.000} intensity={_currentIntensity:0.000}");
         }
       }
@@ -302,11 +306,11 @@ namespace Mods.Prometheus.Scripts {
                 entityId,
                 explosionPropagationChance,
                 PropagationIgnitionSourceKind.Explosion);
-              FireTelemetry.Log($"event=explosion_ignition_request source={GameObject.name} sourceId={entityId} targetId={explosionTargetEntityId} chance={explosionPropagationChance:0.000} severity={explosionSeverity:0.000} mode={tuning.ExplosionIgnitionMode} forced={debugForceExplosionDetonation}");
+              FireTelemetry.Log($"event={FireTelemetryEvents.ExplosionIgnitionRequest} source={GameObject.name} sourceId={entityId} targetId={explosionTargetEntityId} chance={explosionPropagationChance:0.000} severity={explosionSeverity:0.000} mode={tuning.ExplosionIgnitionMode} forced={debugForceExplosionDetonation}");
             }
           }
 
-          FireTelemetry.Log($"event=explosion_detonated entity={GameObject.name} id={entityId} severity={explosionSeverity:0.000} chance={detonationChance:0.000} mode={tuning.ExplosionIgnitionMode} forced={debugForceExplosionDetonation}");
+          FireTelemetry.Log($"event={FireTelemetryEvents.ExplosionDetonated} entity={GameObject.name} id={entityId} severity={explosionSeverity:0.000} chance={detonationChance:0.000} mode={tuning.ExplosionIgnitionMode} forced={debugForceExplosionDetonation}");
         }
       }
 
@@ -326,7 +330,7 @@ namespace Mods.Prometheus.Scripts {
 
           if (spreadPropagationChance > 0.025f && Random.value < spreadPropagationChance) {
             _fireSimulationRuntimeState.RequestSpreadIgnition(spreadTargetEntityId, entityId, spreadPropagationChance);
-            FireTelemetry.Log($"event=spread_propagation source={GameObject.name} sourceId={entityId} targetId={spreadTargetEntityId} chance={spreadPropagationChance:0.000} proximity={spreadProximity:0.000}");
+            FireTelemetry.Log($"event={FireTelemetryEvents.SpreadPropagation} source={GameObject.name} sourceId={entityId} targetId={spreadTargetEntityId} chance={spreadPropagationChance:0.000} proximity={spreadProximity:0.000}");
           }
         }
       }
@@ -440,7 +444,7 @@ namespace Mods.Prometheus.Scripts {
       }
 
       if (responseState != _responseState) {
-        FireTelemetry.Log($"event=response_state entity={GameObject.name} id={entityId} state={responseState} intensity={_currentIntensity:0.000} spread={spreadPressure:0.000} quench={quenchingPower:0.000}");
+        FireTelemetry.Log($"event={FireTelemetryEvents.ResponseState} entity={GameObject.name} id={entityId} state={responseState} intensity={_currentIntensity:0.000} spread={spreadPressure:0.000} quench={quenchingPower:0.000}");
       }
 
       _responseState = responseState;
@@ -481,18 +485,18 @@ namespace Mods.Prometheus.Scripts {
 
       if (simulationSnapshot.Burning && !_wasBurning) {
         _quickNotificationService.SendNotification($"🔥 Prometheus: fire ignited at {GameObject.name}.");
-        FireTelemetry.Log($"event=ignited entity={GameObject.name} id={entityId} source={dominantIgnitionSource} ignitionChance={ignitionChance:0.000} intensity={_currentIntensity:0.000}");
+        FireTelemetry.Log($"event={FireTelemetryEvents.Ignited} entity={GameObject.name} id={entityId} source={dominantIgnitionSource} ignitionChance={ignitionChance:0.000} intensity={_currentIntensity:0.000}");
         if (explosionDetonated) {
           _quickNotificationService.SendNotification($"💥 Prometheus: explosion risk triggered at {GameObject.name}.");
         }
       } else if (!simulationSnapshot.Burning && _wasBurning) {
         _quickNotificationService.SendNotification($"✅ Prometheus: fire extinguished at {GameObject.name}.");
-        FireTelemetry.Log($"event=extinguished entity={GameObject.name} id={entityId}");
+        FireTelemetry.Log($"event={FireTelemetryEvents.Extinguished} entity={GameObject.name} id={entityId}");
       }
 
       if (simulationSnapshot.Burning
           && Time.realtimeSinceStartup - _lastBurningTelemetryLogRealtime >= BurningTelemetryLogIntervalInSeconds) {
-        FireTelemetry.Log($"event=burning_tick entity={GameObject.name} id={entityId} intensity={simulationSnapshot.Intensity:0.000} spread={simulationSnapshot.SpreadPressure:0.000} quench={simulationSnapshot.QuenchingPower:0.000} heat={simulationSnapshot.HeatExposure:0.000} response={responseState}");
+        FireTelemetry.Log($"event={FireTelemetryEvents.BurningTick} entity={GameObject.name} id={entityId} intensity={simulationSnapshot.Intensity:0.000} spread={simulationSnapshot.SpreadPressure:0.000} quench={simulationSnapshot.QuenchingPower:0.000} heat={simulationSnapshot.HeatExposure:0.000} response={responseState}");
         _lastBurningTelemetryLogRealtime = Time.realtimeSinceStartup;
       }
 
@@ -628,7 +632,7 @@ namespace Mods.Prometheus.Scripts {
       UpdateFireMarker(false, 0f, true);
 
       if (!_terminalDeadStateApplied) {
-        FireTelemetry.Log($"event=dead_building_fire_terminal entity={GameObject.name} id={entityId} extinguished={hadActiveFire}");
+        FireTelemetry.Log($"event={FireTelemetryEvents.DeadBuildingFireTerminal} entity={GameObject.name} id={entityId} extinguished={hadActiveFire}");
         _terminalDeadStateApplied = true;
       }
     }

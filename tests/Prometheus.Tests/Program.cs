@@ -55,6 +55,9 @@ namespace Prometheus.Tests {
     [Fact]
     public void BeaverExposureRules_IndoorExposureUsesFullPressure_Test() => BeaverExposureRulesIndoorExposureUsesFullPressure();
 
+    [Fact]
+    public void FireTelemetryEvents_AreCentralizedAndUnique_Test() => FireTelemetryEventsAreCentralizedAndUnique();
+
     private static void SnapshotStoreRemovesAndClearsSnapshots() {
       var state = new FireSuppressionRuntimeState();
       var snapshot = new FireSuppressionSnapshot("BucketBrigade", 1f, 0.25f, 0.5f, 6f, 0.08f);
@@ -250,6 +253,14 @@ namespace Prometheus.Tests {
       NearlyEqual(proximityDeltas.ThirstDelta, indoorDeltas.ThirstDelta, 0.000001f);
       NearlyEqual(proximityDeltas.HeatStressDelta, indoorDeltas.HeatStressDelta, 0.000001f);
       True(indoorDeltas.HasEffect);
+    }
+
+    private static void FireTelemetryEventsAreCentralizedAndUnique() {
+      True(FireTelemetryEvents.All.Length >= 30);
+      Equal(FireTelemetryEvents.All.Length, new HashSet<string>(FireTelemetryEvents.All).Count);
+      True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.DebugResetFireSimulation) >= 0);
+      True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.WorkplaceIndoorExposure) >= 0);
+      True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.ExplosionIgnitionRequestQueued) >= 0);
     }
 
     private static FireSimulationSnapshot CreateSimulationSnapshot(bool burning, float intensity) {

@@ -70,6 +70,7 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
 - `Reset Fire Sim` clears fire/damage/recovery state and restores loaded entities to healthy/functioning state for fast QA loops.
 - `burning_tick` telemetry is throttled by real time, not game simulation time, so high-speed gameplay does not flood the panel as aggressively.
 - Current debug-panel UI pass reorganizes the global panel into Timberborn-style status, command, filter, selection, and log sections; the behavior is unchanged and still intentionally manual-QA'd.
+- Telemetry event names now live in `FireTelemetryEvents`, an iterable constant registry intended for future filters/docs/log tooling.
 
 ### Build/deploy verification
 
@@ -79,6 +80,7 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
 - Debug panel UI is intentionally excluded from automated tests for now and remains manual QA because the workflow is still evolving.
 - First Phase 2 worker/beaver exposure slice landed: assigned workers in burning workplaces receive indoor beaver need exposure through the same NeedManager path as proximity exposure, while proximity and indoor exposure magnitudes are computed by `FireBeaverExposureRules` and covered by plain C# tests.
 - Latest debug-panel redesign build passed `bash scripts/test.sh` and `bash scripts/build.sh`; in-game layout still needs visual QA after launch/reload.
+- Telemetry registry pass increased the plain C# suite to 17 tests and passed `bash scripts/test.sh`; `bash scripts/build.sh` also passed.
 - Latest resume build initially hit a missing VS Tools Unity analyzer path after VS Code updated `visualstudiotoolsforunity.vstuc` from `1.2.1` to `1.2.2`; adding a local compatibility symlink restored `dotnet build`.
 - Latest `bash scripts/build.sh --launch` completed successfully, cleared fresh logs, deployed the symlinked payload, and launched Timberborn.
 - Fresh startup logs confirmed `Prometheus (v0.2)` load, the Prometheus test autosave opened, and no exception/error lines were present in the scanned startup window.

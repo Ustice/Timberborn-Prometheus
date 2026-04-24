@@ -1554,10 +1554,10 @@ namespace Mods.Prometheus.Scripts {
         ? effectiveCount
         : liveExtinguishedCount;
 
-      FireTelemetry.Log($"event=debug_stop_all_fires liveExtinguished={liveExtinguishedCount} simulationExtinguished={simulationExtinguishedCount} registryExtinguished={registryExtinguishedCount} ignitionSuppressionSeconds={DebugStopAllFiresIgnitionSuppressionSeconds:0}");
+      FireTelemetry.Log($"event={FireTelemetryEvents.DebugStopAllFires} liveExtinguished={liveExtinguishedCount} simulationExtinguished={simulationExtinguishedCount} registryExtinguished={registryExtinguishedCount} ignitionSuppressionSeconds={DebugStopAllFiresIgnitionSuppressionSeconds:0}");
       FireTelemetry.Log(effectiveCount > 0
-        ? $"event=debug_stop_all_fires_result result=success count={effectiveCount}"
-        : "event=debug_stop_all_fires_result result=no_active_fires");
+        ? $"event={FireTelemetryEvents.DebugStopAllFiresResult} result=success count={effectiveCount}"
+        : $"event={FireTelemetryEvents.DebugStopAllFiresResult} result=no_active_fires");
 
       _lastObservedEntryCount = FireTelemetry.GetRecentInGameLogEntries().Length;
       RefreshLogPanel(force: true);
@@ -1616,7 +1616,7 @@ namespace Mods.Prometheus.Scripts {
       ClearAllRuntimeStores();
       FireBeaverEffectApplier.DebugClearFireNeedEffects();
 
-      FireTelemetry.Log($"event=debug_reset_fire_simulation result=success loadedEntities={resetEntityCount}");
+      FireTelemetry.Log($"event={FireTelemetryEvents.DebugResetFireSimulation} result=success loadedEntities={resetEntityCount}");
       SetAdminFeedback($"Reset fire sim for {resetEntityCount} entities");
       _lastObservedEntryCount = FireTelemetry.GetRecentInGameLogEntries().Length;
       RefreshLogPanel(force: true);
@@ -1731,8 +1731,8 @@ namespace Mods.Prometheus.Scripts {
     private void ClearBeaverFireEffects() {
       var clearedCount = FireBeaverEffectApplier.DebugClearFireNeedEffects();
       FireTelemetry.Log(clearedCount > 0
-        ? $"event=debug_clear_beaver_fire_effects_result result=success count={clearedCount}"
-        : "event=debug_clear_beaver_fire_effects_result result=none_found");
+        ? $"event={FireTelemetryEvents.DebugClearBeaverFireEffectsResult} result=success count={clearedCount}"
+        : $"event={FireTelemetryEvents.DebugClearBeaverFireEffectsResult} result=none_found");
       SetAdminFeedback(clearedCount > 0
         ? $"Cleared {clearedCount} beavers"
         : "No beavers found");
@@ -2059,7 +2059,7 @@ namespace Mods.Prometheus.Scripts {
       if (componentCache is not null && componentCache.TryGetCachedComponent<FireSimulationController>(out var cachedFireSimulationController)) {
         _entitySelectionService.SelectAndFocusOn(cachedFireSimulationController);
         entityName = gameObject.name;
-        FireTelemetry.Log($"event=debug_view_focus entity={entityName} id={entityId} method=selection_service_cached");
+        FireTelemetry.Log($"event={FireTelemetryEvents.DebugViewFocus} entity={entityName} id={entityId} method=selection_service_cached");
         return true;
       }
 
@@ -2067,7 +2067,7 @@ namespace Mods.Prometheus.Scripts {
       if (fireSimulationController is not null) {
         _entitySelectionService.SelectAndFocusOn(fireSimulationController);
         entityName = gameObject.name;
-        FireTelemetry.Log($"event=debug_view_focus entity={entityName} id={entityId} method=selection_service_component");
+        FireTelemetry.Log($"event={FireTelemetryEvents.DebugViewFocus} entity={entityName} id={entityId} method=selection_service_component");
         return true;
       }
 

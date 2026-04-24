@@ -705,6 +705,7 @@ Active/planned entries only. Full historical log moved to `DESIGN_CHANGELOG_ARCH
 
 | Date | Phase | Update | Status |
 | --- | --- | --- | --- |
+| 2026-04-24 | Phase 2 Architecture | Centralized Prometheus telemetry event names into an iterable registry and added a regression test for uniqueness/key coverage | Done |
 | 2026-04-24 | Phase 2 UX | Reorganized the Prometheus debug panel into Timberborn-style status, command, filter, selection, and log sections while keeping debug UI in the manual-QA lane | In Validation |
 | 2026-04-24 | Phase 2 | Added test-backed beaver exposure rules and first indoor worker exposure path for assigned workers in burning workplaces | In Validation |
 | 2026-04-24 | Phase 2 | Added architecture rules for thin adapters, reset contracts, RuntimeState/Rules ownership, testable decisions, telemetry constants, and deferred stable identity | Done |

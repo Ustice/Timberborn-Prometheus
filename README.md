@@ -76,6 +76,7 @@ Recommended guardrails:
   * Phase 1 core fire loop is complete enough to close: ignition, spread, extinguish, damage, dead/ash terminal behavior, and reset-to-healthy flow have passed live QA.
   * `Reset Fire Sim` now provides a clean-slate recovery path for loaded fire entities and clears stale fire/damage/recovery snapshots.
   * The Prometheus debug panel has been reorganized into Timberborn-style status, command, filter, selection, and log sections for manual QA.
+  * Telemetry event names are centralized in an iterable registry and covered by a uniqueness regression test.
 * Next steps:
   * Start Phase 2 validation/tuning around firefighting logistics, worker/building exposure, and faction identity.
   * Re-run explosion request/apply lifecycle capture during Phase 2 validation if gaps reappear.

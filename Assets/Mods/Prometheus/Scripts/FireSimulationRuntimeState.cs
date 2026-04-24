@@ -7,6 +7,86 @@ namespace Mods.Prometheus.Scripts {
     Explosion,
   }
 
+  internal static class FireTelemetryEvents {
+
+    public const string BeaverEffectApiMissing = "beaver_effect_api_missing";
+    public const string BeaverEffectApiResolved = "beaver_effect_api_resolved";
+    public const string BeaverEffectNeedManagerScan = "beaver_effect_need_manager_scan";
+    public const string BuildingOperationsRestored = "building_operations_restored";
+    public const string BuildingOperationsSuppressed = "building_operations_suppressed";
+    public const string BurningTick = "burning_tick";
+    public const string DeadBuildingFireTerminal = "dead_building_fire_terminal";
+    public const string DebugClearBeaverFireEffects = "debug_clear_beaver_fire_effects";
+    public const string DebugClearBeaverFireEffectsResult = "debug_clear_beaver_fire_effects_result";
+    public const string DebugIgniteApplied = "debug_ignite_applied";
+    public const string DebugIgniteRequest = "debug_ignite_request";
+    public const string DebugResetFireSimulation = "debug_reset_fire_simulation";
+    public const string DebugStopAllFires = "debug_stop_all_fires";
+    public const string DebugStopAllFiresResult = "debug_stop_all_fires_result";
+    public const string DebugViewFocus = "debug_view_focus";
+    public const string EntityDestroyCleanup = "entity_destroy_cleanup";
+    public const string ExplosionDetonated = "explosion_detonated";
+    public const string ExplosionIgniteApplied = "explosion_ignite_applied";
+    public const string ExplosionIgniteNotApplied = "explosion_ignite_not_applied";
+    public const string ExplosionIgnitionRequest = "explosion_ignition_request";
+    public const string ExplosionIgnitionRequestConsumed = "explosion_ignition_request_consumed";
+    public const string ExplosionIgnitionRequestIgnored = "explosion_ignition_request_ignored";
+    public const string ExplosionIgnitionRequestQueued = "explosion_ignition_request_queued";
+    public const string ExplosionIgnitionRequestReplaced = "explosion_ignition_request_replaced";
+    public const string Extinguished = "extinguished";
+    public const string Ignited = "ignited";
+    public const string PreviewExcluded = "preview_excluded";
+    public const string ResponseState = "response_state";
+    public const string SpreadIgniteApplied = "spread_ignite_applied";
+    public const string SpreadIgnitionRequestConsumed = "spread_ignition_request_consumed";
+    public const string SpreadPropagation = "spread_propagation";
+    public const string WorkplaceIndoorExposure = "workplace_indoor_exposure";
+    public const string WorkplaceSpeedApiResolved = "workplace_speed_api_resolved";
+    public const string WorkplaceSpeedPenaltyState = "workplace_speed_penalty_state";
+    public const string WorkplaceSupportRestored = "workplace_support_restored";
+    public const string WorkplaceSupportSuppressed = "workplace_support_suppressed";
+
+    public static readonly string[] All = {
+      BeaverEffectApiMissing,
+      BeaverEffectApiResolved,
+      BeaverEffectNeedManagerScan,
+      BuildingOperationsRestored,
+      BuildingOperationsSuppressed,
+      BurningTick,
+      DeadBuildingFireTerminal,
+      DebugClearBeaverFireEffects,
+      DebugClearBeaverFireEffectsResult,
+      DebugIgniteApplied,
+      DebugIgniteRequest,
+      DebugResetFireSimulation,
+      DebugStopAllFires,
+      DebugStopAllFiresResult,
+      DebugViewFocus,
+      EntityDestroyCleanup,
+      ExplosionDetonated,
+      ExplosionIgniteApplied,
+      ExplosionIgniteNotApplied,
+      ExplosionIgnitionRequest,
+      ExplosionIgnitionRequestConsumed,
+      ExplosionIgnitionRequestIgnored,
+      ExplosionIgnitionRequestQueued,
+      ExplosionIgnitionRequestReplaced,
+      Extinguished,
+      Ignited,
+      PreviewExcluded,
+      ResponseState,
+      SpreadIgniteApplied,
+      SpreadIgnitionRequestConsumed,
+      SpreadPropagation,
+      WorkplaceIndoorExposure,
+      WorkplaceSpeedApiResolved,
+      WorkplaceSpeedPenaltyState,
+      WorkplaceSupportRestored,
+      WorkplaceSupportSuppressed,
+    };
+
+  }
+
   internal readonly struct SpreadIgnitionRequest {
 
     public int SourceEntityId { get; }
@@ -125,7 +205,7 @@ namespace Mods.Prometheus.Scripts {
     public void RequestSpreadIgnition(int targetEntityId, int sourceEntityId, float propagationChance, PropagationIgnitionSourceKind sourceKind = PropagationIgnitionSourceKind.Spread) {
       if (targetEntityId == 0 || sourceEntityId == 0 || targetEntityId == sourceEntityId) {
         if (sourceKind == PropagationIgnitionSourceKind.Explosion) {
-          FireTelemetry.Log($"event=explosion_ignition_request_ignored sourceId={sourceEntityId} targetId={targetEntityId} reason=invalid_ids");
+          FireTelemetry.Log($"event={FireTelemetryEvents.ExplosionIgnitionRequestIgnored} sourceId={sourceEntityId} targetId={targetEntityId} reason=invalid_ids");
         }
         return;
       }
@@ -135,20 +215,20 @@ namespace Mods.Prometheus.Scripts {
         if (existingRequest.PropagationChance >= clampedPropagationChance) {
           if (sourceKind == PropagationIgnitionSourceKind.Explosion || existingRequest.SourceKind == PropagationIgnitionSourceKind.Explosion) {
             FireTelemetry.Log(
-              $"event=explosion_ignition_request_ignored sourceId={sourceEntityId} targetId={targetEntityId} reason=weaker_or_equal_request incomingChance={clampedPropagationChance:0.000} existingChance={existingRequest.PropagationChance:0.000} existingSourceKind={existingRequest.SourceKind}");
+              $"event={FireTelemetryEvents.ExplosionIgnitionRequestIgnored} sourceId={sourceEntityId} targetId={targetEntityId} reason=weaker_or_equal_request incomingChance={clampedPropagationChance:0.000} existingChance={existingRequest.PropagationChance:0.000} existingSourceKind={existingRequest.SourceKind}");
           }
           return;
         }
 
         if (sourceKind == PropagationIgnitionSourceKind.Explosion || existingRequest.SourceKind == PropagationIgnitionSourceKind.Explosion) {
           FireTelemetry.Log(
-            $"event=explosion_ignition_request_replaced sourceId={sourceEntityId} targetId={targetEntityId} incomingChance={clampedPropagationChance:0.000} previousChance={existingRequest.PropagationChance:0.000} previousSourceKind={existingRequest.SourceKind}");
+            $"event={FireTelemetryEvents.ExplosionIgnitionRequestReplaced} sourceId={sourceEntityId} targetId={targetEntityId} incomingChance={clampedPropagationChance:0.000} previousChance={existingRequest.PropagationChance:0.000} previousSourceKind={existingRequest.SourceKind}");
         }
       }
 
       _spreadIgnitionRequestsByEntityId[targetEntityId] = new SpreadIgnitionRequest(sourceEntityId, clampedPropagationChance, sourceKind);
       if (sourceKind == PropagationIgnitionSourceKind.Explosion) {
-        FireTelemetry.Log($"event=explosion_ignition_request_queued sourceId={sourceEntityId} targetId={targetEntityId} chance={clampedPropagationChance:0.000}");
+        FireTelemetry.Log($"event={FireTelemetryEvents.ExplosionIgnitionRequestQueued} sourceId={sourceEntityId} targetId={targetEntityId} chance={clampedPropagationChance:0.000}");
       }
     }
 
