@@ -19,6 +19,9 @@
 # Local handoff history (not committed)
 /handoffs/
 
+# Locally extracted/reference-only base game assets (not committed)
+/derived-assets/
+
 # Local-only launch/test config
 steam_appid.txt
 
