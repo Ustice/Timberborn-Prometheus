@@ -54,7 +54,7 @@ Unity EditMode tests are deferred until the standalone repo has a clean Timberbo
 
 ### C. Prometheus icon/assets pass
 
-- [ ] Prometheus goods/recipes display custom icons instead of borrowed placeholder stock icons.
+- [ ] Prometheus goods/recipes display custom gold outline icons consistent with base-game goods styling instead of borrowed placeholder stock icons.
 - [ ] Asset import shows no missing sprite/icon warnings for ash fertilizer, firefighting foam, fireworks crates, bucket brigade kits, or fire-control gear.
 
 ## Core gameplay validation sequence

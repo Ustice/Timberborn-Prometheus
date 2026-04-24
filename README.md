@@ -78,7 +78,7 @@ Recommended guardrails:
   * The Prometheus debug panel has been reorganized into Timberborn-style status, command, filter, selection, and log sections for manual QA.
   * Telemetry event names are centralized in an iterable registry and covered by a uniqueness regression test.
   * Phase 2 response decisions for faction quenching and dispatch lock/hysteresis are extracted into test-backed rules.
-  * Prometheus goods/recipes now use dedicated icons for ash fertilizer, firefighting foam, fireworks crates, bucket brigade kits, and fire-control gear.
+  * Prometheus goods/recipes now use dedicated Timberborn-style gold outline icons for ash fertilizer, firefighting foam, fireworks crates, bucket brigade kits, and fire-control gear.
 * Next steps:
   * Start Phase 2 validation/tuning around firefighting logistics, worker/building exposure, and faction identity.
   * Re-run explosion request/apply lifecycle capture during Phase 2 validation if gaps reappear.

@@ -705,7 +705,7 @@ Active/planned entries only. Full historical log moved to `DESIGN_CHANGELOG_ARCH
 
 | Date | Phase | Update | Status |
 | --- | --- | --- | --- |
-| 2026-04-24 | Phase 2 UX | Added dedicated Prometheus goods/recipe icons for ash fertilizer, firefighting foam, fireworks crates, bucket brigade kits, and fire-control gear | In Validation |
+| 2026-04-24 | Phase 2 UX | Added dedicated Timberborn-style gold outline goods/recipe icons for ash fertilizer, firefighting foam, fireworks crates, bucket brigade kits, and fire-control gear | In Validation |
 | 2026-04-24 | Phase 2 Architecture | Extracted faction quenching and dispatch lock/hysteresis decisions into dependency-light rules with regression coverage | Done |
 | 2026-04-24 | Phase 2 Architecture | Centralized Prometheus telemetry event names into an iterable registry and added a regression test for uniqueness/key coverage | Done |
 | 2026-04-24 | Phase 2 UX | Reorganized the Prometheus debug panel into Timberborn-style status, command, filter, selection, and log sections while keeping debug UI in the manual-QA lane | In Validation |
