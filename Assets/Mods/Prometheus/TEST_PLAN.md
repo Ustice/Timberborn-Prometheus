@@ -43,6 +43,8 @@ Unity EditMode tests are deferred until the standalone repo has a clean Timberbo
 ### B. Prometheus panel instrumentation
 
 - [ ] Bottom-left `Prometheus Debug` panel opens above the Timberborn bottom bar without overlapping the selected-building details panel.
+- [ ] Panel sections are visually distinct (`Status`, `Commands`, `Filters`, `Selection`, `Log`) and remain readable at the default game UI scale.
+- [ ] Primary QA commands are grouped together and visible when the panel is open: `Reset Fire Sim`, `Stop Fires`, `Clear Beavers`, and `Clear Log`.
 - [ ] Selecting a Prometheus-profiled entity (e.g., Bakery or Explosives Factory) updates the panel `Selection` section.
 - [ ] The selected-building details panel does not show a separate Prometheus debug fragment.
 - [ ] `Copy` in the panel selection section copies the full selected-entity snapshot text.

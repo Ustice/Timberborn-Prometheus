@@ -69,6 +69,7 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
 - `Stop All Fires` resets live fire controllers, clears runtime stores, and suppresses ambient re-ignition for 60 real seconds while preserving manual debug ignition.
 - `Reset Fire Sim` clears fire/damage/recovery state and restores loaded entities to healthy/functioning state for fast QA loops.
 - `burning_tick` telemetry is throttled by real time, not game simulation time, so high-speed gameplay does not flood the panel as aggressively.
+- Current debug-panel UI pass reorganizes the global panel into Timberborn-style status, command, filter, selection, and log sections; the behavior is unchanged and still intentionally manual-QA'd.
 
 ### Build/deploy verification
 
@@ -77,6 +78,7 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
 - Unity EditMode testing was explored and can launch after license activation, but loading the full Timberborn assembly graph in this standalone repo pulled in fragile plugin/package dependencies. Future test work should prefer dependency-light rule/runtime classes first, with Unity tests reserved for lifecycle behavior that truly needs Unity.
 - Debug panel UI is intentionally excluded from automated tests for now and remains manual QA because the workflow is still evolving.
 - First Phase 2 worker/beaver exposure slice landed: assigned workers in burning workplaces receive indoor beaver need exposure through the same NeedManager path as proximity exposure, while proximity and indoor exposure magnitudes are computed by `FireBeaverExposureRules` and covered by plain C# tests.
+- Latest debug-panel redesign build passed `bash scripts/test.sh` and `bash scripts/build.sh`; in-game layout still needs visual QA after launch/reload.
 - Latest resume build initially hit a missing VS Tools Unity analyzer path after VS Code updated `visualstudiotoolsforunity.vstuc` from `1.2.1` to `1.2.2`; adding a local compatibility symlink restored `dotnet build`.
 - Latest `bash scripts/build.sh --launch` completed successfully, cleared fresh logs, deployed the symlinked payload, and launched Timberborn.
 - Fresh startup logs confirmed `Prometheus (v0.2)` load, the Prometheus test autosave opened, and no exception/error lines were present in the scanned startup window.
@@ -194,6 +196,7 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
 
 1. Run `bash scripts/build.sh --launch`.
 2. Select a fire-profiled building and open the debug panel.
-3. Trigger one ignite event.
-4. Verify: filtered/colored/searchable log rows + `View` button camera jump.
-5. Confirm dead-building suppression/restore behavior and capture logs.
+3. Confirm the reorganized `Status`/`Commands`/`Filters`/`Selection`/`Log` sections are readable and do not cover core Timberborn controls.
+4. Trigger one ignite event.
+5. Verify: filtered/colored/searchable log rows + `View` button camera jump.
+6. Confirm dead-building suppression/restore behavior and capture logs.
