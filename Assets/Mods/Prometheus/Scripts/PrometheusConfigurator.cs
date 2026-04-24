@@ -45,6 +45,7 @@ namespace Mods.Prometheus.Scripts {
       Bind<FireImpactController>().AsTransient();
       Bind<FireDamageStateController>().AsTransient();
       Bind<FireDamageEffectApplier>().AsTransient();
+      Bind<FireVisualEffectApplier>().AsTransient();
       Bind<FireRecoveryController>().AsTransient();
       Bind<FireRecoveryEffectApplier>().AsTransient();
       Bind<FireWorkplaceEffectApplier>().AsTransient();
@@ -78,6 +79,7 @@ namespace Mods.Prometheus.Scripts {
       builder.AddDecorator<FireResponseProfileSpec, FireImpactController>();
       builder.AddDecorator<FireResponseProfileSpec, FireDamageStateController>();
       builder.AddDecorator<FireResponseProfileSpec, FireDamageEffectApplier>();
+      builder.AddDecorator<FireResponseProfileSpec, FireVisualEffectApplier>();
       builder.AddDecorator<FireResponseProfileSpec, FireRecoveryController>();
       builder.AddDecorator<FireResponseProfileSpec, FireRecoveryEffectApplier>();
       builder.AddDecorator<FireResponseProfileSpec, FireWorkplaceEffectApplier>();

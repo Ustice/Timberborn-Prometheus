@@ -22,6 +22,7 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
 5. Preserve the simplified Phase 3 renewal direction: players contain burns with cleared terrain/firebreaks, then foresters collect Fertile Ash from burned vegetation and selected ruins.
 6. Add in-world fire-risk presentation: embers, smoke, fire, steam, and charred materials should map directly to runtime fire state. Ember fields can come from active fires, fireworks, selected high-intensity fire-using buildings such as smelters, and explosive/unstable-core events.
 7. Preserve the Phase 2 scope reduction: no fire-brigade/relay minigame, no direct beaver control, and no standalone bucket/foam/gear goods loops unless they prove necessary.
+8. QA the first visual-effect adapter pass in game and tune particle/material intensity from observed readability.
 
 ## Confirmed results so far
 
@@ -84,6 +85,8 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
 - Unity EditMode testing was explored and can launch after license activation, but loading the full Timberborn assembly graph in this standalone repo pulled in fragile plugin/package dependencies. Future test work should prefer dependency-light rule/runtime classes first, with Unity tests reserved for lifecycle behavior that truly needs Unity.
 - Debug panel UI is intentionally excluded from automated tests for now and remains manual QA because the workflow is still evolving.
 - First Phase 2 worker/beaver exposure slice landed: assigned workers in burning workplaces receive indoor beaver need exposure through the same NeedManager path as proximity exposure, while proximity and indoor exposure magnitudes are computed by `FireBeaverExposureRules` and covered by plain C# tests.
+- First fire presentation slice landed: `FireVisualEffectRules` computes tunable ember/smoke/fire/steam/char intensities from fire, water, and damage snapshots, while `FireVisualEffectApplier` applies Unity particles plus char tint to loaded fire-profiled entities and clears them through `Reset Fire Sim`.
+- Latest visual-effect pass increased the plain C# suite to 22 tests and passed `bash scripts/test.sh`; `bash scripts/build.sh` also passed and deployed the refreshed DLL.
 - Latest debug-panel redesign build passed `bash scripts/test.sh` and `bash scripts/build.sh`; in-game layout still needs visual QA after launch/reload.
 - Telemetry registry pass increased the plain C# suite to 17 tests and passed `bash scripts/test.sh`; `bash scripts/build.sh` also passed.
 - Response-rule extraction increased the plain C# suite to 19 tests and passed both `bash scripts/test.sh` and `bash scripts/build.sh`.
@@ -144,12 +147,13 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
    - wet/soaked terrain and firebreaks dampen or block propagation,
    - configured high-risk operating buildings emit ember fields while low-risk warm buildings do not by default.
 2. Add/update plain C# tests for any new real Phase 2 system decision before relying on it in tuning.
-3. Add fire-state presentation adapters:
+3. QA and tune first fire-state presentation adapter:
    - embers for spread pressure,
    - smoke for smoldering/scorched states,
    - fire for active burning,
    - light steam for moisture dampening,
-   - charred shader/material/tint for terminal burned buildings and vegetation.
+   - charred material tint for terminal burned buildings and vegetation,
+   - reset clears active effects and tint.
 4. Add Fertile Ash source tagging for charred vegetation and selected ruined buildings, with foresters as the natural vegetation collection path.
 5. Validate worker/building exposure on at least 3 production archetypes (e.g., Bakery/JamStove/Explosives Factory):
    - assigned workers slow under heat pressure,

@@ -75,7 +75,7 @@ compile_if_possible() {
     return 1
   fi
 
-  prune_stale_prometheus_compile_items
+  sync_prometheus_compile_items
 
   echo "[build] Compiling project with dotnet build ($BUILD_CONFIGURATION)..."
   if ! dotnet build "$PROJECT_CSPROJ" -c "$BUILD_CONFIGURATION" >/tmp/build-dotnet.log 2>&1; then
@@ -96,6 +96,24 @@ compile_if_possible() {
   fi
 
   echo "[build] Compile complete; refreshed $SRC_DLL"
+}
+
+sync_prometheus_compile_items() {
+  add_missing_prometheus_compile_items
+  prune_stale_prometheus_compile_items
+}
+
+add_missing_prometheus_compile_items() {
+  local source_file
+  while IFS= read -r source_file; do
+    local relative_source
+    relative_source="${source_file#$BUILD_PROJECT_DIR/}"
+    if grep -Fq "<Compile Include=\"$relative_source\" />" "$PROJECT_CSPROJ"; then
+      continue
+    fi
+
+    perl -0pi -e "s#(\\s*</ItemGroup>\\s*<ItemGroup>\\s*<None Include=\"Assets/Mods/Prometheus/Scripts/Timberborn\\.ModExamples\\.Prometheus\\.asmdef\")#    <Compile Include=\"$relative_source\" />\\n\\1#" "$PROJECT_CSPROJ"
+  done < <(find "$BUILD_PROJECT_DIR/Assets/Mods/Prometheus/Scripts" -maxdepth 1 -type f -name '*.cs' | sort)
 }
 
 prune_stale_prometheus_compile_items() {

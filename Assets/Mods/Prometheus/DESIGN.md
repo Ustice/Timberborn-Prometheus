@@ -455,6 +455,7 @@ This section turns Phase 2 into an implementation-ready sprint plan focused on *
   - steam when moisture or suppression dampens heat,
   - charred shader/material/tint for terminal burned buildings and vegetation.
 - Prefer shaders/material overrides and reusable particle/effect adapters over bespoke replacement models.
+- Current implementation status: first pass is wired through `FireVisualEffectRules` and `FireVisualEffectApplier`, with tunable intensity scales for embers, smoke, fire, steam, and char. It uses Unity particles plus a material color property block as an adapter over runtime fire/water/damage state; in-game visual QA is still pending.
 
 ##### Slice D — Fertile Ash recovery
 
@@ -743,6 +744,7 @@ Active/planned entries only. Full historical log moved to `DESIGN_CHANGELOG_ARCH
 
 | Date | Phase | Update | Status |
 | --- | --- | --- | --- |
+| 2026-04-24 | Phase 2 UX | Added tunable ember, smoke, fire, steam, and char visual intensity rules plus a thin Unity particle/material adapter for loaded fire-profiled entities | In Validation |
 | 2026-04-24 | Phase 2 Content | Pruned old bucket-kit, firefighting-foam, fire-control-gear, fireworks-crate, and festival-risk scaffolding; renamed ash fertilizer content to Fertile Ash | Done |
 | 2026-04-24 | Phase 2 Design | Reordered Phase 2 around ember-field cellular spread, moisture/steam dampening, fire-state visuals, charred presentation, and Fertile Ash before suppression/responder systems | Planned |
 | 2026-04-24 | Phase 2 Architecture | Extracted faction quenching and dispatch lock/hysteresis decisions into dependency-light rules with regression coverage | Done |

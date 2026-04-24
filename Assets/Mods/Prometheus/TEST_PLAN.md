@@ -33,6 +33,7 @@ Validate:
 - [ ] Unity-specific components stay thin; dependency-light rule/runtime classes carry testable decisions where feasible.
 - [ ] Telemetry event-name constants remain unique and iterable for docs, filters, and future log tooling.
 - [ ] Ember-field emission, dampening, barrier, ignition-threshold, and Fertile Ash source rule tests pass before Phase 2 tuning changes land.
+- [ ] Visual intensity rules for embers, smoke, fire, steam, and char pass before tuning the particle/material adapter.
 - [ ] Debug panel UI changes are manually QA'd; automated UI tests are intentionally out of scope for now.
 
 Unity EditMode tests are deferred until the standalone repo has a clean Timberborn/Unity dependency story. The first automated lane is plain C# regression coverage because it catches decision drift without loading the full game assembly graph.
@@ -103,6 +104,7 @@ Pass criteria:
 - [ ] Lower-risk heat buildings (e.g., Bakery) do not produce ember fields unless explicitly configured.
 - [ ] Fireworks and unstable explosive events can create short-lived ember fields without adding a fireworks-control minigame.
 - [ ] Smoke, active fire, steam, embers, and charred presentation match runtime states.
+- [ ] Reset Fire Sim clears active particles and char tint on loaded fire-profiled entities.
 - [ ] Valid charred vegetation/buildings expose Fertile Ash source state.
 
 ### 3a) Worker/beaver exposure pass

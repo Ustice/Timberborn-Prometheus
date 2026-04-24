@@ -64,6 +64,15 @@ namespace Prometheus.Tests {
     [Fact]
     public void FireTelemetryEvents_AreCentralizedAndUnique_Test() => FireTelemetryEventsAreCentralizedAndUnique();
 
+    [Fact]
+    public void FireVisualEffectRules_DryBurningFireProducesReadableEffects_Test() => FireVisualEffectRulesDryBurningFireProducesReadableEffects();
+
+    [Fact]
+    public void FireVisualEffectRules_MoistureTradesFireForSteam_Test() => FireVisualEffectRulesMoistureTradesFireForSteam();
+
+    [Fact]
+    public void FireVisualEffectRules_DeadDamageStateKeepsCharWithoutFire_Test() => FireVisualEffectRulesDeadDamageStateKeepsCharWithoutFire();
+
     private static void SnapshotStoreRemovesAndClearsSnapshots() {
       var state = new FireSuppressionRuntimeState();
       var snapshot = new FireSuppressionSnapshot("BucketBrigade", 1f, 0.25f, 0.5f, 6f, 0.08f);
@@ -332,6 +341,52 @@ namespace Prometheus.Tests {
       True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.ExplosionIgnitionRequestQueued) >= 0);
     }
 
+    private static void FireVisualEffectRulesDryBurningFireProducesReadableEffects() {
+      var intensity = FireVisualEffectRules.ComputeIntensity(
+        CreateSimulationSnapshot(burning: true, intensity: 0.8f),
+        CreateWaterContextSnapshot(0f),
+        new FireDamageStateSnapshot(FireDamageCategory.Building, FireDamageState.Burning, 0.7f, 0.5f, 4),
+        FireVisualEffectTuning.Default);
+
+      True(intensity.HasAnyVisibleEffect);
+      True(intensity.Embers > 0.1f);
+      True(intensity.Smoke > 0.4f);
+      True(intensity.Fire > 0.7f);
+      True(intensity.Char > 0.4f);
+      NearlyEqual(0f, intensity.Steam);
+    }
+
+    private static void FireVisualEffectRulesMoistureTradesFireForSteam() {
+      var simulation = CreateSimulationSnapshot(burning: true, intensity: 0.8f);
+      var damage = new FireDamageStateSnapshot(FireDamageCategory.Tree, FireDamageState.Burning, 0.65f, 0.5f, 3);
+      var dry = FireVisualEffectRules.ComputeIntensity(
+        simulation,
+        CreateWaterContextSnapshot(0f),
+        damage,
+        FireVisualEffectTuning.Default);
+      var wet = FireVisualEffectRules.ComputeIntensity(
+        simulation,
+        CreateWaterContextSnapshot(0.9f),
+        damage,
+        FireVisualEffectTuning.Default);
+
+      True(wet.Steam > dry.Steam);
+      True(wet.Fire < dry.Fire);
+      True(wet.Smoke < dry.Smoke);
+    }
+
+    private static void FireVisualEffectRulesDeadDamageStateKeepsCharWithoutFire() {
+      var intensity = FireVisualEffectRules.ComputeIntensity(
+        CreateSimulationSnapshot(burning: true, intensity: 1f),
+        CreateWaterContextSnapshot(0f),
+        new FireDamageStateSnapshot(FireDamageCategory.Building, FireDamageState.Dead, 1f, 1f, 12),
+        FireVisualEffectTuning.Default);
+
+      NearlyEqual(0f, intensity.Fire);
+      True(intensity.Char > 0.95f);
+      True(intensity.Smoke > 0f);
+    }
+
     private static FireSimulationSnapshot CreateSimulationSnapshot(bool burning, float intensity) {
       return new FireSimulationSnapshot(
         burning,
@@ -350,6 +405,16 @@ namespace Prometheus.Tests {
         0.4f,
         0.5f,
         0.2f);
+    }
+
+    private static FireWaterContextSnapshot CreateWaterContextSnapshot(float exposure) {
+      return new FireWaterContextSnapshot(
+        exposure > 0f,
+        exposure,
+        exposure > 0f,
+        exposure,
+        exposure * 0.5f,
+        exposure * 0.25f);
     }
 
     private static void True(bool value) {

@@ -1629,6 +1629,7 @@ namespace Mods.Prometheus.Scripts {
              && (componentCache.TryGetCachedComponent<FireSimulationController>(out _)
                  || componentCache.TryGetCachedComponent<FireDamageStateController>(out _)
                  || componentCache.TryGetCachedComponent<FireDamageEffectApplier>(out _)
+                 || componentCache.TryGetCachedComponent<FireVisualEffectApplier>(out _)
                  || componentCache.TryGetCachedComponent<FireWorkplaceEffectApplier>(out _)
                  || componentCache.TryGetCachedComponent<FireRecoveryController>(out _)
                  || componentCache.TryGetCachedComponent<FireRecoveryEffectApplier>(out _));
@@ -1647,6 +1648,10 @@ namespace Mods.Prometheus.Scripts {
 
         if (componentCache.TryGetCachedComponent<FireDamageEffectApplier>(out var cachedFireDamageEffectApplier)) {
           cachedFireDamageEffectApplier.DebugRestoreHealthyState();
+        }
+
+        if (componentCache.TryGetCachedComponent<FireVisualEffectApplier>(out var cachedFireVisualEffectApplier)) {
+          cachedFireVisualEffectApplier.DebugResetVisualEffects();
         }
 
         if (componentCache.TryGetCachedComponent<FireWorkplaceEffectApplier>(out var cachedFireWorkplaceEffectApplier)) {
@@ -1675,6 +1680,11 @@ namespace Mods.Prometheus.Scripts {
       var fireDamageEffectApplier = gameObject.GetComponent<FireDamageEffectApplier>();
       if (fireDamageEffectApplier is not null) {
         fireDamageEffectApplier.DebugRestoreHealthyState();
+      }
+
+      var fireVisualEffectApplier = gameObject.GetComponent<FireVisualEffectApplier>();
+      if (fireVisualEffectApplier is not null) {
+        fireVisualEffectApplier.DebugResetVisualEffects();
       }
 
       var fireWorkplaceEffectApplier = gameObject.GetComponent<FireWorkplaceEffectApplier>();

@@ -26,6 +26,8 @@
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/FireRecoveryRuntimeState.cs" Link="Source/FireRecoveryRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/FireSimulationRuntimeState.cs" Link="Source/FireSimulationRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/FireSuppressionRuntimeState.cs" Link="Source/FireSuppressionRuntimeState.cs" />
+    <Compile Include="../../Assets/Mods/Prometheus/Scripts/FireWaterContextRuntimeState.cs" Link="Source/FireWaterContextRuntimeState.cs" />
+    <Compile Include="../../Assets/Mods/Prometheus/Scripts/FireVisualEffectRules.cs" Link="Source/FireVisualEffectRules.cs" />
   </ItemGroup>
 
   <ItemGroup>
