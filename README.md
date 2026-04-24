@@ -80,6 +80,7 @@ Recommended guardrails:
   * Phase 2 design has been simplified around ember-field cellular spread: active fires, selected high-intensity buildings, fireworks, and unstable explosive events can emit ember pressure.
   * Fire presentation should map to runtime state with embers, smoke, active fire, steam from moisture, and charred material/shader treatment.
   * First visual effect adapter is implemented and deployed: fire-profiled entities now derive tunable ember, smoke, flame, steam, and char intensities from runtime snapshots.
+  * The debug panel now includes `Visual Tuning` sliders for ember, smoke, fire, steam, char, and legacy text-marker scale; legacy `FIRE!`/`DEAD` text markers default off.
   * `bash scripts/test.sh` passes 22 decision-rule tests, including visual-state intensity coverage; `bash scripts/build.sh` passes and deploys the refreshed DLL.
   * The only core post-fire resource is Fertile Ash; bucket/foam/gear loops and fire-brigade mechanics are deferred unless they prove necessary.
   * Old bucket-kit, firefighting-foam, fire-control-gear, fireworks-crate, and festival-risk scaffolding has been pruned from active content.

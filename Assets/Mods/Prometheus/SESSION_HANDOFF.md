@@ -86,6 +86,8 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
 - Debug panel UI is intentionally excluded from automated tests for now and remains manual QA because the workflow is still evolving.
 - First Phase 2 worker/beaver exposure slice landed: assigned workers in burning workplaces receive indoor beaver need exposure through the same NeedManager path as proximity exposure, while proximity and indoor exposure magnitudes are computed by `FireBeaverExposureRules` and covered by plain C# tests.
 - First fire presentation slice landed: `FireVisualEffectRules` computes tunable ember/smoke/fire/steam/char intensities from fire, water, and damage snapshots, while `FireVisualEffectApplier` applies Unity particles plus char tint to loaded fire-profiled entities and clears them through `Reset Fire Sim`.
+- Screenshot QA showed the legacy `DEAD` text markers rendered as huge magenta blocks; they now default off and can be re-enabled/tuned from the debug panel.
+- The global Prometheus debug panel now has a `Visual Tuning` section with live sliders for ember, smoke, fire, steam, char, and text-marker scale.
 - Latest visual-effect pass increased the plain C# suite to 22 tests and passed `bash scripts/test.sh`; `bash scripts/build.sh` also passed and deployed the refreshed DLL.
 - Latest debug-panel redesign build passed `bash scripts/test.sh` and `bash scripts/build.sh`; in-game layout still needs visual QA after launch/reload.
 - Telemetry registry pass increased the plain C# suite to 17 tests and passed `bash scripts/test.sh`; `bash scripts/build.sh` also passed.

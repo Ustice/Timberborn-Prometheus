@@ -18,9 +18,9 @@ namespace Mods.Prometheus.Scripts {
     private FireSimulationRuntimeState _fireSimulationRuntimeState;
     private FireWaterContextRuntimeState _fireWaterContextRuntimeState;
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
+    private FireVisualEffectRuntimeState _fireVisualEffectRuntimeState;
 
     private readonly List<RendererPropertyBlockState> _rendererStates = new();
-    private FireVisualEffectTuning _tuning = FireVisualEffectTuning.Default;
     private ParticleSystem _emberParticles;
     private ParticleSystem _smokeParticles;
     private ParticleSystem _fireParticles;
@@ -34,10 +34,12 @@ namespace Mods.Prometheus.Scripts {
     public void InjectDependencies(
       FireSimulationRuntimeState fireSimulationRuntimeState,
       FireWaterContextRuntimeState fireWaterContextRuntimeState,
-      FireDamageStateRuntimeState fireDamageStateRuntimeState) {
+      FireDamageStateRuntimeState fireDamageStateRuntimeState,
+      FireVisualEffectRuntimeState fireVisualEffectRuntimeState) {
       _fireSimulationRuntimeState = fireSimulationRuntimeState;
       _fireWaterContextRuntimeState = fireWaterContextRuntimeState;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
+      _fireVisualEffectRuntimeState = fireVisualEffectRuntimeState;
     }
 
     public void Awake() {
@@ -62,7 +64,7 @@ namespace Mods.Prometheus.Scripts {
         ? damageSnapshot
         : new FireDamageStateSnapshot(FireDamageCategory.Unknown, FireDamageState.Healthy, 0f, 0f, 0);
 
-      var intensity = FireVisualEffectRules.ComputeIntensity(simulation, waterContext, damageState, _tuning);
+      var intensity = FireVisualEffectRules.ComputeIntensity(simulation, waterContext, damageState, _fireVisualEffectRuntimeState.CurrentTuning);
       ApplyParticleIntensity(_emberParticles, intensity.Embers, 0.75f, 1.4f);
       ApplyParticleIntensity(_smokeParticles, intensity.Smoke, 1.2f, 2.6f);
       ApplyParticleIntensity(_fireParticles, intensity.Fire, 0.45f, 1.0f);
@@ -148,10 +150,36 @@ namespace Mods.Prometheus.Scripts {
       var renderer = particles.GetComponent<ParticleSystemRenderer>();
       renderer.renderMode = ParticleSystemRenderMode.Billboard;
       renderer.sortingOrder = 20;
+      if (ParticleMaterial != null) {
+        renderer.sharedMaterial = ParticleMaterial;
+      }
 
       particles.Play();
       particleObject.SetActive(false);
       return particles;
+    }
+
+    private static Material _particleMaterial;
+
+    private static Material ParticleMaterial {
+      get {
+        if (_particleMaterial != null) {
+          return _particleMaterial;
+        }
+
+        var shader = Shader.Find("Particles/Standard Unlit")
+                     ?? Shader.Find("Legacy Shaders/Particles/Alpha Blended")
+                     ?? Shader.Find("Sprites/Default")
+                     ?? Shader.Find("UI/Default");
+        if (shader == null) {
+          return null;
+        }
+
+        _particleMaterial = new Material(shader) {
+          hideFlags = HideFlags.HideAndDontSave
+        };
+        return _particleMaterial;
+      }
     }
 
     private static void ApplyParticleIntensity(ParticleSystem particles, float intensity, float minScale, float maxScale) {

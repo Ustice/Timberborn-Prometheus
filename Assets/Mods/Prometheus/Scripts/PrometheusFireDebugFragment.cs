@@ -964,6 +964,7 @@ namespace Mods.Prometheus.Scripts {
     private readonly FireDamageStateRuntimeState _fireDamageStateRuntimeState;
     private readonly FireWaterContextRuntimeState _fireWaterContextRuntimeState;
     private readonly FireRecoveryRuntimeState _fireRecoveryRuntimeState;
+    private readonly FireVisualEffectRuntimeState _fireVisualEffectRuntimeState;
     private readonly EntitySelectionService _entitySelectionService;
     private readonly Color _panelTextColor = new(0.84f, 0.92f, 0.83f, 1f);
     private readonly Color _panelMutedTextColor = new(0.60f, 0.74f, 0.64f, 1f);
@@ -1001,6 +1002,7 @@ namespace Mods.Prometheus.Scripts {
     private Label _selectionTitleLabel;
     private Label _selectionFeedbackLabel;
     private Label _selectionDebugLabel;
+    private Label _visualTuningFeedbackLabel;
     private Button _selectionCopyButton;
     private Button _selectionIgniteButton;
     private int _selectedEntityId;
@@ -1026,6 +1028,7 @@ namespace Mods.Prometheus.Scripts {
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
       FireWaterContextRuntimeState fireWaterContextRuntimeState,
       FireRecoveryRuntimeState fireRecoveryRuntimeState,
+      FireVisualEffectRuntimeState fireVisualEffectRuntimeState,
       EntitySelectionService entitySelectionService) {
       _uiLayout = uiLayout;
       _fireSuppressionRuntimeState = fireSuppressionRuntimeState;
@@ -1036,6 +1039,7 @@ namespace Mods.Prometheus.Scripts {
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
       _fireWaterContextRuntimeState = fireWaterContextRuntimeState;
       _fireRecoveryRuntimeState = fireRecoveryRuntimeState;
+      _fireVisualEffectRuntimeState = fireVisualEffectRuntimeState;
       _entitySelectionService = entitySelectionService;
     }
 
@@ -1130,6 +1134,7 @@ namespace Mods.Prometheus.Scripts {
       content.Add(overviewSection);
 
       content.Add(BuildToolbar());
+      content.Add(BuildVisualTuningPanel());
       content.Add(BuildSelectionPanel());
 
       var logSection = CreateSection("Log");
@@ -1355,6 +1360,99 @@ namespace Mods.Prometheus.Scripts {
       controls.Add(filtersSection);
 
       return controls;
+    }
+
+    private VisualElement BuildVisualTuningPanel() {
+      var visualSection = CreateSection("Visual Tuning");
+      var tuning = _fireVisualEffectRuntimeState.CurrentTuning;
+
+      visualSection.Add(CreateVisualSliderRow("Embers", tuning.EmberScale, _fireVisualEffectRuntimeState.SetEmberScale));
+      visualSection.Add(CreateVisualSliderRow("Smoke", tuning.SmokeScale, _fireVisualEffectRuntimeState.SetSmokeScale));
+      visualSection.Add(CreateVisualSliderRow("Fire", tuning.FireScale, _fireVisualEffectRuntimeState.SetFireScale));
+      visualSection.Add(CreateVisualSliderRow("Steam", tuning.SteamScale, _fireVisualEffectRuntimeState.SetSteamScale));
+      visualSection.Add(CreateVisualSliderRow("Char", tuning.CharScale, _fireVisualEffectRuntimeState.SetCharScale));
+      visualSection.Add(CreateVisualSliderRow("Text marker", _fireVisualEffectRuntimeState.TextMarkerScale, _fireVisualEffectRuntimeState.SetTextMarkerScale));
+
+      var controlRow = new VisualElement();
+      controlRow.style.flexDirection = FlexDirection.Row;
+      controlRow.style.flexWrap = Wrap.Wrap;
+      controlRow.style.alignItems = Align.Center;
+      controlRow.style.marginTop = 2;
+
+      var textMarkerToggle = new Toggle("Text markers") {
+        value = _fireVisualEffectRuntimeState.TextMarkersEnabled
+      };
+      textMarkerToggle.style.color = _panelTextColor;
+      textMarkerToggle.style.fontSize = 11;
+      textMarkerToggle.style.marginRight = 8;
+      textMarkerToggle.style.marginBottom = 4;
+      textMarkerToggle.RegisterValueChangedCallback(evt => {
+        _fireVisualEffectRuntimeState.SetTextMarkersEnabled(evt.newValue);
+        SetVisualTuningFeedback(evt.newValue ? "Text markers on" : "Text markers off");
+      });
+      controlRow.Add(textMarkerToggle);
+
+      var resetButton = new Button(() => {
+        _fireVisualEffectRuntimeState.ResetDefaults();
+        SetVisualTuningFeedback("Visuals reset. Reopen panel to refresh sliders.");
+      }) {
+        text = "Reset Visuals"
+      };
+      ApplyCommandButtonStyle(resetButton, new Color(0.88f, 0.68f, 0.38f, 1f), 104);
+      resetButton.tooltip = "Reset visual tuning scales to default and turn text markers off.";
+      controlRow.Add(resetButton);
+
+      _visualTuningFeedbackLabel = new Label();
+      _visualTuningFeedbackLabel.style.fontSize = 10;
+      _visualTuningFeedbackLabel.style.color = new Color(0.72f, 0.93f, 0.72f, 1f);
+      _visualTuningFeedbackLabel.style.marginBottom = 4;
+      _visualTuningFeedbackLabel.style.flexGrow = 1;
+      controlRow.Add(_visualTuningFeedbackLabel);
+
+      visualSection.Add(controlRow);
+      return visualSection;
+    }
+
+    private VisualElement CreateVisualSliderRow(string labelText, float initialValue, Action<float> setter) {
+      var row = new VisualElement();
+      row.style.flexDirection = FlexDirection.Row;
+      row.style.alignItems = Align.Center;
+      row.style.marginBottom = 2;
+
+      var nameLabel = new Label(labelText);
+      nameLabel.style.width = 74;
+      nameLabel.style.fontSize = 10;
+      nameLabel.style.color = _panelTextColor;
+      row.Add(nameLabel);
+
+      var valueLabel = new Label($"x{initialValue:0.00}");
+      valueLabel.style.width = 40;
+      valueLabel.style.fontSize = 10;
+      valueLabel.style.color = _panelMutedTextColor;
+
+      var slider = new Slider(0f, 3f) {
+        value = initialValue
+      };
+      slider.style.flexGrow = 1;
+      slider.style.minWidth = 220;
+      slider.style.marginRight = 6;
+      slider.RegisterValueChangedCallback(evt => {
+        var rounded = Mathf.Round(evt.newValue * 20f) / 20f;
+        setter(rounded);
+        valueLabel.text = $"x{rounded:0.00}";
+        SetVisualTuningFeedback($"{labelText} x{rounded:0.00}");
+      });
+      row.Add(slider);
+      row.Add(valueLabel);
+      return row;
+    }
+
+    private void SetVisualTuningFeedback(string message) {
+      if (_visualTuningFeedbackLabel == null) {
+        return;
+      }
+
+      _visualTuningFeedbackLabel.text = message;
     }
 
     private VisualElement BuildSelectionPanel() {

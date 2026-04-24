@@ -105,6 +105,8 @@ Pass criteria:
 - [ ] Fireworks and unstable explosive events can create short-lived ember fields without adding a fireworks-control minigame.
 - [ ] Smoke, active fire, steam, embers, and charred presentation match runtime states.
 - [ ] Reset Fire Sim clears active particles and char tint on loaded fire-profiled entities.
+- [ ] `Visual Tuning` sliders visibly change ember/smoke/fire/steam/char intensity without a rebuild.
+- [ ] Legacy text markers stay off by default and only appear when `Text markers` is enabled.
 - [ ] Valid charred vegetation/buildings expose Fertile Ash source state.
 
 ### 3a) Worker/beaver exposure pass

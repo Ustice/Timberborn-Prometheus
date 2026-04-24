@@ -20,6 +20,7 @@ namespace Mods.Prometheus.Scripts {
     private FireImpactRuntimeState _fireImpactRuntimeState;
     private FireDispatchScoringRuntimeState _fireDispatchScoringRuntimeState;
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
+    private FireVisualEffectRuntimeState _fireVisualEffectRuntimeState;
     private QuickNotificationService _quickNotificationService;
     private FireResponseProfile _fireResponseProfile;
 
@@ -51,6 +52,7 @@ namespace Mods.Prometheus.Scripts {
       FireImpactRuntimeState fireImpactRuntimeState,
       FireDispatchScoringRuntimeState fireDispatchScoringRuntimeState,
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
+      FireVisualEffectRuntimeState fireVisualEffectRuntimeState,
       QuickNotificationService quickNotificationService) {
       _fireSuppressionRuntimeState = fireSuppressionRuntimeState;
       _fireTuningRuntimeState = fireTuningRuntimeState;
@@ -60,6 +62,7 @@ namespace Mods.Prometheus.Scripts {
       _fireImpactRuntimeState = fireImpactRuntimeState;
       _fireDispatchScoringRuntimeState = fireDispatchScoringRuntimeState;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
+      _fireVisualEffectRuntimeState = fireVisualEffectRuntimeState;
       _quickNotificationService = quickNotificationService;
     }
 
@@ -697,6 +700,14 @@ namespace Mods.Prometheus.Scripts {
         return;
       }
 
+      if (!_fireVisualEffectRuntimeState.TextMarkersEnabled || _fireVisualEffectRuntimeState.TextMarkerScale <= 0.01f) {
+        if (_fireMarkerObject != null) {
+          _fireMarkerObject.SetActive(false);
+        }
+
+        return;
+      }
+
       EnsureFireMarkerCreated();
       if (_fireMarkerObject == null || _fireMarkerText == null) {
         return;
@@ -722,6 +733,7 @@ namespace Mods.Prometheus.Scripts {
       }
 
       _fireMarkerObject.transform.localPosition = new Vector3(0f, _fireMarkerBaseHeight, 0f);
+      scale *= _fireVisualEffectRuntimeState.TextMarkerScale;
       _fireMarkerObject.transform.localScale = new Vector3(scale, scale, scale);
 
       var mainCamera = Camera.main;
