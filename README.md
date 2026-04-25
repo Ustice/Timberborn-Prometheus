@@ -5,7 +5,9 @@ This repository contains the standalone Prometheus Timberborn mod assets, local 
 ## Quick Commands
 
 - `bash scripts/build.sh` - compile and deploy.
+- `bash scripts/build.sh --test` - run fast tests, then compile and deploy.
 - `bash scripts/build.sh --launch` - compile, deploy, clear Timberborn logs, and launch the game for QA.
+- `bash scripts/build.sh --qa` - run tests, launch Timberborn, and wait for Prometheus startup readiness.
 - `bash scripts/test.sh` - run the fast plain C# regression suite.
 
 Source of truth: run `bash scripts/build.sh --help` for current build/deploy behavior.
@@ -24,6 +26,8 @@ Source of truth: run `bash scripts/build.sh --help` for current build/deploy beh
 Prometheus is in a 3D grid fire rewrite. The old entity-neighbor spread and responder-first runtime model has been removed from active code, while the visual tuning tool remains available as the new sparse grid model is built.
 
 Use [docs/HANDOFF.md](docs/HANDOFF.md) for the latest verified result, blocker list, and resume checklist.
+
+The in-game QA channel reads instructions from `~/Library/Application Support/Timberborn/PrometheusQA/instructions.md` and appends button results to `~/Library/Application Support/Timberborn/PrometheusQA/results.md`.
 
 ## Repository Shape
 

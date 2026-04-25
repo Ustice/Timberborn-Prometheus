@@ -8,7 +8,7 @@ This is the authoritative runbook for active Prometheus validation.
 | --- | --- |
 | Build and launch behavior | `bash scripts/build.sh --help` |
 | Automated test behavior | `bash scripts/test.sh` and `tests/Prometheus.Tests` |
-| Runtime telemetry names | `FireTelemetryEvents` |
+| Runtime telemetry names | `FireTelemetryEvents` and QA panel telemetry strings in source |
 | Current live state | [HANDOFF.md](HANDOFF.md) |
 | Durable design gates | [DESIGN.md](DESIGN.md) |
 
@@ -16,6 +16,7 @@ This is the authoritative runbook for active Prometheus validation.
 
 - [ ] Run `bash scripts/test.sh`.
 - [ ] Run `bash scripts/build.sh --launch` for in-game QA.
+- [ ] Prefer `bash scripts/build.sh --qa` when you want tests, launch, cleared logs, and Prometheus startup readiness in one command.
 - [ ] Confirm Timberborn launches with Prometheus enabled.
 - [ ] Confirm fresh logs are available for the measurement window.
 - [ ] Keep each repro scoped to one intent when possible.
@@ -24,10 +25,19 @@ This is the authoritative runbook for active Prometheus validation.
 
 - [ ] `Player.log` contains `- Prometheus (v0.2)` or newer.
 - [ ] No startup exception for Prometheus blueprint/type registration.
-- [ ] Moddable Tool Groups shows `Prometheus` with `Actions`, `Visuals`, `Selection`, and `Log`.
+- [ ] Moddable Tool Groups shows `Prometheus` with `Actions`, `Visuals`, `Selection`, `QA`, and `Log`.
 - [ ] Opening a Prometheus submenu returns Timberborn to normal selection after the panel opens.
 - [ ] Selecting a Prometheus-profiled entity updates the panel.
 - [ ] `Copy`, `Ignite`, `Reset Fire Sim`, `Stop Fires`, `Clear Beavers`, and `Clear Log` are manually QA'd through the current UI.
+
+## In-Game QA Channel
+
+- [ ] Write the next instruction to `~/Library/Application Support/Timberborn/PrometheusQA/instructions.md`.
+- [ ] Open `Prometheus` -> `QA`.
+- [ ] Confirm the instruction text refreshes in-game without restarting Timberborn.
+- [ ] Click `Passed`, `Failed`, or `Blocked`.
+- [ ] Confirm `~/Library/Application Support/Timberborn/PrometheusQA/results.md` receives a timestamped entry with the note and instruction text.
+- [ ] Confirm `Fire.log` records the QA result event.
 
 Source of truth: exact UI labels and control construction live in the debug UI source; this checklist defines behavior to verify, not an inventory to keep synchronized.
 

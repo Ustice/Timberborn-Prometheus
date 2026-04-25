@@ -28,7 +28,7 @@ The active rewrite replaces direct entity-neighbor spread and responder-first as
 | Runtime state | Current fire/grid facts, snapshots, and resettable state |
 | Rules | Dependency-light decisions: propagation, dampening, thresholds, recovery eligibility |
 | Appliers | Translation from runtime decisions into Unity/Timberborn effects |
-| Debug UI | Commands, inspection, evidence capture, and temporary visual authoring |
+| Debug UI | Commands, inspection, evidence capture, in-game QA coordination, and temporary visual authoring |
 
 Source of truth: exact runtime types and telemetry names live in source, especially `FireTelemetryEvents` and current `Scripts/**/*.cs` files.
 
@@ -68,6 +68,12 @@ Status: Accepted.
 
 `Assets/Mods/Prometheus/` is shippable mod content because the deploy script symlinks non-`Scripts` entries into the local Timberborn mod folder. Internal docs live under `docs/`.
 
+### ADR-005: QA Coordination Uses Local Exchange Files
+
+Status: Accepted.
+
+In-game QA instructions and tester results use Markdown exchange files under `~/Library/Application Support/Timberborn/PrometheusQA`. This keeps live validation visible inside Timberborn without requiring Steam chat, and it keeps the mod-owned action limited to reading instructions and appending explicit tester results.
+
 ## Roadmap
 
 | Phase | Goal | Status |
@@ -94,6 +100,7 @@ Status: Accepted.
 | Date | Phase | Update | Status |
 | --- | --- | --- | --- |
 | 2026-04-25 | Docs | Moved internal docs out of deployed mod assets and compressed startup documentation around source-of-truth pointers | Done |
+| 2026-04-25 | QA UX | Added an in-game `QA` panel for live Codex instructions and `Passed` / `Failed` / `Blocked` result capture through local Markdown exchange files | In Validation |
 | 2026-04-25 | Phase 2 | Removed direct-spread/responder runtime scaffolding to prepare for sparse 3D grid rewrite | In Progress |
 | 2026-04-25 | Phase 2 Visuals | Replaced the old Visual Tuning sliders with an effect authoring inspector, selected-entity temporary preview, native source picker/search, and JSON/log target context export | In Validation |
 | 2026-04-24 | Phase 2 UX | Migrated debug navigation to required TimberUi and ModdableToolGroups dependencies with native-style controls and bottom-bar submenu entries | In Validation |

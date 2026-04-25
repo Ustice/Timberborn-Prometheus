@@ -18,6 +18,7 @@ namespace Mods.Prometheus.Scripts {
       Bind<PrometheusDebugActionsTool>().AsSingleton();
       Bind<PrometheusDebugVisualsTool>().AsSingleton();
       Bind<PrometheusDebugSelectionTool>().AsSingleton();
+      Bind<PrometheusDebugQaTool>().AsSingleton();
       Bind<PrometheusDebugLogTool>().AsSingleton();
       this.MultiBindCustomTool<PrometheusDebugToolGroupElement>();
       MultiBind<ILoadableSingleton>().ToProvider<PrometheusDebugPanelLoadableProvider>().AsSingleton();

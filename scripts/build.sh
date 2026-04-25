@@ -4,11 +4,15 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MOD_NAME="Prometheus"
 LAUNCH_AFTER_BUILD=false
+RUN_TESTS_BEFORE_BUILD=false
+QA_MODE=false
 STOP_RUNNING_BEFORE_BUILD=false
 WAIT_FOR_BUILD=false
 WAIT_FOR_BUILD_TIMEOUT_SECONDS=10
 WAIT_FOR_BUILD_POLL_SECONDS=2
 WAIT_FOR_BUILD_STABLE_POLLS=2
+QA_READY_TIMEOUT_SECONDS="${QA_READY_TIMEOUT_SECONDS:-180}"
+QA_READY_POLL_SECONDS="${QA_READY_POLL_SECONDS:-5}"
 DEFAULT_TIMBERBORN_APP_ID="1062090"
 DEFAULT_PLAYER_LOG_PATH="$HOME/Library/Logs/Mechanistry/Timberborn/Player.log"
 DEFAULT_FIRE_LOG_PATH="$HOME/Library/Logs/Mechanistry/Timberborn/Fire.log"
@@ -34,17 +38,24 @@ FIRE_LOG_PATH="${TIMBERBORN_FIRE_LOG_PATH:-$DEFAULT_FIRE_LOG_PATH}"
 
 usage() {
   cat <<'USAGE'
-Usage: bash scripts/build.sh [--launch]
+Usage: bash scripts/build.sh [--test] [--launch] [--qa]
 
 Options:
+  --test        Run the fast plain C# regression suite before build/deploy.
   --launch      Launch Timberborn via Steam after a successful build/deploy.
                 Implies stopping any running Timberborn process and waiting
                 for a fresh + stable Unity DLL before build/deploy.
                 Also clears Timberborn Player.log and Fire.log before launch.
+  --qa          Run tests, build/deploy, launch Timberborn, then wait for
+                Prometheus startup readiness in Player.log / Fire.log.
+                Implies --test and --launch.
 
 Common combos:
-  bash scripts/build.sh            # build + deploy
-  bash scripts/build.sh --launch   # build + stop running + wait for fresh/stable build + deploy + wait + launch
+  bash scripts/build.sh                  # build + deploy
+  bash scripts/build.sh --test           # test + build + deploy
+  bash scripts/build.sh --launch         # build + stop running + wait for fresh/stable build + deploy + wait + launch
+  bash scripts/build.sh --test --launch  # test + launch workflow
+  bash scripts/build.sh --qa             # test + launch + Prometheus readiness wait
 
 Build/deploy model:
   The deployed mod directory is recreated as symlinks on each run:
@@ -55,7 +66,22 @@ Compilation model:
   - If $BUILD_PROJECT_DIR/Timberborn.ModExamples.Prometheus.csproj exists,
     the script runs 'dotnet build' and promotes output into Library/ScriptAssemblies.
   - If the project file is missing, the script falls back to existing Unity DLL checks.
+
+QA model:
+  - QA mode waits up to QA_READY_TIMEOUT_SECONDS (default: 180) for Player.log
+    to show Prometheus startup with no scanned Prometheus errors.
+  - Set QA_READY_POLL_SECONDS to tune the readiness polling interval.
 USAGE
+}
+
+run_tests_if_requested() {
+  if [[ "$RUN_TESTS_BEFORE_BUILD" != "true" ]]; then
+    return 0
+  fi
+
+  echo "[build] Running preflight tests..."
+  bash "$ROOT_DIR/scripts/test.sh"
+  echo "[build] Preflight tests passed."
 }
 
 compile_if_possible() {
@@ -542,9 +568,76 @@ clear_fire_log_for_launch() {
   echo "[build] Cleared Fire.log: $FIRE_LOG_PATH"
 }
 
+prometheus_startup_errors_detected() {
+  local error_pattern='Prometheus.*(Exception|Error|error|failed|Failed|Could not|ReflectionTypeLoadException|NullReferenceException)|Exception.*Prometheus|Error.*Prometheus'
+  local matched=false
+
+  if [[ -f "$PLAYER_LOG_PATH" ]] && grep -Eiq "$error_pattern" "$PLAYER_LOG_PATH"; then
+    echo "[qa] Prometheus-related error detected in Player.log:" >&2
+    grep -Ein "$error_pattern" "$PLAYER_LOG_PATH" | tail -n 12 >&2 || true
+    matched=true
+  fi
+
+  if [[ -f "$FIRE_LOG_PATH" ]] && grep -Eiq "$error_pattern" "$FIRE_LOG_PATH"; then
+    echo "[qa] Prometheus-related error detected in Fire.log:" >&2
+    grep -Ein "$error_pattern" "$FIRE_LOG_PATH" | tail -n 12 >&2 || true
+    matched=true
+  fi
+
+  [[ "$matched" == "true" ]]
+}
+
+prometheus_loaded_from_player_log() {
+  [[ -f "$PLAYER_LOG_PATH" ]] && grep -Eq 'Prometheus \(v[0-9]+(\.[0-9]+)*\)' "$PLAYER_LOG_PATH"
+}
+
+wait_for_qa_readiness() {
+  if [[ "$QA_MODE" != "true" ]]; then
+    return 0
+  fi
+
+  echo "[qa] Waiting for Timberborn + Prometheus readiness..."
+  echo "[qa] Timeout: ${QA_READY_TIMEOUT_SECONDS}s (poll ${QA_READY_POLL_SECONDS}s)"
+  echo "[qa] Player.log: $PLAYER_LOG_PATH"
+  echo "[qa] Fire.log: $FIRE_LOG_PATH"
+
+  local waited=0
+  while (( waited < QA_READY_TIMEOUT_SECONDS )); do
+    if prometheus_startup_errors_detected; then
+      echo "[qa] failed: Prometheus startup/runtime error detected." >&2
+      return 1
+    fi
+
+    if is_timberborn_running && prometheus_loaded_from_player_log; then
+      echo "[qa] ready: Timberborn is running and Prometheus startup was detected."
+      return 0
+    fi
+
+    sleep "$QA_READY_POLL_SECONDS"
+    waited=$(( waited + QA_READY_POLL_SECONDS ))
+  done
+
+  if is_timberborn_running; then
+    echo "[qa] still-loading: Timberborn is running, but Prometheus startup was not detected within ${QA_READY_TIMEOUT_SECONDS}s." >&2
+  else
+    echo "[qa] failed: Timberborn process was not detected within ${QA_READY_TIMEOUT_SECONDS}s." >&2
+  fi
+  return 1
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --test)
+      RUN_TESTS_BEFORE_BUILD=true
+      shift
+      ;;
     --launch)
+      LAUNCH_AFTER_BUILD=true
+      shift
+      ;;
+    --qa)
+      QA_MODE=true
+      RUN_TESTS_BEFORE_BUILD=true
       LAUNCH_AFTER_BUILD=true
       shift
       ;;
@@ -564,6 +657,8 @@ if [[ "$LAUNCH_AFTER_BUILD" == "true" ]]; then
   STOP_RUNNING_BEFORE_BUILD=true
   WAIT_FOR_BUILD=true
 fi
+
+run_tests_if_requested
 
 echo "[build] Build project: $BUILD_PROJECT_DIR"
 echo "[build] Build DLL source: $SRC_DLL"
@@ -623,4 +718,5 @@ if [[ "$LAUNCH_AFTER_BUILD" == "true" ]]; then
   echo "[build] Waiting 5s before launch..."
   sleep 5
   launch_timberborn
+  wait_for_qa_readiness
 fi

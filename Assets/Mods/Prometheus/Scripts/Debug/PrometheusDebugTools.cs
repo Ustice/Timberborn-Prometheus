@@ -68,6 +68,14 @@ namespace Mods.Prometheus.Scripts {
 
   }
 
+  internal class PrometheusDebugQaTool : PrometheusDebugTool {
+
+    public PrometheusDebugQaTool(PrometheusDebugPanel prometheusDebugPanel, ToolService toolService, ILoc loc)
+      : base(prometheusDebugPanel, toolService, loc, PrometheusDebugPanelTab.Qa, "Tools.PrometheusDebugQa", "Tools.PrometheusDebugQa.Description") {
+    }
+
+  }
+
   internal class PrometheusDebugLogTool : PrometheusDebugTool {
 
     public PrometheusDebugLogTool(PrometheusDebugPanel prometheusDebugPanel, ToolService toolService, ILoc loc)

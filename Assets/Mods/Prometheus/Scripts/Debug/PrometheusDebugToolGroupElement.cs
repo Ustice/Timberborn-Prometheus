@@ -9,11 +9,13 @@ namespace Mods.Prometheus.Scripts {
     private const string ActionsIcon = "Options";
     private const string VisualsIcon = "WaterHeightBrushTool";
     private const string SelectionIcon = "Cursor";
+    private const string QaIcon = "Options";
     private const string LogIcon = "Options";
 
     private readonly PrometheusDebugActionsTool _actionsTool;
     private readonly PrometheusDebugVisualsTool _visualsTool;
     private readonly PrometheusDebugSelectionTool _selectionTool;
+    private readonly PrometheusDebugQaTool _qaTool;
     private readonly PrometheusDebugLogTool _logTool;
 
     public override string Id => ToolGroupId;
@@ -22,6 +24,7 @@ namespace Mods.Prometheus.Scripts {
       PrometheusDebugActionsTool actionsTool,
       PrometheusDebugVisualsTool visualsTool,
       PrometheusDebugSelectionTool selectionTool,
+      PrometheusDebugQaTool qaTool,
       PrometheusDebugLogTool logTool,
       ToolGroupService toolGroupService,
       ModdableToolGroupButtonFactory buttonFactory)
@@ -29,6 +32,7 @@ namespace Mods.Prometheus.Scripts {
       _actionsTool = actionsTool;
       _visualsTool = visualsTool;
       _selectionTool = selectionTool;
+      _qaTool = qaTool;
       _logTool = logTool;
       Color = ToolButtonColor.Blue;
     }
@@ -37,6 +41,7 @@ namespace Mods.Prometheus.Scripts {
       button.AddChildTool(_actionsTool, ActionsIcon);
       button.AddChildTool(_visualsTool, VisualsIcon);
       button.AddChildTool(_selectionTool, SelectionIcon);
+      button.AddChildTool(_qaTool, QaIcon);
       button.AddChildTool(_logTool, LogIcon);
     }
 
