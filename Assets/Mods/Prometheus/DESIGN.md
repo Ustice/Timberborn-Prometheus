@@ -151,9 +151,9 @@ Non-goals:
 
 ### Fire Visual State Ladder
 
-Fire state should be readable from in-world effects before the player opens a panel.
+Fire state should be readable from in-world effects before the player opens a panel. Local object fire progression should not emit sparks; sparks and airborne embers are owned by the separate ember-field spread layer.
 
-- **Embers**: airborne sparks around sources and spread-pressure fronts.
+- **Embers**: airborne sparks around ember-field sources and spread-pressure fronts, not local object burn progression.
 - **Steam**: light moisture reaction where water/soaked ground/suppression dampens heat.
 - **Smoke**: smoldering/scorched state, worsening before open flame.
 - **Fire**: active burning state with stronger light/flame effects.
@@ -163,7 +163,11 @@ The visual layer should be an adapter over fire runtime state, not a separate ga
 
 The preferred particle source is Timberborn's own runtime particle systems, cloned and intensity-controlled by Prometheus. Generated particles are a fallback only when no matching native source is loaded or discoverable.
 
-Visual tuning should stay runtime-adjustable while Phase 2 readability is unsettled: intensity, local height/Z placement, overall particle size, and ember source spread are all adapter-level controls.
+Visual tuning should stay runtime-adjustable while Phase 2 readability is unsettled. The authoring UI is now an effect inspector with a switcher for `Smoke`, `Ash`, `Steam`, `Fire`, `Sparks`, and `Char`; selected-effect controls expose source, intensity, emission, local X/Y/Z placement, size/lifetime/speed/alpha/color, spread/shape, size-over-lifetime presets, and advanced velocity/gravity/noise/rotation/sorting controls.
+
+Effect previews are debug-only and temporary. They may apply one effect or a full preset to the currently selected entity, but must not change simulation, damage, recovery, entity profiles, or saved state. JSON/log exports should include target id, raw name, readable kind, and support status so tuning notes can be interpreted later.
+
+Char should move toward destructive-looking cutaway: noise plus severity should carve irregular holes, active burn should have an orange edge glow, and cooled/dead burn should leave black interiors with white/gray ash edges. Until Timberborn shader inspection proves clipping and edge bands are safe on existing materials, the implemented preview path stays limited to material-property overrides and any custom shader choice remains explicit.
 
 ### 2) Spread
 
@@ -459,7 +463,7 @@ This section turns Phase 2 into an implementation-ready sprint plan focused on *
   - steam when moisture or suppression dampens heat,
   - charred shader/material/tint for terminal burned buildings and vegetation.
 - Prefer shaders/material overrides and reusable particle/effect adapters over bespoke replacement models.
-- Current implementation status: first pass is wired through `FireVisualEffectRules`, `FireVisualEffectRuntimeState`, and `FireVisualEffectApplier`, with debug-panel tuning scales for embers, smoke, fire, steam, char, and legacy text-marker scale. It uses Unity particles plus a material color property block as an adapter over runtime fire/water/damage state; in-game visual QA is still pending.
+- Current implementation status: live simulation presentation is wired through `FireVisualEffectRules`, `FireVisualEffectRuntimeState`, and `FireVisualEffectApplier`, with Timberborn native particle clones plus material property blocks over runtime fire/water/damage state. The debug Visuals panel is now a separate authoring inspector with selected-entity temporary preview, source search, and JSON/log export; in-game visual QA is still pending.
 
 ##### Slice D — Fertile Ash recovery
 
@@ -764,6 +768,7 @@ Active/planned entries only. Full historical log moved to `DESIGN_CHANGELOG_ARCH
 | 2026-04-25 | Phase 2 UX | Restored a TimberUi `Frame` outer container without the custom Prometheus title strip to fix flush child-section borders and clipped leading controls | In Validation |
 | 2026-04-25 | Phase 2 UX | Reworked visible debug-panel construction to follow upstream `TimberUiDemo` parent-extension patterns for fragments, rows, labels, buttons, fields, toggles, scroll views, and sliders | In Validation |
 | 2026-04-25 | Phase 2 UX | Applied screenshot-driven TimberUi layout cleanup with row classes, restored native padding, readable selected filters, and full `View` buttons in log rows | In Validation |
+| 2026-04-25 | Phase 2 Visuals | Replaced the old Visual Tuning sliders with an effect authoring inspector, selected-entity temporary preview, native source picker/search, and JSON/log target context export | In Validation |
 | 2026-04-25 | Phase 2 UX | Cleaned up remaining TimberUi panel presentation issues by applying native label classes to visible text, removing the visible raw Unity Selection foldout, trimming extra margins, and bringing the native close button above the initialized panel frame | In Validation |
 | 2026-04-24 | Phase 2 UX | Removed old custom button/frame visual overrides from TimberUi panel controls and the hidden selection bridge, keeping Prometheus color usage to semantic feedback and severity text | In Validation |
 | 2026-04-24 | Phase 2 Content | Pruned old bucket-kit, firefighting-foam, fire-control-gear, fireworks-crate, and festival-risk scaffolding; renamed ash fertilizer content to Fertile Ash | Done |

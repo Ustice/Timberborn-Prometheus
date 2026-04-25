@@ -6,6 +6,7 @@ namespace Mods.Prometheus.Scripts {
   internal abstract class PrometheusDebugTool : ITool, IToolDescriptor {
 
     private readonly PrometheusDebugPanel _prometheusDebugPanel;
+    private readonly ToolService _toolService;
     private readonly PrometheusDebugPanelTab _view;
     private readonly ILoc _loc;
     private readonly string _titleLocKey;
@@ -13,11 +14,13 @@ namespace Mods.Prometheus.Scripts {
 
     protected PrometheusDebugTool(
       PrometheusDebugPanel prometheusDebugPanel,
+      ToolService toolService,
       ILoc loc,
       PrometheusDebugPanelTab view,
       string titleLocKey,
       string descriptionLocKey) {
       _prometheusDebugPanel = prometheusDebugPanel;
+      _toolService = toolService;
       _loc = loc;
       _view = view;
       _titleLocKey = titleLocKey;
@@ -26,6 +29,8 @@ namespace Mods.Prometheus.Scripts {
 
     public void Enter() {
       _prometheusDebugPanel.Open(_view);
+      _toolService.SwitchToDefaultTool();
+      _prometheusDebugPanel.RestoreSelectionIfToolSwitchClearedIt();
     }
 
     public void Exit() {
@@ -41,32 +46,32 @@ namespace Mods.Prometheus.Scripts {
 
   internal class PrometheusDebugActionsTool : PrometheusDebugTool {
 
-    public PrometheusDebugActionsTool(PrometheusDebugPanel prometheusDebugPanel, ILoc loc)
-      : base(prometheusDebugPanel, loc, PrometheusDebugPanelTab.Actions, "Tools.PrometheusDebugActions", "Tools.PrometheusDebugActions.Description") {
+    public PrometheusDebugActionsTool(PrometheusDebugPanel prometheusDebugPanel, ToolService toolService, ILoc loc)
+      : base(prometheusDebugPanel, toolService, loc, PrometheusDebugPanelTab.Actions, "Tools.PrometheusDebugActions", "Tools.PrometheusDebugActions.Description") {
     }
 
   }
 
   internal class PrometheusDebugVisualsTool : PrometheusDebugTool {
 
-    public PrometheusDebugVisualsTool(PrometheusDebugPanel prometheusDebugPanel, ILoc loc)
-      : base(prometheusDebugPanel, loc, PrometheusDebugPanelTab.Visuals, "Tools.PrometheusDebugVisuals", "Tools.PrometheusDebugVisuals.Description") {
+    public PrometheusDebugVisualsTool(PrometheusDebugPanel prometheusDebugPanel, ToolService toolService, ILoc loc)
+      : base(prometheusDebugPanel, toolService, loc, PrometheusDebugPanelTab.Visuals, "Tools.PrometheusDebugVisuals", "Tools.PrometheusDebugVisuals.Description") {
     }
 
   }
 
   internal class PrometheusDebugSelectionTool : PrometheusDebugTool {
 
-    public PrometheusDebugSelectionTool(PrometheusDebugPanel prometheusDebugPanel, ILoc loc)
-      : base(prometheusDebugPanel, loc, PrometheusDebugPanelTab.Selection, "Tools.PrometheusDebugSelection", "Tools.PrometheusDebugSelection.Description") {
+    public PrometheusDebugSelectionTool(PrometheusDebugPanel prometheusDebugPanel, ToolService toolService, ILoc loc)
+      : base(prometheusDebugPanel, toolService, loc, PrometheusDebugPanelTab.Selection, "Tools.PrometheusDebugSelection", "Tools.PrometheusDebugSelection.Description") {
     }
 
   }
 
   internal class PrometheusDebugLogTool : PrometheusDebugTool {
 
-    public PrometheusDebugLogTool(PrometheusDebugPanel prometheusDebugPanel, ILoc loc)
-      : base(prometheusDebugPanel, loc, PrometheusDebugPanelTab.Log, "Tools.PrometheusDebugLog", "Tools.PrometheusDebugLog.Description") {
+    public PrometheusDebugLogTool(PrometheusDebugPanel prometheusDebugPanel, ToolService toolService, ILoc loc)
+      : base(prometheusDebugPanel, toolService, loc, PrometheusDebugPanelTab.Log, "Tools.PrometheusDebugLog", "Tools.PrometheusDebugLog.Description") {
     }
 
   }

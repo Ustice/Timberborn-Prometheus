@@ -73,6 +73,9 @@ namespace Prometheus.Tests {
     [Fact]
     public void FireVisualEffectRules_DeadDamageStateKeepsCharWithoutFire_Test() => FireVisualEffectRulesDeadDamageStateKeepsCharWithoutFire();
 
+    [Fact]
+    public void FireVisualPreset_DefaultsUsePromotedAuthoringValues_Test() => FireVisualPresetDefaultsUsePromotedAuthoringValues();
+
     private static void SnapshotStoreRemovesAndClearsSnapshots() {
       var state = new FireSuppressionRuntimeState();
       var snapshot = new FireSuppressionSnapshot("BucketBrigade", 1f, 0.25f, 0.5f, 6f, 0.08f);
@@ -349,7 +352,7 @@ namespace Prometheus.Tests {
         FireVisualEffectTuning.Default);
 
       True(intensity.HasAnyVisibleEffect);
-      True(intensity.Embers > 0.1f);
+      NearlyEqual(0f, intensity.Embers);
       True(intensity.Smoke > 0.4f);
       True(intensity.Fire > 0.7f);
       True(intensity.Char > 0.4f);
@@ -385,6 +388,46 @@ namespace Prometheus.Tests {
       NearlyEqual(0f, intensity.Fire);
       True(intensity.Char > 0.95f);
       True(intensity.Smoke > 0f);
+    }
+
+    private static void FireVisualPresetDefaultsUsePromotedAuthoringValues() {
+      var preset = new FireVisualPreset();
+      var smoke = preset.GetParticle(FireVisualEffectKind.Smoke);
+      Equal("FoodFactorySmoke", smoke.SourceName);
+      NearlyEqual(2.3f, smoke.Lifetime);
+      NearlyEqual(0f, smoke.Spread);
+
+      var ash = preset.GetParticle(FireVisualEffectKind.Ash);
+      Equal("BadwaterRigSmoke", ash.SourceName);
+      NearlyEqual(0.55f, ash.Intensity);
+      NearlyEqual(0.4f, ash.Emission);
+      NearlyEqual(0.9f, ash.Position.y);
+      NearlyEqual(0.2f, ash.Size);
+      NearlyEqual(0.75f, ash.Lifetime);
+      NearlyEqual(0.25f, ash.Spread);
+
+      var steam = preset.GetParticle(FireVisualEffectKind.Steam);
+      Equal("CoffeeBrewerySmoke", steam.SourceName);
+      NearlyEqual(0.35f, steam.Position.y);
+      NearlyEqual(0.7f, steam.Velocity.y);
+      NearlyEqual(0.8f, steam.Spread);
+
+      var fire = preset.GetParticle(FireVisualEffectKind.Fire);
+      Equal("CampfireFire", fire.SourceName);
+      NearlyEqual(0.25f, fire.Position.x);
+      NearlyEqual(0.15f, fire.Position.z);
+      NearlyEqual(1.2f, fire.Lifetime);
+      NearlyEqual(0f, fire.Spread);
+      NearlyEqual(-0.15f, fire.Gravity);
+      Equal(FireVisualSizeOverLifetimePreset.Swell, fire.SizeOverLifetime);
+
+      var sparks = preset.GetParticle(FireVisualEffectKind.Sparks);
+      Equal("Sparks_Trail", sparks.SourceName);
+      NearlyEqual(0.7f, sparks.Intensity);
+      NearlyEqual(0.55f, sparks.Emission);
+      NearlyEqual(1.4f, sparks.Spread);
+      NearlyEqual(-0.25f, sparks.Gravity);
+      NearlyEqual(0.4f, sparks.NoiseStrength);
     }
 
     private static FireSimulationSnapshot CreateSimulationSnapshot(bool burning, float intensity) {

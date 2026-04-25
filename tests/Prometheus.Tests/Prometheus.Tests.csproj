@@ -27,6 +27,7 @@
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/FireSimulationRuntimeState.cs" Link="Source/FireSimulationRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/FireSuppressionRuntimeState.cs" Link="Source/FireSuppressionRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/FireWaterContextRuntimeState.cs" Link="Source/FireWaterContextRuntimeState.cs" />
+    <Compile Include="../../Assets/Mods/Prometheus/Scripts/FireVisualEffectAuthoring.cs" Link="Source/FireVisualEffectAuthoring.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/FireVisualEffectRules.cs" Link="Source/FireVisualEffectRules.cs" />
   </ItemGroup>
 
@@ -37,6 +38,14 @@
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>/Applications/Unity/Hub/Editor/6000.3.6f1/Unity.app/Contents/Resources/Scripting/Managed/UnityEngine/UnityEngine.CoreModule.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ParticleSystemModule">
+      <HintPath>/Applications/Unity/Hub/Editor/6000.3.6f1/Unity.app/Contents/Resources/Scripting/Managed/UnityEngine/UnityEngine.ParticleSystemModule.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="Timberborn.Localization">
+      <HintPath>/Users/jasonkleinberg/repos/timberborn-modding/Assets/Plugins/Timberborn/Timberborn.Localization.dll</HintPath>
       <Private>true</Private>
     </Reference>
   </ItemGroup>

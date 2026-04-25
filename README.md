@@ -78,18 +78,23 @@ Recommended guardrails:
   * The Prometheus debug panel has been reorganized into TimberUi command, filter, selection, and log sections for manual QA.
   * Telemetry event names are centralized in an iterable registry and covered by a uniqueness regression test.
   * Phase 2 design has been simplified around ember-field cellular spread: active fires, selected high-intensity buildings, fireworks, and unstable explosive events can emit ember pressure.
-  * Fire presentation should map to runtime state with embers, smoke, active fire, steam from moisture, and charred material/shader treatment.
-  * First visual effect adapter is implemented and deployed: fire-profiled entities now derive tunable ember, smoke, flame, steam, and char intensities from runtime snapshots.
+  * Local fire presentation should progress from smoke to active fire, then back to smoke/ash/char as the object burns out. Sparks/embers are reserved for the separate ember-field spread visualization.
+  * First visual effect adapter is implemented and deployed: fire-profiled entities now derive tunable smoke, flame, steam, and char intensities from runtime snapshots.
   * Fire presentation now clones native Timberborn particle prefabs for the visible channels before falling back to generated particles; the latest launch resolved `Sparks_Trail`, `SmelterSmoke`, `CampfireFire`, and `SteamEngineSmoke`.
-  * Visual tuning now includes live height, local Z offset, overall size, and ember-spread controls so native particle clones can be placed and widened without rebuilding.
-  * The debug panel now includes `Visual Tuning` sliders for ember, smoke, fire, steam, char, and legacy text-marker scale; legacy `FIRE!`/`DEAD` text markers default off.
+  * `Prometheus` -> `Visuals` now replaces the old tuning sliders with an effect authoring inspector for `Smoke`, `Ash`, `Steam`, `Fire`, `Sparks`, and `Char`, plus native source selection/search, temporary selected-entity preview, and JSON copy/log export.
+  * Visual preview can apply one effect or the full preset to the selected Timberborn entity without changing fire simulation, damage, recovery, or entity profiles; `Reset Fire Sim` also clears active visual previews.
+  * The current promoted authoring defaults are based on the latest in-game tuning pass: `FoodFactorySmoke` smoke, `BadwaterRigSmoke` ash, `CoffeeBrewerySmoke` steam, `CampfireFire` fire, and `Sparks_Trail` sparks. The tuning tool remains available for follow-up tweaks before these are mapped into simulation-driven fire visuals.
+  * JSON/log payloads include selected target context (`id`, raw object name, best-effort readable kind, and supported flag) so chosen settings can later replace the fire config cleanly.
+  * Char tuning includes cut amount, noise scale/contrast, edge width/depth, active glow, ash-edge brightness, black interior strength, seed, tint strength, darkening, and tint color. The current preview uses safe material-property overrides; true destructive clipping remains gated by shader inspection.
   * The debug panel now uses installable `TimberUi` plus `ModdableToolGroups` dependencies for native-style controls and a bottom-bar submenu (`Prometheus` -> `Actions`, `Visuals`, `Selection`, `Log`) instead of in-panel tabs.
   * Latest TimberUi pass removes the old hidden entity-panel UI, keeps only the selection forwarding hook, moves log counts into the Log filters, and removes custom visible `style.*` overrides so TimberUi controls/layout own the blank-slate presentation.
   * Follow-up screenshot pass gives the bottom-left panel a native fixed width/offset, reinitializes dynamically switched submenu views through TimberUi, and uses `AddHorizontalContainer()` rows for command/filter/selection controls so buttons render with their native styles.
   * Latest selection-panel cleanup switches `Copy` and `Ignite` to TimberUi `GameButton` controls after screenshot QA showed entity-fragment buttons rendering as plain text in the detached bottom-bar panel.
   * Detached custom-panel pass now matches the source examples (`QuestPanel`/`TodoListPanel`) by using a `NineSliceVisualElement` root with TimberUi `square-large--green`, padding, width, and direct child controls.
   * Latest button cleanup uses TimberUi `AddGameButtonPadded` for debug-panel command/filter/view buttons so button text gets the same horizontal inset used by source examples.
-  * `bash scripts/test.sh` passes 22 decision-rule tests, including visual-state intensity coverage; `bash scripts/build.sh --launch` passes with the installed Steam Workshop `TimberUi` and `ModdableToolGroups` assemblies, and fresh startup logs show all three mods loading plus native visual particles resolving without Prometheus errors.
+  * Debug panel hitbox cleanup constrains the detached panel root and log scroll view so open-panel clicks outside the visible panel can still reach Timberborn selection.
+  * Prometheus debug submenu tools now act as momentary panel-open commands and immediately return Timberborn to the default selection tool.
+  * `bash scripts/test.sh` passes with 23 decision-rule/default tests.
   * The only core post-fire resource is Fertile Ash; bucket/foam/gear loops and fire-brigade mechanics are deferred unless they prove necessary.
   * Old bucket-kit, firefighting-foam, fire-control-gear, fireworks-crate, and festival-risk scaffolding has been pruned from active content.
 * Next steps:

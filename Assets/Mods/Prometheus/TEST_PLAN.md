@@ -34,7 +34,7 @@ Validate:
 - [ ] Unity-specific components stay thin; dependency-light rule/runtime classes carry testable decisions where feasible.
 - [ ] Telemetry event-name constants remain unique and iterable for docs, filters, and future log tooling.
 - [ ] Ember-field emission, dampening, barrier, ignition-threshold, and Fertile Ash source rule tests pass before Phase 2 tuning changes land.
-- [ ] Visual intensity rules for embers, smoke, fire, steam, and char pass before tuning the particle/material adapter.
+- [ ] Visual intensity rules for local smoke, fire, steam, and char pass before tuning the particle/material adapter; sparks are reserved for ember fields.
 - [ ] Debug panel UI changes are manually QA'd; automated UI tests are intentionally out of scope for now.
 
 Unity EditMode tests are deferred until the standalone repo has a clean Timberborn/Unity dependency story. The first automated lane is plain C# regression coverage because it catches decision drift without loading the full game assembly graph.
@@ -49,7 +49,7 @@ Unity EditMode tests are deferred until the standalone repo has a clean Timberbo
 - [ ] Moddable Tool Groups bottom-bar group `Prometheus` appears with submenu entries `Actions`, `Visuals`, `Selection`, and `Log`.
 - [ ] Each submenu entry opens the same TimberUi panel instance above the Timberborn bottom bar and switches to the matching view.
 - [ ] No old in-panel tab row appears.
-- [ ] Panel sections are visually distinct (`Commands`, `Visual Tuning`, `Selection`, `Filters`, `Log`) and remain readable at the default game UI scale.
+- [ ] Panel sections are visually distinct (`Commands`, `Effect Inspector`, `Selection`, `Filters`, `Log`) and remain readable at the default game UI scale.
 - [ ] Buttons, close control, toggles, search fields, scrollbars, and sliders use TimberUi/base-game styling.
 - [ ] Visible debug-panel controls are created through TimberUi parent extension methods, matching the upstream `TimberUiDemo` pattern.
 - [ ] Button and submenu labels remain readable and match native Timberborn panels.
@@ -64,6 +64,8 @@ Unity EditMode tests are deferred until the standalone repo has a clean Timberbo
 - [ ] Log entry counts appear in the Log filters area rather than in a shared Status section.
 - [ ] Primary QA commands are grouped together and visible when the panel is open: `Reset Fire Sim`, `Stop Fires`, `Clear Beavers`, and `Clear Log`.
 - [ ] Selecting a Prometheus-profiled entity (e.g., Bakery or Explosives Factory) updates the panel `Selection` section.
+- [ ] Selecting a Prometheus-profiled entity still works while the detached debug panel is open, as long as the click is outside the visible panel bounds.
+- [ ] After opening `Prometheus` -> `Selection`/`Visuals`/`Log`, the active tool returns to normal selection and building clicks still select entities.
 - [ ] The selected-building details panel does not show a separate Prometheus debug fragment; the hidden selection hook only forwards state.
 - [ ] `Copy` in the panel selection section copies the full selected-entity snapshot text.
 - [ ] `Ignite` in the panel selection section queues ignition for the selected fire-profiled entity.
@@ -118,14 +120,22 @@ Pass criteria:
 - [ ] Configured high-intensity operating buildings (e.g., Smelter) can produce ember fields.
 - [ ] Lower-risk heat buildings (e.g., Bakery) do not produce ember fields unless explicitly configured.
 - [ ] Fireworks and unstable explosive events can create short-lived ember fields without adding a fireworks-control minigame.
-- [ ] Smoke, active fire, steam, embers, and charred presentation match runtime states.
+- [ ] Local smoke, active fire, steam, and charred presentation match runtime states, with no sparks from local object fire progression.
 - [ ] `Fire.log` records `native_visual_effect_resolved` for Timberborn-sourced particle channels when visible effects are initialized; current expected sources are `Sparks_Trail`, `SmelterSmoke`, `CampfireFire`, and `SteamEngineSmoke`.
 - [ ] Any `native_visual_effect_unavailable` fallback channel is captured with the selected entity, save, and visible effect state.
 - [ ] Reset Fire Sim clears active particles and char tint on loaded fire-profiled entities.
-- [ ] `Visual Tuning` sliders visibly change ember/smoke/fire/steam/char intensity without a rebuild.
-- [ ] `Visual Tuning` height, Z offset, size, and ember-spread sliders visibly affect native particle placement/footprint without a rebuild.
+- [ ] `Prometheus` -> `Visuals` opens the replacement effect inspector for `Smoke`, `Ash`, `Steam`, `Fire`, `Sparks`, and `Char`.
+- [ ] With the Visuals panel open, Timberborn selection still works and the target summary updates for a Bakery, platform, tree, and berry bush.
+- [ ] For particle effects, enabled, native source, intensity, emission, position X/Y/Z, size, lifetime, speed, alpha, RGB color, spread, and size-over-lifetime presets visibly affect temporary previews without a rebuild.
+- [ ] Advanced particle controls expose velocity, gravity, noise, rotation, shape mode, and sorting/order.
+- [ ] Recommended native sources appear first, expandable/searchable all-native sources appear second, and changing a source reclones the preview while preserving tuning values.
+- [ ] `Reset` in the Visuals inspector restores the promoted defaults from the current tuning pass: `FoodFactorySmoke`, `BadwaterRigSmoke`, `CoffeeBrewerySmoke`, `CampfireFire`, and `Sparks_Trail` with their saved position/lifetime/spread/gravity/noise values.
+- [ ] `Apply Effect`, `Apply Preset`, and `Clear Preview` work on selected supported entities without changing fire simulation, damage state, recovery state, or entity profiles.
+- [ ] Unsupported selected entities report clear feedback and log `supported=false` or an unsupported result without errors.
+- [ ] `Copy JSON` and `Log JSON` include `version`, `selectedEffect`, `advancedEnabled`, `target`, `effects`, and `char`; `target.kind` is human-readable when discoverable.
+- [ ] Char controls include cut amount, noise scale/contrast, edge width/depth, active glow, ash-edge brightness, black interior strength, seed/offset, tint strength, darkening, and tint color.
+- [ ] Char preview uses only safe material-property overrides until shader inspection proves clipping/edge bands are supported or a custom shader path is chosen.
 - [ ] Ember spread prevents sparks from reading as a single fixed point at normal zoom.
-- [ ] Legacy text markers stay off by default and only appear when `Text markers` is enabled.
 - [ ] Valid charred vegetation/buildings expose Fertile Ash source state.
 
 ### 3a) Worker/beaver exposure pass

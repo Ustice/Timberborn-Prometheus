@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using UiBuilder;
@@ -9,6 +10,7 @@ using Timberborn.BaseComponentSystem;
 using Timberborn.CoreUI;
 using Timberborn.Demolishing;
 using Timberborn.EntityPanelSystem;
+using Timberborn.Localization;
 using Timberborn.SelectionSystem;
 using Timberborn.SingletonSystem;
 using Timberborn.UILayoutSystem;
@@ -28,6 +30,12 @@ namespace Mods.Prometheus.Scripts {
     Visuals,
     Selection,
     Log,
+  }
+
+  internal enum FireVisualLivePreviewMode {
+    None,
+    Effect,
+    Preset,
   }
 
   internal class PrometheusFireDebugFragment : IEntityPanelFragment {
@@ -425,8 +433,9 @@ namespace Mods.Prometheus.Scripts {
     private readonly FireDamageStateRuntimeState _fireDamageStateRuntimeState;
     private readonly FireWaterContextRuntimeState _fireWaterContextRuntimeState;
     private readonly FireRecoveryRuntimeState _fireRecoveryRuntimeState;
-    private readonly FireVisualEffectRuntimeState _fireVisualEffectRuntimeState;
+    private readonly FireVisualEffectPreviewRuntimeState _fireVisualEffectPreviewRuntimeState;
     private readonly EntitySelectionService _entitySelectionService;
+    private readonly ILoc _loc;
     private const float DebugStopAllFiresIgnitionSuppressionSeconds = 60f;
 
     public event Action<bool> OpenStateChanged;
@@ -457,6 +466,17 @@ namespace Mods.Prometheus.Scripts {
     private Label _visualTuningFeedbackLabel;
     private Button _selectionCopyButton;
     private Button _selectionIgniteButton;
+    private readonly FireVisualPreset _visualPreset = new();
+    private FireVisualEffectKind _selectedVisualEffect = FireVisualEffectKind.Smoke;
+    private bool _advancedVisualControls;
+    private bool _showAllNativeSources;
+    private string _nativeSourceSearchText = string.Empty;
+    private FireVisualPreviewTarget _selectedPreviewTarget = FireVisualPreviewTarget.None;
+    private GameObject _selectedPreviewGameObject;
+    private FireVisualLivePreviewMode _livePreviewMode = FireVisualLivePreviewMode.None;
+    private FireVisualEffectKind _livePreviewEffectKind = FireVisualEffectKind.Smoke;
+    private int _livePreviewTargetId;
+    private SelectableObject _selectionBeforePanelToolSwitch;
     private int _selectedEntityId;
     private bool _selectedEntityHasFireProfile;
     private bool _selectedEntityHasSimulationController;
@@ -483,8 +503,9 @@ namespace Mods.Prometheus.Scripts {
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
       FireWaterContextRuntimeState fireWaterContextRuntimeState,
       FireRecoveryRuntimeState fireRecoveryRuntimeState,
-      FireVisualEffectRuntimeState fireVisualEffectRuntimeState,
-      EntitySelectionService entitySelectionService) {
+      FireVisualEffectPreviewRuntimeState fireVisualEffectPreviewRuntimeState,
+      EntitySelectionService entitySelectionService,
+      ILoc loc) {
       _uiLayout = uiLayout;
       _visualElementInitializer = visualElementInitializer;
       _fireSuppressionRuntimeState = fireSuppressionRuntimeState;
@@ -495,8 +516,9 @@ namespace Mods.Prometheus.Scripts {
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
       _fireWaterContextRuntimeState = fireWaterContextRuntimeState;
       _fireRecoveryRuntimeState = fireRecoveryRuntimeState;
-      _fireVisualEffectRuntimeState = fireVisualEffectRuntimeState;
+      _fireVisualEffectPreviewRuntimeState = fireVisualEffectPreviewRuntimeState;
       _entitySelectionService = entitySelectionService;
+      _loc = loc;
     }
 
     public void Load() {
@@ -517,8 +539,19 @@ namespace Mods.Prometheus.Scripts {
     }
 
     public void Open(PrometheusDebugPanelTab view) {
+      _selectionBeforePanelToolSwitch = _entitySelectionService.SelectedObject;
       SetActiveTab(view);
       SetOpen(true);
+    }
+
+    public void RestoreSelectionIfToolSwitchClearedIt() {
+      if (_selectionBeforePanelToolSwitch == null || _entitySelectionService.IsAnythingSelected) {
+        _selectionBeforePanelToolSwitch = null;
+        return;
+      }
+
+      _entitySelectionService.SelectSelectable(_selectionBeforePanelToolSwitch);
+      _selectionBeforePanelToolSwitch = null;
     }
 
     public void SetOpen(bool isOpen) {
@@ -553,8 +586,16 @@ namespace Mods.Prometheus.Scripts {
         .SetWidth(520)
         .SetMargin(right: 8, bottom: 82, left: 8)
         .SetDisplay(false);
+      root.pickingMode = PickingMode.Ignore;
+      root.style.flexGrow = 0;
+      root.style.flexShrink = 0;
+      root.style.alignSelf = Align.FlexStart;
+      root.style.maxHeight = 520;
 
       _contentContainer = root.AddChild();
+      _contentContainer.pickingMode = PickingMode.Position;
+      _contentContainer.style.flexGrow = 0;
+      _contentContainer.style.flexShrink = 0;
 
       var closeButton = root.AddCloseButton("PrometheusDebugCloseButton");
       closeButton.clicked += () => SetOpen(false);
@@ -596,6 +637,10 @@ namespace Mods.Prometheus.Scripts {
       var scrollView = parent.AddGameScrollView();
       scrollView.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
       scrollView.verticalScrollerVisibility = ScrollerVisibility.Auto;
+      scrollView.style.minHeight = minHeight;
+      scrollView.style.maxHeight = maxHeight;
+      scrollView.style.flexGrow = 0;
+      scrollView.style.flexShrink = 1;
       return scrollView;
     }
 
@@ -724,57 +769,355 @@ namespace Mods.Prometheus.Scripts {
 
     private VisualElement BuildVisualTuningPanel() {
       var controls = new VisualElement();
-      var visualSection = CreateSection(controls, "Visual Tuning");
-      var tuning = _fireVisualEffectRuntimeState.CurrentTuning;
+      var visualScrollView = AddDefaultScrollViewTo(controls, 260, 430);
+      var visualSection = CreateSection(visualScrollView.AddChild(), "Effect Inspector");
 
-      AddVisualSlider(visualSection, "Embers", tuning.EmberScale, _fireVisualEffectRuntimeState.SetEmberScale);
-      AddVisualSlider(visualSection, "Smoke", tuning.SmokeScale, _fireVisualEffectRuntimeState.SetSmokeScale);
-      AddVisualSlider(visualSection, "Fire", tuning.FireScale, _fireVisualEffectRuntimeState.SetFireScale);
-      AddVisualSlider(visualSection, "Steam", tuning.SteamScale, _fireVisualEffectRuntimeState.SetSteamScale);
-      AddVisualSlider(visualSection, "Char", tuning.CharScale, _fireVisualEffectRuntimeState.SetCharScale);
-      AddVisualSlider(visualSection, "Height", tuning.HeightOffset, _fireVisualEffectRuntimeState.SetHeightOffset, -2f, 4f, "");
-      AddVisualSlider(visualSection, "Z offset", tuning.DepthOffset, _fireVisualEffectRuntimeState.SetDepthOffset, -3f, 3f, "");
-      AddVisualSlider(visualSection, "Size", tuning.EffectSize, _fireVisualEffectRuntimeState.SetEffectSize, 0.25f, 4f, "x");
-      AddVisualSlider(visualSection, "Ember spread", tuning.EmberSpread, _fireVisualEffectRuntimeState.SetEmberSpread, 0f, 4f, "");
-      AddVisualSlider(visualSection, "Text marker", _fireVisualEffectRuntimeState.TextMarkerScale, _fireVisualEffectRuntimeState.SetTextMarkerScale);
+      var switcherRow = AddWrappingRowTo(visualSection);
+      foreach (var kind in Enum.GetValues(typeof(FireVisualEffectKind)).Cast<FireVisualEffectKind>()) {
+        AddEffectSwitcherButtonTo(switcherRow, kind).SetMarginRight(4);
+      }
 
-      var controlRow = visualSection.AddHorizontalContainer();
+      AddPreviewTargetSummary(visualSection);
+      AddPreviewActions(visualSection);
 
-      var textMarkerToggle = AddGameToggleTo(controlRow, "Text markers", _fireVisualEffectRuntimeState.TextMarkersEnabled).SetMarginRight(8);
-      textMarkerToggle.RegisterValueChangedCallback(evt => {
-        _fireVisualEffectRuntimeState.SetTextMarkersEnabled(evt.newValue);
-        SetVisualTuningFeedback(evt.newValue ? "Text markers on" : "Text markers off");
+      var globalRow = AddWrappingRowTo(visualSection);
+      var advancedToggle = AddGameToggleTo(globalRow, "Advanced", _advancedVisualControls).SetMarginRight(8);
+      advancedToggle.tooltip = "Show velocity, gravity, noise, rotation, shape mode, and sorting controls.";
+      advancedToggle.RegisterValueChangedCallback(evt => {
+        _advancedVisualControls = evt.newValue;
+        ApplyActiveTab();
       });
 
-      var copyButton = AddGameButtonTo(controlRow, "Copy Visuals", CopyVisualTuningSettings).SetMarginRight(8);
-      copyButton.tooltip = "Copy current visual tuning values to the clipboard.";
-
-      var resetButton = AddGameButtonTo(controlRow, "Reset Visuals", () => {
-        _fireVisualEffectRuntimeState.ResetDefaults();
-        SetVisualTuningFeedback("Visuals reset. Reopen panel to refresh sliders.");
+      var allSourcesToggle = AddGameToggleTo(globalRow, "All sources", _showAllNativeSources).SetMarginRight(8);
+      allSourcesToggle.tooltip = "Show searchable native ParticleSystem prefabs discovered in loaded resources.";
+      allSourcesToggle.RegisterValueChangedCallback(evt => {
+        _showAllNativeSources = evt.newValue;
+        ApplyActiveTab();
       });
-      resetButton.tooltip = "Reset visual tuning scales to default and turn text markers off.";
 
-      _visualTuningFeedbackLabel = controlRow.AddGameLabel();
+      _visualTuningFeedbackLabel = globalRow.AddGameLabel();
+      SetVisualTuningFeedback(CreateLivePreviewStatusText());
+
+      if (_selectedVisualEffect == FireVisualEffectKind.Char) {
+        AddCharEffectControls(visualSection);
+      } else {
+        AddParticleEffectControls(visualSection, _visualPreset.GetParticle(_selectedVisualEffect));
+      }
+
       return controls;
     }
 
-    private void CopyVisualTuningSettings() {
-      var tuning = _fireVisualEffectRuntimeState.CurrentTuning;
-      var settings = "Prometheus visual tuning: "
-                     + $"embers={tuning.EmberScale:0.00}, "
-                     + $"smoke={tuning.SmokeScale:0.00}, "
-                     + $"fire={tuning.FireScale:0.00}, "
-                     + $"steam={tuning.SteamScale:0.00}, "
-                     + $"char={tuning.CharScale:0.00}, "
-                     + $"height={tuning.HeightOffset:0.00}, "
-                     + $"z={tuning.DepthOffset:0.00}, "
-                     + $"size={tuning.EffectSize:0.00}, "
-                     + $"emberSpread={tuning.EmberSpread:0.00}, "
-                     + $"textMarkers={_fireVisualEffectRuntimeState.TextMarkersEnabled}, "
-                     + $"textMarkerScale={_fireVisualEffectRuntimeState.TextMarkerScale:0.00}";
-      GUIUtility.systemCopyBuffer = settings;
-      SetVisualTuningFeedback("Copied visual tuning.");
+    private static VisualElement AddWrappingRowTo(VisualElement parent) {
+      var row = parent.AddChild();
+      row.SetAsRow().SetWrap();
+      return row;
+    }
+
+    private Button AddEffectSwitcherButtonTo(VisualElement parent, FireVisualEffectKind kind) {
+      var button = AddGameButtonTo(parent, _selectedVisualEffect == kind ? $"✓ {kind}" : kind.ToString(), () => {
+        _selectedVisualEffect = kind;
+        if (_livePreviewMode == FireVisualLivePreviewMode.Effect && _livePreviewTargetId == _selectedPreviewTarget.Id) {
+          _livePreviewEffectKind = kind;
+          RefreshLivePreviewIfArmed();
+        }
+
+        ApplyActiveTab();
+      });
+      button.tooltip = $"Tune {kind}.";
+      return button;
+    }
+
+    private void AddPreviewTargetSummary(VisualElement parent) {
+      var targetRow = AddWrappingRowTo(parent);
+      targetRow.AddGameLabel("Target").SetMarginRight(8);
+      var target = _selectedPreviewTarget;
+      if (target.Id == 0) {
+        targetRow.AddGameLabel("No selected entity");
+        return;
+      }
+
+      targetRow.AddGameLabel(target.Kind).SetMarginRight(8);
+      targetRow.AddGameLabel($"id={target.Id}").SetMarginRight(8);
+      targetRow.AddGameLabel($"supported={target.Supported}");
+      var rawNameRow = AddWrappingRowTo(parent);
+      rawNameRow.AddGameLabel($"raw={target.RawName}");
+    }
+
+    private void AddPreviewActions(VisualElement parent) {
+      var actionsRow = AddWrappingRowTo(parent);
+
+      var applyEffectButton = AddGameButtonTo(actionsRow, "Apply Effect", ApplySelectedVisualEffectPreview).SetMarginRight(8);
+      applyEffectButton.tooltip = "Apply only the currently selected effect to the selected entity as a temporary preview.";
+
+      var applyPresetButton = AddGameButtonTo(actionsRow, "Apply Preset", ApplyVisualPresetPreview).SetMarginRight(8);
+      applyPresetButton.tooltip = "Apply every particle effect plus Char to the selected entity as a temporary preview.";
+
+      var clearPreviewButton = AddGameButtonTo(actionsRow, "Clear Preview", ClearSelectedVisualPreview).SetMarginRight(8);
+      clearPreviewButton.tooltip = "Remove temporary preview particles and material overrides from the selected entity.";
+
+      var jsonRow = AddWrappingRowTo(parent);
+
+      var copyJsonButton = AddGameButtonTo(jsonRow, "Copy JSON", CopyVisualPresetJson).SetMarginRight(8);
+      copyJsonButton.tooltip = "Copy the full effect preset and current target context.";
+
+      var logJsonButton = AddGameButtonTo(jsonRow, "Log JSON", LogVisualPresetJson).SetMarginRight(8);
+      logJsonButton.tooltip = "Write the full effect preset and current target context to Fire.log.";
+
+      var resetButton = AddGameButtonTo(jsonRow, "Reset", () => {
+        _visualPreset.ResetDefaults();
+        SetVisualTuningFeedback("Preset reset.");
+        RefreshLivePreviewIfArmed();
+        ApplyActiveTab();
+      });
+      resetButton.tooltip = "Reset all effect authoring controls to defaults.";
+    }
+
+    private void AddParticleEffectControls(VisualElement parent, FireParticleEffectTuning tuning) {
+      var sourceSection = CreateSection(parent, $"{_selectedVisualEffect} Source");
+      sourceSection.AddGameLabel($"Current: {tuning.SourceName}");
+
+      var recommendedRow = AddWrappingRowTo(sourceSection);
+      foreach (var sourceName in FireNativeParticleSourceCatalog.GetRecommendedSources(tuning.Kind)) {
+        var isAvailable = FireNativeParticleSourceCatalog.TryGetSource(sourceName) != null;
+        var button = AddGameButtonTo(recommendedRow, sourceName, () => {
+          tuning.SourceName = sourceName;
+          SetVisualTuningFeedback($"Source {sourceName}");
+          RefreshLivePreviewIfArmed();
+          ApplyActiveTab();
+        }).SetMarginRight(4);
+        button.SetEnabled(isAvailable);
+      }
+
+      if (_showAllNativeSources) {
+        AddNativeSourceSearch(sourceSection, tuning);
+      }
+
+      var controlsSection = CreateSection(parent, $"{_selectedVisualEffect} Controls");
+      var enabledRow = AddWrappingRowTo(controlsSection);
+      var enabledToggle = AddGameToggleTo(enabledRow, "Enabled", tuning.Enabled).SetMarginRight(8);
+      enabledToggle.RegisterValueChangedCallback(evt => {
+        tuning.Enabled = evt.newValue;
+        SetVisualTuningFeedback(evt.newValue ? $"{tuning.Kind} enabled" : $"{tuning.Kind} disabled");
+        RefreshLivePreviewIfArmed();
+      });
+
+      AddSizeOverLifetimePresetRow(controlsSection, tuning);
+
+      AddVisualSlider(controlsSection, "Intensity", tuning.Intensity, value => tuning.Intensity = value, 0f, 3f, "");
+      AddVisualSlider(controlsSection, "Emission", tuning.Emission, value => tuning.Emission = value, 0f, 5f, "");
+      AddVector3Sliders(controlsSection, "Position", () => tuning.Position, value => tuning.Position = value, -5f, 5f);
+      AddVisualSlider(controlsSection, "Size", tuning.Size, value => tuning.Size = value, 0.1f, 5f, "x");
+      AddVisualSlider(controlsSection, "Lifetime", tuning.Lifetime, value => tuning.Lifetime = value, 0.1f, 5f, "x");
+      AddVisualSlider(controlsSection, "Speed", tuning.Speed, value => tuning.Speed = value, 0f, 5f, "x");
+      AddVisualSlider(controlsSection, "Alpha", tuning.Alpha, value => tuning.Alpha = value, 0f, 1f, "");
+      AddColorSliders(controlsSection, "Color", () => tuning.Color, value => tuning.Color = value);
+      AddVisualSlider(controlsSection, "Spread", tuning.Spread, value => tuning.Spread = value, 0f, 5f, "");
+
+      if (!_advancedVisualControls) {
+        return;
+      }
+
+      var advancedSection = CreateSection(parent, "Advanced");
+      AddVector3Sliders(advancedSection, "Velocity", () => tuning.Velocity, value => tuning.Velocity = value, -5f, 5f);
+      AddVisualSlider(advancedSection, "Gravity", tuning.Gravity, value => tuning.Gravity = value, -2f, 2f, "");
+      AddVisualSlider(advancedSection, "Noise", tuning.NoiseStrength, value => tuning.NoiseStrength = value, 0f, 3f, "");
+      AddVisualSlider(advancedSection, "Rotation", tuning.RotationSpeed, value => tuning.RotationSpeed = value, -10f, 10f, "");
+      AddVisualSlider(advancedSection, "Sorting", tuning.SortingOrder, value => tuning.SortingOrder = Mathf.RoundToInt(value), -20f, 80f, "");
+      AddShapeModeRow(advancedSection, tuning);
+    }
+
+    private void AddNativeSourceSearch(VisualElement parent, FireParticleEffectTuning tuning) {
+      var searchRow = AddWrappingRowTo(parent);
+      var sourceSearchField = AddDefaultTextFieldTo(searchRow, "Search");
+      sourceSearchField.value = _nativeSourceSearchText;
+      sourceSearchField.RegisterValueChangedCallback(evt => {
+        _nativeSourceSearchText = evt.newValue ?? string.Empty;
+        ApplyActiveTab();
+      });
+
+      var needle = _nativeSourceSearchText.Trim();
+      var allSources = FireNativeParticleSourceCatalog.GetAllSourceNames()
+        .Where(source => string.IsNullOrWhiteSpace(needle) || source.Contains(needle, StringComparison.OrdinalIgnoreCase))
+        .Take(18)
+        .ToArray();
+      var allSourcesRow = AddWrappingRowTo(parent);
+      foreach (var sourceName in allSources) {
+        AddGameButtonTo(allSourcesRow, sourceName, () => {
+          tuning.SourceName = sourceName;
+          SetVisualTuningFeedback($"Source {sourceName}");
+          RefreshLivePreviewIfArmed();
+          ApplyActiveTab();
+        }).SetMarginRight(4);
+      }
+    }
+
+    private void AddSizeOverLifetimePresetRow(VisualElement parent, FireParticleEffectTuning tuning) {
+      var row = AddWrappingRowTo(parent);
+      row.AddGameLabel("Size over life").SetMarginRight(8);
+      foreach (var preset in Enum.GetValues(typeof(FireVisualSizeOverLifetimePreset)).Cast<FireVisualSizeOverLifetimePreset>()) {
+        AddGameButtonTo(row, tuning.SizeOverLifetime == preset ? $"✓ {preset}" : preset.ToString(), () => {
+          tuning.SizeOverLifetime = preset;
+          SetVisualTuningFeedback($"Size over life {preset}");
+          RefreshLivePreviewIfArmed();
+          ApplyActiveTab();
+        }).SetMarginRight(4);
+      }
+    }
+
+    private void AddShapeModeRow(VisualElement parent, FireParticleEffectTuning tuning) {
+      var row = AddWrappingRowTo(parent);
+      row.AddGameLabel("Shape").SetMarginRight(8);
+      foreach (var shapeMode in Enum.GetValues(typeof(FireVisualShapeMode)).Cast<FireVisualShapeMode>()) {
+        AddGameButtonTo(row, tuning.ShapeMode == shapeMode ? $"✓ {shapeMode}" : shapeMode.ToString(), () => {
+          tuning.ShapeMode = shapeMode;
+          SetVisualTuningFeedback($"Shape {shapeMode}");
+          RefreshLivePreviewIfArmed();
+          ApplyActiveTab();
+        }).SetMarginRight(4);
+      }
+    }
+
+    private void AddCharEffectControls(VisualElement parent) {
+      var tuning = _visualPreset.Char;
+      var controlsSection = CreateSection(parent, "Char Controls");
+      var enabledRow = AddWrappingRowTo(controlsSection);
+      var enabledToggle = AddGameToggleTo(enabledRow, "Enabled", tuning.Enabled).SetMarginRight(8);
+      enabledToggle.RegisterValueChangedCallback(evt => {
+        tuning.Enabled = evt.newValue;
+        SetVisualTuningFeedback(evt.newValue ? "Char enabled" : "Char disabled");
+        RefreshLivePreviewIfArmed();
+      });
+      controlsSection.AddGameLabel("Cutaway preview uses material properties only when supported; custom shader clipping is still gated by shader inspection.");
+
+      AddVisualSlider(controlsSection, "Cut amount", tuning.CutAmount, value => tuning.CutAmount = value, 0f, 1f, "");
+      AddVisualSlider(controlsSection, "Noise scale", tuning.NoiseScale, value => tuning.NoiseScale = value, 0f, 8f, "");
+      AddVisualSlider(controlsSection, "Noise contrast", tuning.NoiseContrast, value => tuning.NoiseContrast = value, 0.1f, 4f, "");
+      AddVisualSlider(controlsSection, "Edge width", tuning.EdgeWidth, value => tuning.EdgeWidth = value, 0f, 1f, "");
+      AddVisualSlider(controlsSection, "Edge depth", tuning.EdgeDepth, value => tuning.EdgeDepth = value, 0f, 1f, "");
+      AddVisualSlider(controlsSection, "Active glow", tuning.ActiveGlow, value => tuning.ActiveGlow = value, 0f, 2f, "");
+      AddVisualSlider(controlsSection, "Ash edge", tuning.AshEdgeBrightness, value => tuning.AshEdgeBrightness = value, 0f, 2f, "");
+      AddVisualSlider(controlsSection, "Black interior", tuning.BlackInteriorStrength, value => tuning.BlackInteriorStrength = value, 0f, 2f, "");
+      AddVisualSlider(controlsSection, "Seed", tuning.Seed, value => tuning.Seed = value, 0f, 20f, "");
+      AddVisualSlider(controlsSection, "Tint strength", tuning.TintStrength, value => tuning.TintStrength = value, 0f, 1f, "");
+      AddVisualSlider(controlsSection, "Darkening", tuning.Darkening, value => tuning.Darkening = value, 0f, 1f, "");
+      AddColorSliders(controlsSection, "Tint", () => tuning.TintColor, value => tuning.TintColor = value);
+    }
+
+    private void AddVector3Sliders(VisualElement parent, string labelText, Func<Vector3> getter, Action<Vector3> setter, float min, float max) {
+      var value = getter();
+      AddVisualSlider(parent, $"{labelText} X", value.x, newValue => {
+        var current = getter();
+        setter(new Vector3(newValue, current.y, current.z));
+      }, min, max, "");
+      AddVisualSlider(parent, $"{labelText} Y", value.y, newValue => {
+        var current = getter();
+        setter(new Vector3(current.x, newValue, current.z));
+      }, min, max, "");
+      AddVisualSlider(parent, $"{labelText} Z", value.z, newValue => {
+        var current = getter();
+        setter(new Vector3(current.x, current.y, newValue));
+      }, min, max, "");
+    }
+
+    private void AddColorSliders(VisualElement parent, string labelText, Func<Color> getter, Action<Color> setter) {
+      var value = getter();
+      AddVisualSlider(parent, $"{labelText} R", value.r, newValue => {
+        var current = getter();
+        setter(new Color(newValue, current.g, current.b, current.a));
+      }, 0f, 1f, "");
+      AddVisualSlider(parent, $"{labelText} G", value.g, newValue => {
+        var current = getter();
+        setter(new Color(current.r, newValue, current.b, current.a));
+      }, 0f, 1f, "");
+      AddVisualSlider(parent, $"{labelText} B", value.b, newValue => {
+        var current = getter();
+        setter(new Color(current.r, current.g, newValue, current.a));
+      }, 0f, 1f, "");
+    }
+
+    private void ApplySelectedVisualEffectPreview() {
+      var success = _fireVisualEffectPreviewRuntimeState.TryApplyEffect(_selectedPreviewGameObject, _visualPreset, _selectedVisualEffect, out var message);
+      if (success) {
+        _livePreviewMode = FireVisualLivePreviewMode.Effect;
+        _livePreviewEffectKind = _selectedVisualEffect;
+        _livePreviewTargetId = _selectedPreviewTarget.Id;
+      }
+
+      LogVisualPreviewEvent(FireTelemetryEvents.VisualPreviewApply, success, message, $"effect={_selectedVisualEffect}");
+      SetVisualTuningFeedback(message);
+    }
+
+    private void ApplyVisualPresetPreview() {
+      var success = _fireVisualEffectPreviewRuntimeState.TryApplyPreset(_selectedPreviewGameObject, _visualPreset, out var message);
+      if (success) {
+        _livePreviewMode = FireVisualLivePreviewMode.Preset;
+        _livePreviewTargetId = _selectedPreviewTarget.Id;
+      }
+
+      LogVisualPreviewEvent(FireTelemetryEvents.VisualPreviewApply, success, message, "effect=Preset");
+      SetVisualTuningFeedback(message);
+    }
+
+    private void ClearSelectedVisualPreview() {
+      var success = _fireVisualEffectPreviewRuntimeState.ClearPreview(_selectedPreviewGameObject, out var message);
+      if (success || _livePreviewTargetId == _selectedPreviewTarget.Id) {
+        _livePreviewMode = FireVisualLivePreviewMode.None;
+        _livePreviewTargetId = 0;
+      }
+
+      LogVisualPreviewEvent(FireTelemetryEvents.VisualPreviewClear, success, message, string.Empty);
+      SetVisualTuningFeedback(message);
+    }
+
+    private void RefreshLivePreviewIfArmed() {
+      if (_livePreviewMode == FireVisualLivePreviewMode.None
+          || _selectedPreviewTarget.Id == 0
+          || _selectedPreviewTarget.Id != _livePreviewTargetId) {
+        return;
+      }
+
+      var success = _livePreviewMode == FireVisualLivePreviewMode.Preset
+        ? _fireVisualEffectPreviewRuntimeState.TryApplyPreset(_selectedPreviewGameObject, _visualPreset, out var message)
+        : _fireVisualEffectPreviewRuntimeState.TryApplyEffect(_selectedPreviewGameObject, _visualPreset, _livePreviewEffectKind, out message);
+      if (!success) {
+        _livePreviewMode = FireVisualLivePreviewMode.None;
+        _livePreviewTargetId = 0;
+        SetVisualTuningFeedback(message);
+      }
+    }
+
+    private string CreateLivePreviewStatusText() {
+      if (_livePreviewMode == FireVisualLivePreviewMode.None || _livePreviewTargetId != _selectedPreviewTarget.Id) {
+        return string.Empty;
+      }
+
+      return _livePreviewMode == FireVisualLivePreviewMode.Preset
+        ? "Live preview: preset"
+        : $"Live preview: {_livePreviewEffectKind}";
+    }
+
+    private void CopyVisualPresetJson() {
+      GUIUtility.systemCopyBuffer = CreateVisualPresetJson();
+      SetVisualTuningFeedback("Copied JSON.");
+    }
+
+    private void LogVisualPresetJson() {
+      var json = CreateVisualPresetJson();
+      FireTelemetry.Log($"event={FireTelemetryEvents.VisualTuningJson} json={json}");
+      SetVisualTuningFeedback("Logged JSON.");
+      _lastObservedEntryCount = FireTelemetry.GetRecentInGameLogEntries().Length;
+      RefreshLogPanel(force: true);
+    }
+
+    private string CreateVisualPresetJson() =>
+      FireVisualPresetJson.Create(_visualPreset, _selectedVisualEffect, _advancedVisualControls, _selectedPreviewTarget);
+
+    private void LogVisualPreviewEvent(string eventName, bool success, string message, string extra) {
+      var target = _selectedPreviewTarget;
+      var extraToken = string.IsNullOrWhiteSpace(extra) ? string.Empty : $" {extra}";
+      FireTelemetry.Log($"event={eventName} result={(success ? "success" : "unsupported")} targetId={target.Id} kind=\"{target.Kind}\" rawName=\"{target.RawName}\" supported={target.Supported}{extraToken} message=\"{message}\"");
+      _lastObservedEntryCount = FireTelemetry.GetRecentInGameLogEntries().Length;
+      RefreshLogPanel(force: true);
     }
 
     private void AddVisualSlider(
@@ -790,6 +1133,7 @@ namespace Mods.Prometheus.Scripts {
         var rounded = Mathf.Round(newValue * 20f) / 20f;
         setter(rounded);
         SetVisualTuningFeedback($"{labelText} {valuePrefix}{rounded:0.00}");
+        RefreshLivePreviewIfArmed();
       });
     }
 
@@ -831,21 +1175,49 @@ namespace Mods.Prometheus.Scripts {
       string debugText,
       bool hasFireProfile,
       bool hasSimulationController) {
+      var previousPreviewTargetId = _selectedPreviewTarget.Id;
+      var previousPreviewRawName = _selectedPreviewTarget.RawName;
       _selectedEntityId = selectedEntityId;
       _selectedEntityTitle = string.IsNullOrWhiteSpace(title) ? "Selected entity" : title;
       _selectedEntityDebugText = string.IsNullOrWhiteSpace(debugText) ? "No selected entity details available." : debugText;
       _selectedEntityHasFireProfile = hasFireProfile;
       _selectedEntityHasSimulationController = hasSimulationController;
+      if (TryFindLoadedGameObject(selectedEntityId, out var gameObject)) {
+        _selectedPreviewGameObject = gameObject;
+        _selectedPreviewTarget = FireVisualPreviewTarget.FromGameObject(gameObject, _loc);
+      } else {
+        _selectedPreviewGameObject = null;
+        _selectedPreviewTarget = new FireVisualPreviewTarget(selectedEntityId, _selectedEntityTitle, _selectedEntityTitle, false);
+      }
+
       RefreshSelectionPanel();
+      var targetChanged = previousPreviewTargetId != _selectedPreviewTarget.Id
+                          || previousPreviewRawName != _selectedPreviewTarget.RawName;
+      if (targetChanged && _activeTab == PrometheusDebugPanelTab.Visuals) {
+        if (_livePreviewTargetId != _selectedPreviewTarget.Id) {
+          _livePreviewMode = FireVisualLivePreviewMode.None;
+          _livePreviewTargetId = 0;
+        }
+
+        ApplyActiveTab();
+      }
     }
 
     internal void ClearSelectedEntityDebug() {
+      var hadPreviewTarget = _selectedPreviewTarget.Id != 0;
       _selectedEntityId = 0;
       _selectedEntityHasFireProfile = false;
       _selectedEntityHasSimulationController = false;
       _selectedEntityTitle = "No selected fire entity";
       _selectedEntityDebugText = "Select a fire-profiled building to inspect Prometheus runtime details.";
+      _selectedPreviewGameObject = null;
+      _selectedPreviewTarget = FireVisualPreviewTarget.None;
       RefreshSelectionPanel();
+      if (hadPreviewTarget && _activeTab == PrometheusDebugPanelTab.Visuals) {
+        _livePreviewMode = FireVisualLivePreviewMode.None;
+        _livePreviewTargetId = 0;
+        ApplyActiveTab();
+      }
     }
 
     private void RefreshSelectionPanel() {
@@ -958,6 +1330,7 @@ namespace Mods.Prometheus.Scripts {
     }
 
     private void ResetAllFireSimulation() {
+      _fireVisualEffectPreviewRuntimeState.ClearAllPreviews();
       var resetEntityCount = 0;
       foreach (var gameObject in FindLoadedFireEntityGameObjects()) {
         ResetLoadedFireEntity(gameObject);

@@ -87,12 +87,20 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
 - Unity EditMode testing was explored and can launch after license activation, but loading the full Timberborn assembly graph in this standalone repo pulled in fragile plugin/package dependencies. Future test work should prefer dependency-light rule/runtime classes first, with Unity tests reserved for lifecycle behavior that truly needs Unity.
 - Debug panel UI is intentionally excluded from automated tests for now and remains manual QA because the workflow is still evolving.
 - First Phase 2 worker/beaver exposure slice landed: assigned workers in burning workplaces receive indoor beaver need exposure through the same NeedManager path as proximity exposure, while proximity and indoor exposure magnitudes are computed by `FireBeaverExposureRules` and covered by plain C# tests.
-- First fire presentation slice landed: `FireVisualEffectRules` computes tunable ember/smoke/fire/steam/char intensities from fire, water, and damage snapshots, while `FireVisualEffectApplier` applies Unity particles plus char tint to loaded fire-profiled entities and clears them through `Reset Fire Sim`.
+- First fire presentation slice landed: `FireVisualEffectRules` computes tunable smoke/fire/steam/char intensities from fire, water, and damage snapshots, while `FireVisualEffectApplier` applies Unity particles plus char tint to loaded fire-profiled entities and clears them through `Reset Fire Sim`.
+- Local object fire progression intentionally does not emit sparks: it should read as smoke to fire, then back to smoke/ash/char. Sparks belong to the separate ember-field spread visualization.
 - Native-particle replacement pass landed: `FireVisualEffectApplier` now loads Timberborn Resource particle prefabs, clones the best native ember/smoke/fire/steam source by name/material scoring, controls each cloned effect group from Prometheus intensity, and logs `native_visual_effect_resolved` or `native_visual_effect_unavailable` once per channel.
 - Latest launch resolved native sources as `Sparks_Trail` for embers, `SmelterSmoke` for smoke, `CampfireFire` for fire, and `SteamEngineSmoke` for steam.
-- Visual tuning now exposes height, local Z offset, overall effect size, and ember spread. Ember spread rewrites the cloned ember particle shape to a sphere so sparks do not emit from a single point.
+- `Prometheus` -> `Visuals` now fully replaces the old tuning-slider panel with an effect authoring inspector for `Smoke`, `Ash`, `Steam`, `Fire`, `Sparks`, and `Char`.
+- Particle authoring includes enabled, native source, intensity, emission, local position X/Y/Z, size, lifetime, speed, alpha, RGB color, spread/shape, and size-over-lifetime presets (`Constant`, `Grow`, `Shrink`, `Swell`, `Pop`). Advanced mode exposes velocity, gravity, noise, rotation, shape mode, and sorting/order.
+- Native source selection shows recommended Timberborn particle prefabs first and can expand into a searchable all-native list; changing the source reclones the preview while keeping tuning values.
+- Selected-entity preview can apply the selected effect or full preset to any selected loaded entity when supported. `Clear Preview` and `Reset Fire Sim` remove temporary preview particles/material overrides without changing fire simulation, damage, recovery, profiles, or saved state.
+- Visuals panel target refresh is now gated to actual target identity changes; rebuilding it on every selected-entity runtime update caused visible flicker and made buttons hard to click.
+- Visual preview is now live after `Apply Effect` or `Apply Preset`: later control/source/preset changes reapply the armed preview automatically without extra log spam. `Clear Preview` disarms live preview.
+- Promoted current authoring defaults from the latest tuning pass: Smoke uses `FoodFactorySmoke` with longer lifetime and zero spread; Ash uses `BadwaterRigSmoke`; Steam uses `CoffeeBrewerySmoke` with +0.35 Y position and +0.7 Y velocity; Fire uses `CampfireFire` with offset `(0.25, 0, 0.15)`, 1.2 lifetime, zero spread, and -0.15 gravity; Sparks uses `Sparks_Trail` with reduced intensity/emission, 1.4 spread, -0.25 gravity, and 0.4 noise. These are tool defaults/reset values only until intentionally mapped into simulation-driven fire visuals.
+- JSON copy/log export writes `version`, `selectedEffect`, `advancedEnabled`, `target`, `effects`, and `char`; `target` includes selected id, raw name, best-effort kind, and supported flag.
+- Char authoring now includes cut amount, noise scale/contrast, edge width, edge depth, active glow, ash-edge brightness, black interior strength, seed, tint strength, darkening, and tint color. The current preview path deliberately uses safe material-property overrides; true shader clipping remains gated until Timberborn shader support is inspected.
 - Screenshot QA showed the legacy `DEAD` text markers rendered as huge magenta blocks; they now default off and can be re-enabled/tuned from the debug panel.
-- The global Prometheus debug panel now has a `Visual Tuning` section with live sliders for ember, smoke, fire, steam, char, and text-marker scale.
 - Previous panel pass converted the global debug panel from a tall stack into compact tabs; the current Moddable Tool Groups migration supersedes that navigation with bottom-bar submenu entries.
 - Native-style pass now lets TimberUi own visible panel controls. The `IEntityPanelFragment` remains only as a selection forwarding hook so Timberborn selection changes can update the global panel.
 - Latest blank-slate TimberUi pass removes the old hidden entity-panel UI, deletes the custom palette file, moves log counts into the Log filters, and removes visible debug-panel `style.*` overrides so TimberUi components/layout provide the baseline presentation.
@@ -100,8 +108,11 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
 - Latest selection-panel screenshot cleanup switches `Copy` and `Ignite` from entity-fragment buttons to TimberUi `GameButton` controls because entity-fragment buttons rendered as plain text in the detached bottom-bar panel context.
 - Detached custom-panel pass now follows the source `QuestPanel`/`TodoListPanel` examples: `NineSliceVisualElement` root, TimberUi `square-large--green` class, padding, width, and direct child controls. This replaces the entity-fragment root for the bottom-bar panel because it is not hosted inside Timberborn's entity-panel layout.
 - Latest button cleanup follows source examples that add padding through TimberUi helpers by routing debug-panel command/filter/view buttons through `AddGameButtonPadded` with modest horizontal/vertical inset.
-- Latest visual-effect pass increased the plain C# suite to 22 tests.
-- Latest TimberUi blank-slate pass passed `bash scripts/test.sh`, `bash scripts/build.sh`, and `bash scripts/build.sh --launch`; fresh startup logs show `Moddable Tool Groups`, `TimberUi`, and `Prometheus` loading without Prometheus errors.
+- Debug-panel hitbox cleanup constrains the detached panel root and log scroll view so the visible panel controls remain clickable without blocking Timberborn object selection across the rest of the screen.
+- Debug submenu tools now inject `ToolService`, open the requested panel tab, and immediately call `SwitchToDefaultTool()` so Timberborn building selection remains active after using the Prometheus bottom-bar submenu.
+- Do not raise the detached debug panel `UILayout.AddBottomLeft` priority aggressively or call `BringToFront()` as a selection-overlay workaround; testing on 2026-04-25 caused startup/save-load spinning. Restoring the normal priority allowed the usual Prometheus test save to load again.
+- Latest visual-effect/default pass increased the plain C# suite to 23 tests.
+- Latest replacement visual-inspector pass passed `bash scripts/test.sh && bash scripts/build.sh --launch`; fresh startup logs show `Prometheus (v0.2)` loading without Prometheus errors.
 - Telemetry registry pass increased the plain C# suite to 17 tests and passed `bash scripts/test.sh`; `bash scripts/build.sh` also passed.
 - Response-rule extraction increased the plain C# suite to 19 tests and passed both `bash scripts/test.sh` and `bash scripts/build.sh`.
 - Latest resume build initially hit a missing VS Tools Unity analyzer path after VS Code updated `visualstudiotoolsforunity.vstuc` from `1.2.1` to `1.2.2`; adding a local compatibility symlink restored `dotnet build`.
@@ -162,7 +173,7 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
    - configured high-risk operating buildings emit ember fields while low-risk warm buildings do not by default.
 2. Add/update plain C# tests for any new real Phase 2 system decision before relying on it in tuning.
 3. QA and tune first fire-state presentation adapter:
-   - embers for spread pressure,
+  - no local sparks during object fire progression; sparks belong to the ember-field spread layer,
    - smoke for smoldering/scorched states,
    - fire for active burning,
    - light steam for moisture dampening,
@@ -235,10 +246,10 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
 
 ## Resume checklist
 
-1. Run `bash scripts/build.sh --launch`.
-2. Select a fire-profiled building and open the debug panel.
-3. Confirm the reorganized `Actions`/`Visuals`/`Selection`/`Log` submenu views are readable and do not cover core Timberborn controls.
-4. Trigger one ignite event.
-5. Verify `Fire.log` contains `native_visual_effect_resolved` for the visible channels, or note any `native_visual_effect_unavailable` fallback channel.
-6. Verify: filtered/colored/searchable log rows + `View` button camera jump.
-7. Confirm dead-building suppression/restore behavior and capture logs.
+1. Run `bash scripts/test.sh && bash scripts/build.sh --launch`.
+2. Open `Prometheus` -> `Visuals`; confirm Timberborn object selection still works while the panel is open.
+3. Select a Bakery, platform, tree, and berry bush; confirm the Visuals target summary and JSON target kind are readable.
+4. For `Smoke`, `Ash`, `Steam`, `Fire`, and `Sparks`, try recommended sources plus one searched native source, then `Apply Effect`.
+5. Apply the full preset, then `Clear Preview`; confirm particles and material overrides are removed.
+6. Log JSON and confirm `Fire.log` contains `visual_tuning_json` with target context.
+7. Trigger `Reset Fire Sim` and confirm all active visual previews clear without changing selection behavior.

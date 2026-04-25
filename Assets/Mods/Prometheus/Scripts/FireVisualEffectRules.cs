@@ -109,7 +109,8 @@ namespace Mods.Prometheus.Scripts {
       var moistureDampening = Mathf.Clamp01(waterExposure + waterContext.QuenchingBonus + waterContext.SpreadReduction);
       var severity = Mathf.Clamp01(damageState.Severity);
 
-      var embers = Mathf.Clamp01(((simulation.SpreadPressure * 1.6f) + (simulation.NeighborSpreadPressure * 0.8f) + (simulation.Intensity * 0.55f)) * tuning.EmberScale);
+      // Local object fire progression is smoke/fire/smoke+ash. Sparks belong to the separate ember-field spread visual.
+      var embers = 0f;
       var smokeBase = damageState.State switch {
         FireDamageState.Scorched => Mathf.Max(0.25f, severity),
         FireDamageState.Burning => Mathf.Max(0.45f, simulation.Intensity),

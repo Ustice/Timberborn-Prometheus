@@ -42,6 +42,9 @@ namespace Mods.Prometheus.Scripts {
     public const string SpreadIgniteApplied = "spread_ignite_applied";
     public const string SpreadIgnitionRequestConsumed = "spread_ignition_request_consumed";
     public const string SpreadPropagation = "spread_propagation";
+    public const string VisualPreviewApply = "visual_preview_apply";
+    public const string VisualPreviewClear = "visual_preview_clear";
+    public const string VisualTuningJson = "visual_tuning_json";
     public const string WorkplaceIndoorExposure = "workplace_indoor_exposure";
     public const string WorkplaceSpeedApiResolved = "workplace_speed_api_resolved";
     public const string WorkplaceSpeedPenaltyState = "workplace_speed_penalty_state";
@@ -82,6 +85,9 @@ namespace Mods.Prometheus.Scripts {
       SpreadIgniteApplied,
       SpreadIgnitionRequestConsumed,
       SpreadPropagation,
+      VisualPreviewApply,
+      VisualPreviewClear,
+      VisualTuningJson,
       WorkplaceIndoorExposure,
       WorkplaceSpeedApiResolved,
       WorkplaceSpeedPenaltyState,
