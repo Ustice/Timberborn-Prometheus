@@ -15,37 +15,37 @@
 
 ## 2. Sparse 3D Grid Foundation
 
-- [ ] Add integer `x/y/z` fire grid coordinates.
-- [ ] Add chunk coordinates and default `8x8x8` chunk indexing.
-- [ ] Store dynamic fire cell state separately from environment samples.
-- [ ] Add sparse active-cell storage and chunk cleanup.
-- [ ] Add double-buffered simulation stepping.
-- [ ] Add 27-direction kernel shape including self-retention.
-- [ ] Add foundation tests for coordinate lookup, boundary writes, cleanup, and order independence.
+- [x] Add integer `x/y/z` fire grid coordinates.
+- [x] Add chunk coordinates and default `8x8x8` chunk indexing.
+- [x] Store dynamic fire cell state separately from environment samples.
+- [x] Add sparse active-cell storage and chunk cleanup.
+- [x] Add double-buffered simulation stepping.
+- [x] Add 27-direction kernel shape including self-retention.
+- [x] Add foundation tests for coordinate lookup, boundary writes, cleanup, and order independence.
 
 ## 3. Environment Sampling
 
-- [ ] Sample entity footprints into grid cells.
+- [x] Sample entity footprints into grid cells.
 - [ ] Sample terrain occupancy and terrain top surfaces.
 - [ ] Sample block/building occupancy.
 - [ ] Sample exposed face masks.
 - [ ] Sample water columns/depth as read-only inputs.
 - [ ] Sample soil moisture as read-only input.
-- [ ] Derive fuel, moisture dampening, barrier resistance, oxygen availability, and structure kind.
+- [x] Derive fuel, moisture dampening, barrier resistance, oxygen availability, and structure kind.
 
 ## 4. Combustion And Propagation
 
 - [ ] Model heat, ember pressure, smoke, ignition progress, fuel consumption, and burn state.
-- [ ] Use oxygen only for combustion efficiency and flame sustainment.
-- [ ] Let smoke reduce effective combustion oxygen locally.
+- [x] Use oxygen only for combustion efficiency and flame sustainment.
+- [x] Let smoke reduce effective combustion oxygen locally.
 - [ ] Bias heat and smoke upward.
 - [ ] Bias embers outward across exposed/reachable fuel.
-- [ ] Make moisture and barriers reduce transfer.
+- [x] Make moisture and barriers reduce transfer.
 - [ ] Keep kernel definitions swappable for 27, 18, 6, or exposed-surface modes.
 
 ## 5. Source Injection
 
-- [ ] Make debug ignite seed grid cells instead of entity burn state.
+- [x] Make debug ignite seed grid cells instead of entity burn state.
 - [ ] Make active burning cells emit into nearby cells.
 - [ ] Add configured heat-source building injection.
 - [ ] Add explosion/firework burst fields without direct nearest-target ignition.

@@ -329,6 +329,7 @@ namespace Mods.Prometheus.Scripts {
 
     private readonly UILayout _uiLayout;
     private readonly VisualElementInitializer _visualElementInitializer;
+    private readonly FireGridRuntimeState _fireGridRuntimeState;
     private readonly FireSimulationRuntimeState _fireSimulationRuntimeState;
     private readonly FireImpactRuntimeState _fireImpactRuntimeState;
     private readonly FireDamageStateRuntimeState _fireDamageStateRuntimeState;
@@ -395,6 +396,7 @@ namespace Mods.Prometheus.Scripts {
     public PrometheusDebugPanel(
       UILayout uiLayout,
       VisualElementInitializer visualElementInitializer,
+      FireGridRuntimeState fireGridRuntimeState,
       FireSimulationRuntimeState fireSimulationRuntimeState,
       FireImpactRuntimeState fireImpactRuntimeState,
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
@@ -404,6 +406,7 @@ namespace Mods.Prometheus.Scripts {
       ILoc loc) {
       _uiLayout = uiLayout;
       _visualElementInitializer = visualElementInitializer;
+      _fireGridRuntimeState = fireGridRuntimeState;
       _fireSimulationRuntimeState = fireSimulationRuntimeState;
       _fireImpactRuntimeState = fireImpactRuntimeState;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
@@ -1160,6 +1163,7 @@ namespace Mods.Prometheus.Scripts {
       }
 
       var simulationExtinguishedCount = _fireSimulationRuntimeState.ExtinguishAllBurning();
+      _fireGridRuntimeState.Clear();
 
       var effectiveCount = simulationExtinguishedCount;
       effectiveCount = effectiveCount > liveExtinguishedCount
@@ -1220,6 +1224,7 @@ namespace Mods.Prometheus.Scripts {
 
     private void ResetAllFireSimulation() {
       _fireVisualEffectPreviewRuntimeState.ClearAllPreviews();
+      _fireGridRuntimeState.Clear();
       var resetEntityCount = 0;
       foreach (var gameObject in FindLoadedFireEntityGameObjects()) {
         ResetLoadedFireEntity(gameObject);
@@ -1340,6 +1345,7 @@ namespace Mods.Prometheus.Scripts {
     }
 
     private void ClearAllRuntimeStores() {
+      _fireGridRuntimeState.Clear();
       _fireSimulationRuntimeState.ClearSnapshotsAndIgnitionRequests();
       _fireImpactRuntimeState.ClearSnapshots();
       _fireDamageStateRuntimeState.ClearSnapshots();

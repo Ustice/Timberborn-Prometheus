@@ -54,6 +54,36 @@ namespace Prometheus.Tests {
     [Fact]
     public void FireVisualPreset_DefaultsUsePromotedAuthoringValues_Test() => FireVisualPresetDefaultsUsePromotedAuthoringValues();
 
+    [Fact]
+    public void FireGridCoordinate_MapsCellsIntoEightByEightByEightChunks_Test() => FireGridCoordinateMapsCellsIntoEightByEightByEightChunks();
+
+    [Fact]
+    public void FireGridKernel_Full27IncludesSelfAndAllNeighbors_Test() => FireGridKernelFull27IncludesSelfAndAllNeighbors();
+
+    [Fact]
+    public void FireGridRuntimeState_WritesAcrossChunkBoundaries_Test() => FireGridRuntimeStateWritesAcrossChunkBoundaries();
+
+    [Fact]
+    public void FireGridRuntimeState_PrunesColdChunks_Test() => FireGridRuntimeStatePrunesColdChunks();
+
+    [Fact]
+    public void FireGridRuntimeState_DoubleBufferedStepIsInjectionOrderIndependent_Test() => FireGridRuntimeStateDoubleBufferedStepIsInjectionOrderIndependent();
+
+    [Fact]
+    public void FireGridFootprintSampler_ConvertsBoundsToOccupiedCells_Test() => FireGridFootprintSamplerConvertsBoundsToOccupiedCells();
+
+    [Fact]
+    public void FireGridRuntimeState_SamplesFootprintAggregate_Test() => FireGridRuntimeStateSamplesFootprintAggregate();
+
+    [Fact]
+    public void FireGridRuntimeState_UnderwaterCellsSuppressIgnition_Test() => FireGridRuntimeStateUnderwaterCellsSuppressIgnition();
+
+    [Fact]
+    public void FireGridRuntimeState_MoistureAndBarriersReduceTransfer_Test() => FireGridRuntimeStateMoistureAndBarriersReduceTransfer();
+
+    [Fact]
+    public void FireGridRuntimeState_OxygenAvailabilityChangesIgnition_Test() => FireGridRuntimeStateOxygenAvailabilityChangesIgnition();
+
     private static void SnapshotStoreRemovesAndClearsSnapshots() {
       var state = new FireImpactRuntimeState();
       var snapshot = new FireImpactSnapshot(0.1f, 0.2f, 0.3f, 0.4f, 0.5f);
@@ -275,6 +305,158 @@ namespace Prometheus.Tests {
       NearlyEqual(0.4f, sparks.NoiseStrength);
     }
 
+    private static void FireGridCoordinateMapsCellsIntoEightByEightByEightChunks() {
+      Equal(new FireGridChunkCoordinate(0, 0, 0), FireGridChunkCoordinate.FromCell(new FireGridCoordinate(0, 0, 0)));
+      Equal(new FireGridChunkCoordinate(0, 0, 0), FireGridChunkCoordinate.FromCell(new FireGridCoordinate(7, 7, 7)));
+      Equal(new FireGridChunkCoordinate(1, 0, 0), FireGridChunkCoordinate.FromCell(new FireGridCoordinate(8, 0, 0)));
+      Equal(new FireGridChunkCoordinate(-1, -1, -1), FireGridChunkCoordinate.FromCell(new FireGridCoordinate(-1, -1, -1)));
+      Equal(new FireGridChunkCoordinate(-1, -1, -1), FireGridChunkCoordinate.FromCell(new FireGridCoordinate(-8, -8, -8)));
+      Equal(new FireGridChunkCoordinate(-2, -1, -1), FireGridChunkCoordinate.FromCell(new FireGridCoordinate(-9, -8, -8)));
+
+      Equal(0, FireGridChunkCoordinate.LocalIndex(new FireGridCoordinate(0, 0, 0)));
+      Equal(7, FireGridChunkCoordinate.LocalIndex(new FireGridCoordinate(7, 0, 0)));
+      Equal(7, FireGridChunkCoordinate.LocalIndex(new FireGridCoordinate(-1, 0, 0)));
+    }
+
+    private static void FireGridKernelFull27IncludesSelfAndAllNeighbors() {
+      var entries = FireGridKernel.Full27.Entries;
+      Equal(27, entries.Count);
+      Equal(1, CountKernelEntries(entries, 0, 0, 0));
+      Equal(1, CountKernelEntries(entries, -1, -1, -1));
+      Equal(1, CountKernelEntries(entries, 1, 1, 1));
+      True(entries[0].HeatWeight >= 0f);
+      True(FindKernelEntry(entries, 0, 0, 0).IsSelf);
+      True(FindKernelEntry(entries, 0, 1, 0).SmokeWeight > FindKernelEntry(entries, 0, -1, 0).SmokeWeight);
+      True(FindKernelEntry(entries, 0, 1, 0).HeatWeight > FindKernelEntry(entries, 0, -1, 0).HeatWeight);
+    }
+
+    private static void FireGridRuntimeStateWritesAcrossChunkBoundaries() {
+      var grid = CreateGridWithFuelAroundOrigin();
+      var source = new FireGridCoordinate(7, 0, 0);
+      var target = new FireGridCoordinate(8, 0, 0);
+
+      grid.SetEnvironment(source, BurnableEnvironment());
+      grid.SetEnvironment(target, BurnableEnvironment());
+      grid.Inject(source, HotCell());
+      grid.Step(FireGridKernel.Full27);
+
+      True(grid.TryGetState(target, out var targetState));
+      True(targetState.Heat > 0f);
+      True(grid.ActiveChunkCount >= 2);
+    }
+
+    private static void FireGridRuntimeStatePrunesColdChunks() {
+      var grid = new FireGridRuntimeState();
+      var coordinate = new FireGridCoordinate(0, 0, 0);
+
+      grid.Inject(coordinate, HotCell());
+      Equal(1, grid.TotalChunkCount);
+      Equal(1, grid.ActiveCellCount);
+
+      grid.ClearCell(coordinate);
+      grid.PruneInactiveChunks();
+
+      Equal(0, grid.TotalChunkCount);
+      Equal(0, grid.ActiveCellCount);
+    }
+
+    private static void FireGridRuntimeStateDoubleBufferedStepIsInjectionOrderIndependent() {
+      var first = CreateGridWithFuelAroundOrigin();
+      var second = CreateGridWithFuelAroundOrigin();
+      var left = new FireGridCoordinate(0, 0, 0);
+      var right = new FireGridCoordinate(1, 0, 0);
+      var sample = new FireGridCoordinate(0, 1, 0);
+
+      first.Inject(left, new FireCellState(0.8f, 0.6f, 0.4f, 0.2f, 0f, FireGridBurnState.Burning));
+      first.Inject(right, new FireCellState(0.3f, 0.9f, 0.2f, 0.1f, 0f, FireGridBurnState.Smoldering));
+      second.Inject(right, new FireCellState(0.3f, 0.9f, 0.2f, 0.1f, 0f, FireGridBurnState.Smoldering));
+      second.Inject(left, new FireCellState(0.8f, 0.6f, 0.4f, 0.2f, 0f, FireGridBurnState.Burning));
+
+      first.Step(FireGridKernel.Full27);
+      second.Step(FireGridKernel.Full27);
+
+      True(first.TryGetState(sample, out var firstSample));
+      True(second.TryGetState(sample, out var secondSample));
+      NearlyEqual(firstSample.Heat, secondSample.Heat, 0.000001f);
+      NearlyEqual(firstSample.EmberPressure, secondSample.EmberPressure, 0.000001f);
+      NearlyEqual(firstSample.Smoke, secondSample.Smoke, 0.000001f);
+      NearlyEqual(firstSample.IgnitionProgress, secondSample.IgnitionProgress, 0.000001f);
+    }
+
+    private static void FireGridFootprintSamplerConvertsBoundsToOccupiedCells() {
+      var footprint = FireGridFootprintSampler.FromBounds(new UnityEngine.Bounds(
+        new UnityEngine.Vector3(1f, 0.5f, 1f),
+        new UnityEngine.Vector3(2f, 1f, 2f)));
+
+      Equal(new FireGridCoordinate(1, 0, 1), footprint.PrimaryCoordinate);
+      Equal(4, footprint.Coordinates.Count);
+      True(ContainsCoordinate(footprint.Coordinates, new FireGridCoordinate(0, 0, 0)));
+      True(ContainsCoordinate(footprint.Coordinates, new FireGridCoordinate(1, 0, 1)));
+      False(ContainsCoordinate(footprint.Coordinates, new FireGridCoordinate(2, 0, 1)));
+    }
+
+    private static void FireGridRuntimeStateSamplesFootprintAggregate() {
+      var grid = new FireGridRuntimeState();
+      var first = new FireGridCoordinate(0, 0, 0);
+      var second = new FireGridCoordinate(1, 0, 0);
+      var footprint = new FireGridFootprint(new[] { first, second }, first);
+
+      grid.SetEnvironment(first, new FireCellEnvironment(FireGridStructureKind.Building, 1f, 0.2f, 0f, 0.8f, 0f, 63));
+      grid.SetEnvironment(second, new FireCellEnvironment(FireGridStructureKind.Building, 1f, 0.6f, 0f, 0.4f, 0f, 63));
+      grid.Inject(first, new FireCellState(0.2f, 0.1f, 0.3f, 0.2f, 0.1f, FireGridBurnState.Heating));
+      grid.Inject(second, new FireCellState(0.7f, 0.4f, 0.2f, 0.8f, 0.3f, FireGridBurnState.Burning));
+
+      var sample = grid.Sample(footprint);
+
+      True(sample.HasActivity);
+      True(sample.Burning);
+      NearlyEqual(0.7f, sample.Heat);
+      NearlyEqual(0.4f, sample.EmberPressure);
+      NearlyEqual(0.3f, sample.Smoke);
+      NearlyEqual(0.8f, sample.IgnitionProgress);
+      NearlyEqual(0.3f, sample.FuelConsumed);
+      NearlyEqual(0.4f, sample.MoistureDampening);
+      NearlyEqual(0.6f, sample.OxygenAvailability);
+    }
+
+    private static void FireGridRuntimeStateUnderwaterCellsSuppressIgnition() {
+      var grid = new FireGridRuntimeState();
+      var coordinate = new FireGridCoordinate(0, 0, 0);
+
+      grid.SetEnvironment(coordinate, new FireCellEnvironment(FireGridStructureKind.Water, 1f, 0f, 0f, 1f, 1f, 63));
+      grid.Inject(coordinate, HotCell());
+      grid.Step(FireGridKernel.Full27);
+
+      False(grid.TryGetState(coordinate, out var state) && state.IsActive);
+    }
+
+    private static void FireGridRuntimeStateMoistureAndBarriersReduceTransfer() {
+      var dryGrid = CreateTwoCellTransferGrid(new FireCellEnvironment(FireGridStructureKind.Vegetation, 1f, 0f, 0f, 1f, 0f, 63));
+      var dampBarrierGrid = CreateTwoCellTransferGrid(new FireCellEnvironment(FireGridStructureKind.Vegetation, 1f, 0.75f, 0.5f, 1f, 0f, 63));
+      var target = new FireGridCoordinate(1, 0, 0);
+
+      dryGrid.Step(FireGridKernel.Full27);
+      dampBarrierGrid.Step(FireGridKernel.Full27);
+
+      True(dryGrid.TryGetState(target, out var dryState));
+      True(dampBarrierGrid.TryGetState(target, out var dampBarrierState));
+      True(dampBarrierState.Heat < dryState.Heat);
+      True(dampBarrierState.EmberPressure < dryState.EmberPressure);
+    }
+
+    private static void FireGridRuntimeStateOxygenAvailabilityChangesIgnition() {
+      var highOxygenGrid = CreateTwoCellTransferGrid(new FireCellEnvironment(FireGridStructureKind.Vegetation, 1f, 0f, 0f, 1f, 0f, 63));
+      var lowOxygenGrid = CreateTwoCellTransferGrid(new FireCellEnvironment(FireGridStructureKind.Vegetation, 1f, 0f, 0f, 0.1f, 0f, 63));
+      var target = new FireGridCoordinate(1, 0, 0);
+
+      highOxygenGrid.Step(FireGridKernel.Full27);
+      lowOxygenGrid.Step(FireGridKernel.Full27);
+
+      True(highOxygenGrid.TryGetState(target, out var highOxygenState));
+      True(lowOxygenGrid.TryGetState(target, out var lowOxygenState));
+      True(lowOxygenState.IgnitionProgress < highOxygenState.IgnitionProgress);
+    }
+
     private static FireSimulationSnapshot CreateSimulationSnapshot(
       bool burning,
       float intensity,
@@ -290,6 +472,69 @@ namespace Prometheus.Tests {
         moistureDampening,
         1f,
         burning ? "Grid" : "None");
+    }
+
+    private static FireGridRuntimeState CreateGridWithFuelAroundOrigin() {
+      var grid = new FireGridRuntimeState();
+      for (var x = -1; x <= 2; x++) {
+        for (var y = -1; y <= 1; y++) {
+          for (var z = -1; z <= 1; z++) {
+            grid.SetEnvironment(new FireGridCoordinate(x, y, z), BurnableEnvironment());
+          }
+        }
+      }
+
+      return grid;
+    }
+
+    private static FireCellEnvironment BurnableEnvironment() =>
+      new(FireGridStructureKind.Vegetation, 1f, 0f, 0f, 1f, 0f, 63);
+
+    private static FireCellState HotCell() =>
+      new(1f, 1f, 0.5f, 1f, 0f, FireGridBurnState.Burning);
+
+    private static FireGridRuntimeState CreateTwoCellTransferGrid(FireCellEnvironment targetEnvironment) {
+      var grid = new FireGridRuntimeState();
+      var source = new FireGridCoordinate(0, 0, 0);
+      var target = new FireGridCoordinate(1, 0, 0);
+
+      grid.SetEnvironment(source, BurnableEnvironment());
+      grid.SetEnvironment(target, targetEnvironment);
+      grid.Inject(source, HotCell());
+      return grid;
+    }
+
+    private static FireGridKernelEntry FindKernelEntry(IReadOnlyList<FireGridKernelEntry> entries, int dx, int dy, int dz) {
+      for (var i = 0; i < entries.Count; i++) {
+        var entry = entries[i];
+        if (entry.Offset.Dx == dx && entry.Offset.Dy == dy && entry.Offset.Dz == dz) {
+          return entry;
+        }
+      }
+
+      throw new InvalidOperationException($"Missing kernel entry {dx},{dy},{dz}.");
+    }
+
+    private static int CountKernelEntries(IReadOnlyList<FireGridKernelEntry> entries, int dx, int dy, int dz) {
+      var count = 0;
+      for (var i = 0; i < entries.Count; i++) {
+        var entry = entries[i];
+        if (entry.Offset.Dx == dx && entry.Offset.Dy == dy && entry.Offset.Dz == dz) {
+          count++;
+        }
+      }
+
+      return count;
+    }
+
+    private static bool ContainsCoordinate(IReadOnlyList<FireGridCoordinate> coordinates, FireGridCoordinate coordinate) {
+      for (var i = 0; i < coordinates.Count; i++) {
+        if (coordinates[i].Equals(coordinate)) {
+          return true;
+        }
+      }
+
+      return false;
     }
 
     private static void True(bool value) {

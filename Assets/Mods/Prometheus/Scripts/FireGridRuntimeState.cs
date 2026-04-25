@@ -229,6 +229,112 @@ namespace Mods.Prometheus.Scripts {
 
   }
 
+  internal readonly struct FireGridSample {
+
+    public static FireGridSample Empty { get; } = new(
+      false,
+      0f,
+      0f,
+      0f,
+      0f,
+      0f,
+      0f,
+      1f,
+      FireGridBurnState.Cold);
+
+    public bool HasActivity { get; }
+    public float Heat { get; }
+    public float EmberPressure { get; }
+    public float Smoke { get; }
+    public float IgnitionProgress { get; }
+    public float FuelConsumed { get; }
+    public float MoistureDampening { get; }
+    public float OxygenAvailability { get; }
+    public FireGridBurnState DominantBurnState { get; }
+    public bool Burning => DominantBurnState == FireGridBurnState.Burning || DominantBurnState == FireGridBurnState.Smoldering;
+
+    public FireGridSample(
+      bool hasActivity,
+      float heat,
+      float emberPressure,
+      float smoke,
+      float ignitionProgress,
+      float fuelConsumed,
+      float moistureDampening,
+      float oxygenAvailability,
+      FireGridBurnState dominantBurnState) {
+      HasActivity = hasActivity;
+      Heat = Mathf.Clamp01(heat);
+      EmberPressure = Mathf.Clamp01(emberPressure);
+      Smoke = Mathf.Clamp01(smoke);
+      IgnitionProgress = Mathf.Clamp01(ignitionProgress);
+      FuelConsumed = Mathf.Clamp01(fuelConsumed);
+      MoistureDampening = Mathf.Clamp01(moistureDampening);
+      OxygenAvailability = Mathf.Clamp01(oxygenAvailability);
+      DominantBurnState = dominantBurnState;
+    }
+
+  }
+
+  internal readonly struct FireGridFootprint {
+
+    public IReadOnlyList<FireGridCoordinate> Coordinates { get; }
+    public FireGridCoordinate PrimaryCoordinate { get; }
+
+    public FireGridFootprint(IReadOnlyList<FireGridCoordinate> coordinates, FireGridCoordinate primaryCoordinate) {
+      Coordinates = coordinates;
+      PrimaryCoordinate = primaryCoordinate;
+    }
+
+  }
+
+  internal static class FireGridFootprintSampler {
+
+    private const int MaxFootprintCells = 512;
+
+    internal static FireGridFootprint FromWorldPosition(Vector3 position) {
+      var coordinate = new FireGridCoordinate(
+        Mathf.RoundToInt(position.x),
+        Mathf.RoundToInt(position.y),
+        Mathf.RoundToInt(position.z));
+      return new FireGridFootprint(new[] { coordinate }, coordinate);
+    }
+
+    internal static FireGridFootprint FromBounds(Bounds bounds) {
+      if (bounds.size.sqrMagnitude <= 0.0001f) {
+        return FromWorldPosition(bounds.center);
+      }
+
+      var coordinates = new List<FireGridCoordinate>();
+      var minX = Mathf.FloorToInt(bounds.min.x);
+      var minY = Mathf.FloorToInt(bounds.min.y);
+      var minZ = Mathf.FloorToInt(bounds.min.z);
+      var maxX = Mathf.Max(minX, Mathf.CeilToInt(bounds.max.x) - 1);
+      var maxY = Mathf.Max(minY, Mathf.CeilToInt(bounds.max.y) - 1);
+      var maxZ = Mathf.Max(minZ, Mathf.CeilToInt(bounds.max.z) - 1);
+
+      for (var x = minX; x <= maxX; x++) {
+        for (var y = minY; y <= maxY; y++) {
+          for (var z = minZ; z <= maxZ; z++) {
+            coordinates.Add(new FireGridCoordinate(x, y, z));
+            if (coordinates.Count >= MaxFootprintCells) {
+              return new FireGridFootprint(coordinates, CreatePrimaryCoordinate(bounds.center));
+            }
+          }
+        }
+      }
+
+      return new FireGridFootprint(coordinates, CreatePrimaryCoordinate(bounds.center));
+    }
+
+    private static FireGridCoordinate CreatePrimaryCoordinate(Vector3 position) =>
+      new(
+        Mathf.RoundToInt(position.x),
+        Mathf.RoundToInt(position.y),
+        Mathf.RoundToInt(position.z));
+
+  }
+
   internal readonly struct FireGridKernelEntry {
 
     public FireGridOffset Offset { get; }
@@ -291,6 +397,9 @@ namespace Mods.Prometheus.Scripts {
   internal sealed class FireGridRuntimeState {
 
     private readonly Dictionary<FireGridChunkCoordinate, FireGridChunk> _chunks = new();
+    private int _lastSteppedFrame = -1;
+
+    public int TotalChunkCount => _chunks.Count;
 
     public int ActiveChunkCount => _chunks.Values.Count(chunk => chunk.ActiveCellCount > 0);
 
@@ -324,6 +433,60 @@ namespace Mods.Prometheus.Scripts {
 
       state = FireCellState.Cold;
       return false;
+    }
+
+    public FireGridSample Sample(FireGridFootprint footprint) =>
+      Sample(footprint.Coordinates);
+
+    public FireGridSample Sample(IEnumerable<FireGridCoordinate> coordinates) {
+      var hasAnyCoordinate = false;
+      var hasActivity = false;
+      var heat = 0f;
+      var emberPressure = 0f;
+      var smoke = 0f;
+      var ignitionProgress = 0f;
+      var fuelConsumed = 0f;
+      var moistureDampening = 0f;
+      var oxygenAvailability = 0f;
+      var dominantBurnState = FireGridBurnState.Cold;
+      var environmentCount = 0;
+
+      foreach (var coordinate in coordinates) {
+        hasAnyCoordinate = true;
+        var environment = GetEnvironment(coordinate);
+        moistureDampening += environment.Moisture;
+        oxygenAvailability += environment.EffectiveOxygen(0f);
+        environmentCount++;
+
+        if (!TryGetState(coordinate, out var state) || !state.IsActive) {
+          continue;
+        }
+
+        hasActivity = true;
+        heat = Mathf.Max(heat, state.Heat);
+        emberPressure = Mathf.Max(emberPressure, state.EmberPressure);
+        smoke = Mathf.Max(smoke, state.Smoke);
+        ignitionProgress = Mathf.Max(ignitionProgress, state.IgnitionProgress);
+        fuelConsumed = Mathf.Max(fuelConsumed, state.FuelConsumed);
+        if (state.BurnState > dominantBurnState) {
+          dominantBurnState = state.BurnState;
+        }
+      }
+
+      if (!hasAnyCoordinate) {
+        return FireGridSample.Empty;
+      }
+
+      return new FireGridSample(
+        hasActivity,
+        heat,
+        emberPressure,
+        smoke,
+        ignitionProgress,
+        fuelConsumed,
+        environmentCount == 0 ? 0f : moistureDampening / environmentCount,
+        environmentCount == 0 ? 1f : oxygenAvailability / environmentCount,
+        dominantBurnState);
     }
 
     public void ClearCell(FireGridCoordinate coordinate) {
@@ -367,6 +530,15 @@ namespace Mods.Prometheus.Scripts {
       }
 
       PruneInactiveChunks();
+    }
+
+    public void StepOncePerFrame(int frame, FireGridKernel kernel) {
+      if (_lastSteppedFrame == frame) {
+        return;
+      }
+
+      _lastSteppedFrame = frame;
+      Step(kernel);
     }
 
     public void PruneInactiveChunks() {

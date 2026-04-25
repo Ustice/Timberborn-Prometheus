@@ -14,6 +14,11 @@ Prometheus is moving into the 3D grid fire rewrite. The old entity-neighbor spre
 | 2026-04-25 | Source inspection and build | Pass | Direct spread registry, spread ignition queue, dispatch scoring store, water context probe/store, suppression applier/store, response-state labels, and floating `FIRE`/`DEAD` markers are out of active source. |
 | 2026-04-25 | Blueprint update | Pass | Blueprint components now use neutral `FireProfileSpec` data instead of `FireResponseProfileSpec`. |
 | 2026-04-25 | Runtime bridge | Pass | Temporary simulation controller supports debug ignition/cooling snapshots until grid state replaces it. |
+| 2026-04-25 | `bash scripts/test.sh` | Pass | Grid foundation tests increased the plain C# suite to 21 tests. |
+| 2026-04-25 | `bash scripts/build.sh --launch` + startup log scan | Pass | Debug ignition now seeds grid state; startup logs showed `Prometheus (v0.2)` and no Prometheus errors in the scanned window. |
+| 2026-04-25 | `bash scripts/test.sh` | Pass | Footprint sampling and aggregate grid reads increased the plain C# suite to 23 tests. |
+| 2026-04-25 | `bash scripts/build.sh --launch` + startup log scan | Pass | Entity snapshots now sample grid state across renderer-derived footprints; startup logs remained clean in the scanned window. |
+| 2026-04-25 | `bash scripts/test.sh` | Pass | Environment-rule coverage increased the plain C# suite to 26 tests: underwater suppression, moisture/barrier dampening, and oxygen-driven ignition differences. |
 
 ## Durable Context
 
@@ -29,7 +34,7 @@ Source of truth: current UI labels and telemetry event names should be checked i
 
 | Blocker | Status | Next Check |
 | --- | --- | --- |
-| Sparse 3D grid not implemented yet | Active | Build dependency-light rules/state first. |
+| Sparse 3D grid needs environment sampling | Active | Foundation exists; next slice should sample footprints/terrain/block/water/moisture inputs. |
 | Runtime visuals need reconnection to grid state | Active | Keep authoring tool intact, then map grid fire state into visual rules. |
 | Explosion request/apply policy needs broader re-validation | Carryover | Use [VALIDATION/explosion-policy.md](VALIDATION/explosion-policy.md) if gaps reappear. |
 | Worker/building exposure needs Phase 2 live validation | Carryover | Validate after the grid model stabilizes. |
@@ -37,11 +42,11 @@ Source of truth: current UI labels and telemetry event names should be checked i
 
 ## Next Exact Action
 
-Implement the sparse chunked 3D fire grid foundation:
+Continue the sparse chunked 3D fire grid rewrite:
 
-1. Add dependency-light grid coordinate/chunk/runtime state types.
-2. Add plain C# tests for neighbor enumeration, chunk addressing, ignition/cooling persistence, and reset clearing.
-3. Wire the temporary debug ignition bridge to write/read grid state.
+1. Add environment sampling adapters for entity footprints first.
+2. Expand sampling toward terrain/block/water/moisture inputs.
+3. Keep all Timberborn inputs read-only.
 4. Keep existing visual preview tooling functional while runtime visuals are reconnected.
 
 ## Resume Checklist

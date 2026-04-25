@@ -49,9 +49,9 @@ Use this section as the next validation gate once the sparse grid lands.
 | --- | --- | --- |
 | Debug ignition writes grid state | Selected target creates an active grid fire snapshot | Panel screenshot + `Fire.log` |
 | Cooling/decay update | Active cell intensity decreases deterministically | Test output + log sample |
-| 27-direction neighbor pass | Fire pressure can evaluate adjacent cells in 3D | Plain C# test |
+| 27-direction neighbor pass | Fire pressure can evaluate adjacent cells in 3D | Passing plain C# test |
 | Reset clears grid | `Reset Fire Sim` clears active grid, preview, damage, and recovery state | Panel screenshot + log sample |
-| Chunk boundary propagation | Fire pressure can cross chunk boundaries without duplicate/missing cells | Plain C# test |
+| Chunk boundary propagation | Fire pressure can cross chunk boundaries without duplicate/missing cells | Passing plain C# test |
 
 ## Visual Authoring QA
 

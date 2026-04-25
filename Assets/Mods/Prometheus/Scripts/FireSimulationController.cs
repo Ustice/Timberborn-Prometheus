@@ -10,6 +10,7 @@ namespace Mods.Prometheus.Scripts {
     private const float UpdateIntervalInSeconds = 0.5f;
 
     private FireSimulationRuntimeState _fireSimulationRuntimeState;
+    private FireGridRuntimeState _fireGridRuntimeState;
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
     private FireProfile _fireProfile;
     private float _timeSinceLastUpdate;
@@ -18,8 +19,10 @@ namespace Mods.Prometheus.Scripts {
     [Inject]
     public void InjectDependencies(
       FireSimulationRuntimeState fireSimulationRuntimeState,
+      FireGridRuntimeState fireGridRuntimeState,
       FireDamageStateRuntimeState fireDamageStateRuntimeState) {
       _fireSimulationRuntimeState = fireSimulationRuntimeState;
+      _fireGridRuntimeState = fireGridRuntimeState;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
     }
 
@@ -34,44 +37,24 @@ namespace Mods.Prometheus.Scripts {
       }
 
       var entityId = GameObject.GetInstanceID();
+      var footprint = GetGridFootprint();
+      var coordinate = footprint.PrimaryCoordinate;
+      SetEnvironment(footprint, CreateEnvironment());
+
       if (_fireDamageStateRuntimeState.TryGetSnapshot(entityId, out var damageState)
           && damageState.State == FireDamageState.Dead) {
+        _fireGridRuntimeState.ClearCell(coordinate);
         PublishSnapshot(entityId, FireSimulationRules.CreateTerminalDeadBuildingSnapshot());
         return;
       }
 
       if (_fireSimulationRuntimeState.ConsumeForcedIgnitionRequest(entityId)) {
-        PublishSnapshot(entityId, FireSimulationRules.CreateSeededDebugSnapshot());
+        _fireGridRuntimeState.Inject(coordinate, CreateDebugIgnitionCell());
         FireTelemetry.Log($"event={FireTelemetryEvents.GridIgnitionSeeded} entity={GameObject.name} id={entityId}");
-        return;
       }
 
-      if (!_fireSimulationRuntimeState.TryGetSnapshot(entityId, out var existing)) {
-        PublishSnapshot(entityId, FireSimulationRules.CreateColdSnapshot());
-        return;
-      }
-
-      if (!existing.Burning) {
-        PublishSnapshot(entityId, existing);
-        return;
-      }
-
-      var cooling = Mathf.Clamp01(existing.Intensity - 0.04f);
-      var next = cooling > 0.02f
-        ? new FireSimulationSnapshot(
-          true,
-          cooling,
-          cooling,
-          Mathf.Clamp01(existing.EmberPressure * 0.82f),
-          Mathf.Clamp01(Mathf.Max(existing.Smoke, cooling * 0.5f)),
-          existing.IgnitionProgress,
-          Mathf.Clamp01(existing.FuelConsumed + 0.02f),
-          existing.MoistureDampening,
-          existing.OxygenAvailability,
-          existing.DominantSource)
-        : FireSimulationRules.CreateColdSnapshot("Cooling");
-
-      PublishSnapshot(entityId, next);
+      _fireGridRuntimeState.StepOncePerFrame(Time.frameCount, FireGridKernel.Full27);
+      PublishSnapshot(entityId, CreateSnapshotFromGrid(footprint));
     }
 
     internal bool DebugForceExtinguish() {
@@ -79,14 +62,111 @@ namespace Mods.Prometheus.Scripts {
       var hadActiveFire = _fireSimulationRuntimeState.TryGetSnapshot(entityId, out var snapshot)
                           && (snapshot.Burning || snapshot.Intensity > 0f);
       _fireSimulationRuntimeState.SetSnapshot(entityId, FireSimulationRules.CreateColdSnapshot("DebugExtinguish"));
+      _fireGridRuntimeState.ClearCell(GetGridCoordinate());
       _wasBurning = false;
       return hadActiveFire;
     }
 
     internal void DebugResetFireSimulationState() {
       _fireSimulationRuntimeState.RemoveSnapshot(GameObject.GetInstanceID());
+      _fireGridRuntimeState.ClearCell(GetGridCoordinate());
       _wasBurning = false;
     }
+
+    private FireSimulationSnapshot CreateSnapshotFromGrid(FireGridFootprint footprint) {
+      var sample = _fireGridRuntimeState.Sample(footprint);
+      if (!sample.HasActivity) {
+        return FireSimulationRules.CreateColdSnapshot();
+      }
+
+      var intensity = Mathf.Clamp01(Mathf.Max(sample.Heat, sample.IgnitionProgress));
+      return new FireSimulationSnapshot(
+        sample.Burning,
+        intensity,
+        sample.Heat,
+        sample.EmberPressure,
+        sample.Smoke,
+        sample.IgnitionProgress,
+        sample.FuelConsumed,
+        sample.MoistureDampening,
+        sample.OxygenAvailability,
+        "Grid");
+    }
+
+    private void SetEnvironment(FireGridFootprint footprint, FireCellEnvironment environment) {
+      for (var i = 0; i < footprint.Coordinates.Count; i++) {
+        _fireGridRuntimeState.SetEnvironment(footprint.Coordinates[i], environment);
+      }
+    }
+
+    private FireCellEnvironment CreateEnvironment() {
+      if (_fireProfile == null) {
+        return new FireCellEnvironment(FireGridStructureKind.Unknown, 1f, 0f, 0f, 1f, 0f, 63);
+      }
+
+      return new FireCellEnvironment(
+        ParseStructureKind(_fireProfile.StructureKind),
+        _fireProfile.Fuel,
+        1f - _fireProfile.MoistureResistance,
+        _fireProfile.BarrierResistance,
+        1f,
+        0f,
+        63);
+    }
+
+    private static FireGridStructureKind ParseStructureKind(string structureKind) {
+      if (string.IsNullOrWhiteSpace(structureKind)) {
+        return FireGridStructureKind.Unknown;
+      }
+
+      var normalized = structureKind.ToLowerInvariant();
+      if (normalized.Contains("tree") || normalized.Contains("berry") || normalized.Contains("crop")) {
+        return FireGridStructureKind.Vegetation;
+      }
+
+      if (normalized.Contains("barrier")) {
+        return FireGridStructureKind.Barrier;
+      }
+
+      return FireGridStructureKind.Building;
+    }
+
+    private FireGridFootprint GetGridFootprint() {
+      if (TryGetRendererBounds(out var bounds)) {
+        return FireGridFootprintSampler.FromBounds(bounds);
+      }
+
+      var position = GameObject.transform.position;
+      return FireGridFootprintSampler.FromWorldPosition(position);
+    }
+
+    private FireGridCoordinate GetGridCoordinate() =>
+      GetGridFootprint().PrimaryCoordinate;
+
+    private bool TryGetRendererBounds(out Bounds bounds) {
+      var renderers = GameObject.GetComponentsInChildren<Renderer>();
+      var hasBounds = false;
+      bounds = default;
+      for (var i = 0; i < renderers.Length; i++) {
+        var renderer = renderers[i];
+        if (renderer == null || renderer is ParticleSystemRenderer) {
+          continue;
+        }
+
+        if (!hasBounds) {
+          bounds = renderer.bounds;
+          hasBounds = true;
+          continue;
+        }
+
+        bounds.Encapsulate(renderer.bounds);
+      }
+
+      return hasBounds;
+    }
+
+    private static FireCellState CreateDebugIgnitionCell() =>
+      new(1f, 0.85f, 0.35f, 1f, 0f, FireGridBurnState.Burning);
 
     private void PublishSnapshot(int entityId, FireSimulationSnapshot snapshot) {
       _fireSimulationRuntimeState.SetSnapshot(entityId, snapshot);
