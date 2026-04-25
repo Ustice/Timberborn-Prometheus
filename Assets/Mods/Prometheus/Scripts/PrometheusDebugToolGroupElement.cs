@@ -1,0 +1,44 @@
+using ConfigurableToolGroups.Services;
+using ConfigurableToolGroups.UI;
+using Timberborn.ToolSystem;
+
+namespace Mods.Prometheus.Scripts {
+  internal class PrometheusDebugToolGroupElement : CustomRootToolGroupElement {
+
+    public const string ToolGroupId = "PrometheusDebug";
+    private const string ActionsIcon = "Options";
+    private const string VisualsIcon = "WaterHeightBrushTool";
+    private const string SelectionIcon = "Cursor";
+    private const string LogIcon = "Options";
+
+    private readonly PrometheusDebugActionsTool _actionsTool;
+    private readonly PrometheusDebugVisualsTool _visualsTool;
+    private readonly PrometheusDebugSelectionTool _selectionTool;
+    private readonly PrometheusDebugLogTool _logTool;
+
+    public override string Id => ToolGroupId;
+
+    public PrometheusDebugToolGroupElement(
+      PrometheusDebugActionsTool actionsTool,
+      PrometheusDebugVisualsTool visualsTool,
+      PrometheusDebugSelectionTool selectionTool,
+      PrometheusDebugLogTool logTool,
+      ToolGroupService toolGroupService,
+      ModdableToolGroupButtonFactory buttonFactory)
+      : base(toolGroupService, buttonFactory) {
+      _actionsTool = actionsTool;
+      _visualsTool = visualsTool;
+      _selectionTool = selectionTool;
+      _logTool = logTool;
+      Color = ToolButtonColor.Blue;
+    }
+
+    protected override void AddChildren(ModdableToolGroupButton button) {
+      button.AddChildTool(_actionsTool, ActionsIcon);
+      button.AddChildTool(_visualsTool, VisualsIcon);
+      button.AddChildTool(_selectionTool, SelectionIcon);
+      button.AddChildTool(_logTool, LogIcon);
+    }
+
+  }
+}

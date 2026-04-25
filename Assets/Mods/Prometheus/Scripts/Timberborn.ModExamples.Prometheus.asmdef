@@ -1,5 +1,9 @@
 {
   "name": "Timberborn.ModExamples.Prometheus",
+  "references": [
+    "TimberUi",
+    "ConfigurableToolGroups"
+  ],
   "autoReferenced": false,
   "allowUnsafeCode": true
 }

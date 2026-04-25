@@ -2,7 +2,7 @@
 
 ## Last updated
 
-2026-04-24
+2026-04-25
 
 ## Why we are doing this
 
@@ -10,7 +10,7 @@ Current objective is to move from Phase 1 core fire simulation into Phase 2 embe
 Recent work closed the early fire-spread proof of concept and prioritized three outcomes:
 
 1. Correctness fixes for burn lifecycle edge cases (dead buildings, placement previews, destroy cleanup, reset-to-healthy recovery).
-2. Strong in-game observability (scrollable fire log, filters, colored severity rows, and entity jump helpers).
+2. Strong in-game observability (scrollable fire log, filters, log counts, and entity jump helpers).
 3. Compatibility fixes against the current installed Timberborn assemblies.
 
 ## What we are actively working on
@@ -56,15 +56,17 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
 
 - The Prometheus debug UI is consolidated into one bottom-left panel, raised above the Timberborn bottom bar.
 - The entity panel fragment is hidden and only forwards selection state into the global panel.
+- The global panel is behind the Moddable Tool Groups bottom-bar group `Prometheus`, whose submenu entries open the same TimberUi panel instance at `Actions`, `Visuals`, `Selection`, or `Log`.
+- `TimberUi` and `ModdableToolGroups` are now required dependencies for the debug UI migration; local builds resolve them from the installed Steam Workshop payloads.
 - The global panel supports:
   - selected-entity runtime details,
   - selected-entity copy output,
   - selected-entity debug ignite request,
-  - runtime snapshot counts + **delta since selection**,
-  - in-game fire log (scrollable, minimizable),
+  - runtime snapshot counts + **delta since selection** in the Selection view,
+  - in-game fire log with counts merged into the Log filters,
   - auto-scroll toggle,
   - severity filters (`All`/`Events`/`Warnings`/`Errors`),
-  - colored severity labels,
+  - log severity counts,
   - search box.
 - Prometheus debug panel admin buttons:
   - `Stop All Fires`,
@@ -73,7 +75,7 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
 - `Stop All Fires` resets live fire controllers, clears runtime stores, and suppresses ambient re-ignition for 60 real seconds while preserving manual debug ignition.
 - `Reset Fire Sim` clears fire/damage/recovery state and restores loaded entities to healthy/functioning state for fast QA loops.
 - `burning_tick` telemetry is throttled by real time, not game simulation time, so high-speed gameplay does not flood the panel as aggressively.
-- Current debug-panel UI pass reorganizes the global panel into Timberborn-style status, command, filter, selection, and log sections; the behavior is unchanged and still intentionally manual-QA'd.
+- Current debug-panel UI pass replaces in-panel tabs with Moddable Tool Groups bottom-bar submenu navigation; the behavior is unchanged and still intentionally manual-QA'd.
 - Telemetry event names now live in `FireTelemetryEvents`, an iterable constant registry intended for future filters/docs/log tooling.
 - Earlier faction quenching and dispatch scoring/lock decisions live in `FireSimulationRules`; these remain useful patterns, but current Phase 2 priority has shifted to ember-field spread before responder behavior.
 - Old bucket-kit, firefighting-foam, fire-control-gear, fireworks-crate, and festival-risk scaffolding was pruned from active content. Ash fertilizer content was renamed to Fertile Ash.
@@ -88,11 +90,15 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
 - First fire presentation slice landed: `FireVisualEffectRules` computes tunable ember/smoke/fire/steam/char intensities from fire, water, and damage snapshots, while `FireVisualEffectApplier` applies Unity particles plus char tint to loaded fire-profiled entities and clears them through `Reset Fire Sim`.
 - Screenshot QA showed the legacy `DEAD` text markers rendered as huge magenta blocks; they now default off and can be re-enabled/tuned from the debug panel.
 - The global Prometheus debug panel now has a `Visual Tuning` section with live sliders for ember, smoke, fire, steam, char, and text-marker scale.
-- Latest panel pass converts the global debug panel from a tall stack into compact tabs (`Actions`, `Visuals`, `Selection`, `Log`) and gives buttons filled, outlined, higher-contrast normal/hover/press states closer to native Timberborn controls.
-- Visible debug-panel colors now live in `PrometheusDebugPalette` as named design tokens (`Text`, `Border`, `Button`, `ButtonSelected`, severity colors, feedback colors, etc.) so future UI changes do not add more inline RGBA values.
-- Native-style pass uses light/muted text on controls; dark button/tab labels are intentionally avoided.
-- Latest visual-effect pass increased the plain C# suite to 22 tests and passed `bash scripts/test.sh`; `bash scripts/build.sh` also passed and deployed the refreshed DLL.
-- Latest debug-panel redesign build passed `bash scripts/test.sh` and `bash scripts/build.sh`; in-game layout still needs visual QA after launch/reload.
+- Previous panel pass converted the global debug panel from a tall stack into compact tabs; the current Moddable Tool Groups migration supersedes that navigation with bottom-bar submenu entries.
+- Native-style pass now lets TimberUi own visible panel controls. The `IEntityPanelFragment` remains only as a selection forwarding hook so Timberborn selection changes can update the global panel.
+- Latest blank-slate TimberUi pass removes the old hidden entity-panel UI, deletes the custom palette file, moves log counts into the Log filters, and removes visible debug-panel `style.*` overrides so TimberUi components/layout provide the baseline presentation.
+- Follow-up screenshot pass gives the bottom-left panel a native fixed width/offset, reinitializes dynamically switched submenu views through TimberUi, and switches command/filter/selection strips to `AddHorizontalContainer()` rows so button backgrounds are not clipped or squeezed.
+- Latest selection-panel screenshot cleanup switches `Copy` and `Ignite` from entity-fragment buttons to TimberUi `GameButton` controls because entity-fragment buttons rendered as plain text in the detached bottom-bar panel context.
+- Detached custom-panel pass now follows the source `QuestPanel`/`TodoListPanel` examples: `NineSliceVisualElement` root, TimberUi `square-large--green` class, padding, width, and direct child controls. This replaces the entity-fragment root for the bottom-bar panel because it is not hosted inside Timberborn's entity-panel layout.
+- Latest button cleanup follows source examples that add padding through TimberUi helpers by routing debug-panel command/filter/view buttons through `AddGameButtonPadded` with modest horizontal/vertical inset.
+- Latest visual-effect pass increased the plain C# suite to 22 tests.
+- Latest TimberUi blank-slate pass passed `bash scripts/test.sh`, `bash scripts/build.sh`, and `bash scripts/build.sh --launch`; fresh startup logs show `Moddable Tool Groups`, `TimberUi`, and `Prometheus` loading without Prometheus errors.
 - Telemetry registry pass increased the plain C# suite to 17 tests and passed `bash scripts/test.sh`; `bash scripts/build.sh` also passed.
 - Response-rule extraction increased the plain C# suite to 19 tests and passed both `bash scripts/test.sh` and `bash scripts/build.sh`.
 - Latest resume build initially hit a missing VS Tools Unity analyzer path after VS Code updated `visualstudiotoolsforunity.vstuc` from `1.2.1` to `1.2.2`; adding a local compatibility symlink restored `dotnet build`.
@@ -226,7 +232,7 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
 
 1. Run `bash scripts/build.sh --launch`.
 2. Select a fire-profiled building and open the debug panel.
-3. Confirm the reorganized `Status`/`Commands`/`Filters`/`Selection`/`Log` sections are readable and do not cover core Timberborn controls.
+3. Confirm the reorganized `Actions`/`Visuals`/`Selection`/`Log` submenu views are readable and do not cover core Timberborn controls.
 4. Trigger one ignite event.
 5. Verify: filtered/colored/searchable log rows + `View` button camera jump.
 6. Confirm dead-building suppression/restore behavior and capture logs.

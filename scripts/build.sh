@@ -101,6 +101,8 @@ compile_if_possible() {
 sync_prometheus_compile_items() {
   add_missing_prometheus_compile_items
   prune_stale_prometheus_compile_items
+  prune_stale_external_mod_references
+  add_missing_external_mod_references
 }
 
 add_missing_prometheus_compile_items() {
@@ -127,8 +129,79 @@ prune_stale_prometheus_compile_items() {
       continue
     fi
 
-    perl -0pi -e "s#\\s*<Compile Include=\"\\Q$relative_source\\E\" />\\r?\\n##g" "$PROJECT_CSPROJ"
+    perl -0pi -e "s#\\s*<Compile Include=\"\\Q$relative_source\\E\" />##g" "$PROJECT_CSPROJ"
   done < <(grep -o 'Assets/Mods/Prometheus/Scripts/[^"]*\.cs' "$PROJECT_CSPROJ" | sort -u)
+}
+
+prune_stale_external_mod_references() {
+  local stale_assemblies=(
+    "TimberApi"
+    "TimberApi.SpecificationSystem"
+    "TimberApi.Tools"
+    "TimberApi.UIBuilderSystem"
+    "TimberApi.UIPresets"
+  )
+
+  local assembly
+  for assembly in "${stale_assemblies[@]}"; do
+    perl -0pi -e "s#\\s*<Reference Include=\"\\Q$assembly\\E\">.*?</Reference>\\r?\\n##sg" "$PROJECT_CSPROJ"
+  done
+}
+
+add_missing_external_mod_references() {
+  local external_mod_assemblies=(
+    "TimberUi"
+    "ConfigurableToolGroups"
+  )
+
+  local assembly
+  for assembly in "${external_mod_assemblies[@]}"; do
+    if grep -Fq "<Reference Include=\"$assembly\">" "$PROJECT_CSPROJ"; then
+      continue
+    fi
+
+    local dll_path
+    dll_path="$(find_external_mod_dll "$assembly")"
+    if [[ -z "$dll_path" ]]; then
+      echo "[build] External mod reference $assembly not found; install TimberUi and Moddable Tool Groups before compiling." >&2
+      continue
+    fi
+
+    local relative_hint
+    if [[ "$dll_path" == "$BUILD_PROJECT_DIR/"* ]]; then
+      relative_hint="${dll_path#$BUILD_PROJECT_DIR/}"
+    else
+      relative_hint="$dll_path"
+    fi
+
+    perl -0pi -e "s#(\\s*</Project>\\s*)#  <ItemGroup>\\n    <Reference Include=\"$assembly\">\\n      <HintPath>$relative_hint</HintPath>\\n      <Private>False</Private>\\n    </Reference>\\n  </ItemGroup>\\n\\1#" "$PROJECT_CSPROJ"
+  done
+}
+
+find_external_mod_dll() {
+  local assembly="$1"
+  local candidate_roots=(
+    "$BUILD_PROJECT_DIR/Assets"
+    "$BUILD_PROJECT_DIR/Library"
+    "$HOME/Documents/Timberborn/Mods"
+    "$HOME/Library/Application Support/Steam/steamapps/workshop/content/1062090"
+  )
+
+  local root
+  for root in "${candidate_roots[@]}"; do
+    if [[ ! -d "$root" ]]; then
+      continue
+    fi
+
+    local found
+    found="$(find -L "$root" -type f -name "$assembly.dll" | head -n 1 || true)"
+    if [[ -n "$found" ]]; then
+      echo "$found"
+      return 0
+    fi
+  done
+
+  echo ""
 }
 
 rebuild_symlinked_mod_directory() {

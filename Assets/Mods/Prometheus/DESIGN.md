@@ -746,8 +746,22 @@ Active/planned entries only. Full historical log moved to `DESIGN_CHANGELOG_ARCH
 | --- | --- | --- | --- |
 | 2026-04-24 | Phase 2 UX | Added tunable ember, smoke, fire, steam, and char visual intensity rules plus a thin Unity particle/material adapter for loaded fire-profiled entities | In Validation |
 | 2026-04-24 | Phase 2 UX | Added live debug-panel visual tuning controls and defaulted legacy `FIRE!`/`DEAD` text markers off after screenshot QA exposed missing-material marker noise | In Validation |
-| 2026-04-24 | Phase 2 UX | Reworked the global debug panel into compact native-style tabs with higher-contrast filled/outlined button states for normal, hover, and pressed interaction | In Validation |
-| 2026-04-24 | Phase 2 UX | Added `PrometheusDebugPalette` so visible debug UI colors are named design tokens instead of inline RGBA values | In Validation |
+| 2026-04-24 | Phase 2 UX | Reworked the global debug panel into compact native-style tabs with higher-contrast filled/outlined button states for normal, hover, and pressed interaction | Superseded |
+| 2026-04-24 | Phase 2 UX | Added `PrometheusDebugPalette` so visible debug UI colors are named design tokens instead of inline RGBA values | Superseded |
+| 2026-04-24 | Phase 2 UX | Migrated debug navigation to required `TimberUi` and `ModdableToolGroups` dependencies with native-style controls and bottom-bar submenu entries for `Actions`, `Visuals`, `Selection`, and `Log` | In Validation |
+| 2026-04-25 | Phase 2 UX | Removed the old hidden entity-panel UI, kept only the selection forwarding hook, moved log counts into the Log filters, and stripped visible debug-panel `style.*` overrides for a TimberUi blank-slate baseline | In Validation |
+| 2026-04-25 | Phase 2 UX | Added TimberUi fixed panel width/offset, dynamic submenu view initialization, and demo-style horizontal control rows to prevent bottom-bar clipping and raw-looking buttons | In Validation |
+| 2026-04-25 | Phase 2 UX | Switched Selection `Copy`/`Ignite` actions to TimberUi `GameButton` controls after entity-fragment buttons rendered as plain text in the detached bottom-bar panel | In Validation |
+| 2026-04-25 | Phase 2 UX | Flattened the detached debug panel toward the TimberUi demo shape by using one green `EntityPanelFragmentElement` surface and removing nested section fragments | In Validation |
+| 2026-04-25 | Phase 2 UX | Changed the detached bottom-bar panel root to the custom-panel source pattern: `NineSliceVisualElement` with TimberUi `square-large--green`, padding, width, and direct child controls | In Validation |
+| 2026-04-25 | Phase 2 UX | Routed debug-panel command/filter/view buttons through TimberUi `AddGameButtonPadded` to restore native horizontal text inset | In Validation |
+| 2026-04-25 | Phase 2 UX | Removed the custom outer debug-panel frame/title strip and most manual visible row spacing/sizing so TimberUi sections, rows, and controls own presentation | In Validation |
+| 2026-04-25 | Phase 2 UX | Split log filters and search/autoscroll into separate TimberUi rows and moved log-row `View` actions to the leading side to avoid edge clipping | In Validation |
+| 2026-04-25 | Phase 2 UX | Restored a TimberUi `Frame` outer container without the custom Prometheus title strip to fix flush child-section borders and clipped leading controls | In Validation |
+| 2026-04-25 | Phase 2 UX | Reworked visible debug-panel construction to follow upstream `TimberUiDemo` parent-extension patterns for fragments, rows, labels, buttons, fields, toggles, scroll views, and sliders | In Validation |
+| 2026-04-25 | Phase 2 UX | Applied screenshot-driven TimberUi layout cleanup with row classes, restored native padding, readable selected filters, and full `View` buttons in log rows | In Validation |
+| 2026-04-25 | Phase 2 UX | Cleaned up remaining TimberUi panel presentation issues by applying native label classes to visible text, removing the visible raw Unity Selection foldout, trimming extra margins, and bringing the native close button above the initialized panel frame | In Validation |
+| 2026-04-24 | Phase 2 UX | Removed old custom button/frame visual overrides from TimberUi panel controls and the hidden selection bridge, keeping Prometheus color usage to semantic feedback and severity text | In Validation |
 | 2026-04-24 | Phase 2 Content | Pruned old bucket-kit, firefighting-foam, fire-control-gear, fireworks-crate, and festival-risk scaffolding; renamed ash fertilizer content to Fertile Ash | Done |
 | 2026-04-24 | Phase 2 Design | Reordered Phase 2 around ember-field cellular spread, moisture/steam dampening, fire-state visuals, charred presentation, and Fertile Ash before suppression/responder systems | Planned |
 | 2026-04-24 | Phase 2 Architecture | Extracted faction quenching and dispatch lock/hysteresis decisions into dependency-light rules with regression coverage | Done |

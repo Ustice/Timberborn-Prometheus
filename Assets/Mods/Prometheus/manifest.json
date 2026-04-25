@@ -4,6 +4,15 @@
   "Id": "ExampleBuilding.Prometheus",
   "MinimumGameVersion": "1.0.0.0",
   "Description": "Brings fire-themed industry, hazards, and recovery systems to Timberborn.",
-  "RequiredMods": [],
+  "RequiredMods": [
+    {
+      "Id": "TimberUi",
+      "MinimumVersion": "10.1.4"
+    },
+    {
+      "Id": "ModdableToolGroups",
+      "MinimumVersion": "10.4.6"
+    }
+  ],
   "OptionalMods": []
 }

@@ -1,12 +1,10 @@
 using Bindito.Core;
 using System.Collections.Generic;
 using Timberborn.BaseComponentSystem;
-using Timberborn.BottomBarSystem;
 using Timberborn.SingletonSystem;
 using Timberborn.EntityPanelSystem;
 using Timberborn.TemplateInstantiation;
-using UnityEngine;
-using UnityEngine.UIElements;
+using Timberborn.ToolSystem;
 
 namespace Mods.Prometheus.Scripts {
   [Context("Game")]
@@ -17,10 +15,13 @@ namespace Mods.Prometheus.Scripts {
       BindFireResponseComponents();
       Bind<PrometheusFireDebugFragment>().AsSingleton();
       Bind<PrometheusDebugPanel>().AsSingleton();
-      Bind<PrometheusDebugBottomBarButton>().AsSingleton();
+      Bind<PrometheusDebugActionsTool>().AsSingleton();
+      Bind<PrometheusDebugVisualsTool>().AsSingleton();
+      Bind<PrometheusDebugSelectionTool>().AsSingleton();
+      Bind<PrometheusDebugLogTool>().AsSingleton();
+      this.MultiBindCustomTool<PrometheusDebugToolGroupElement>();
       MultiBind<ILoadableSingleton>().ToProvider<PrometheusDebugPanelLoadableProvider>().AsSingleton();
 
-      RegisterBottomBarModule();
       RegisterEntityPanelModule();
       RegisterTemplateModule();
     }
@@ -56,10 +57,6 @@ namespace Mods.Prometheus.Scripts {
 
     private void RegisterEntityPanelModule() {
       MultiBind<EntityPanelModule>().ToProvider<EntityPanelModuleProvider>().AsSingleton();
-    }
-
-    private void RegisterBottomBarModule() {
-      MultiBind<BottomBarModule>().ToProvider<BottomBarModuleProvider>().AsSingleton();
     }
 
     private void RegisterTemplateModule() {
@@ -104,22 +101,6 @@ namespace Mods.Prometheus.Scripts {
 
     }
 
-    private class BottomBarModuleProvider : IProvider<BottomBarModule> {
-
-      private readonly PrometheusDebugBottomBarButton _prometheusDebugBottomBarButton;
-
-      public BottomBarModuleProvider(PrometheusDebugBottomBarButton prometheusDebugBottomBarButton) {
-        _prometheusDebugBottomBarButton = prometheusDebugBottomBarButton;
-      }
-
-      public BottomBarModule Get() {
-        var builder = new BottomBarModule.Builder();
-        builder.AddLeftSectionElement(_prometheusDebugBottomBarButton, 180);
-        return builder.Build();
-      }
-
-    }
-
     private class PrometheusDebugPanelLoadableProvider : IProvider<ILoadableSingleton> {
 
       private readonly PrometheusDebugPanel _prometheusDebugPanel;
@@ -132,50 +113,6 @@ namespace Mods.Prometheus.Scripts {
         return _prometheusDebugPanel;
       }
 
-    }
-
-  }
-
-  internal class PrometheusDebugBottomBarButton : IBottomBarElementsProvider {
-
-    private readonly PrometheusDebugPanel _prometheusDebugPanel;
-    private Button _button;
-
-    public PrometheusDebugBottomBarButton(PrometheusDebugPanel prometheusDebugPanel) {
-      _prometheusDebugPanel = prometheusDebugPanel;
-      _prometheusDebugPanel.OpenStateChanged += UpdateButtonState;
-      _prometheusDebugPanel.UnreadCountChanged += _ => UpdateButtonState(_prometheusDebugPanel.IsOpen);
-    }
-
-    public IEnumerable<BottomBarElement> GetElements() {
-      _button = new Button(_prometheusDebugPanel.ToggleOpenClose) {
-        text = "Debug"
-      };
-      _button.style.height = 24;
-      _button.style.minWidth = 92;
-      _button.style.unityFontStyleAndWeight = FontStyle.Bold;
-      _button.style.unityTextAlign = TextAnchor.MiddleCenter;
-      _button.tooltip = "Toggle the standalone Prometheus Debug panel.";
-
-      UpdateButtonState(_prometheusDebugPanel.IsOpen);
-
-      yield return BottomBarElement.CreateSingleLevel(_button);
-    }
-
-    private void UpdateButtonState(bool isOpen) {
-      if (_button == null) {
-        return;
-      }
-
-      var unreadCount = _prometheusDebugPanel.UnreadCount;
-      var unreadSuffix = unreadCount <= 0 ? string.Empty : unreadCount > 99 ? " (99+)" : $" ({unreadCount})";
-
-      _button.text = isOpen ? "Debug ●" : $"Debug{unreadSuffix}";
-      _button.style.unityBackgroundImageTintColor = isOpen
-        ? PrometheusDebugPalette.ButtonSelected
-        : unreadCount > 0
-          ? PrometheusDebugPalette.ButtonUnread
-        : PrometheusDebugPalette.ButtonNeutral;
     }
 
   }
