@@ -1,0 +1,497 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+namespace Mods.Prometheus.Scripts {
+  internal readonly struct FireGridCoordinate : IEquatable<FireGridCoordinate> {
+
+    public int X { get; }
+    public int Y { get; }
+    public int Z { get; }
+
+    public FireGridCoordinate(int x, int y, int z) {
+      X = x;
+      Y = y;
+      Z = z;
+    }
+
+    public static FireGridCoordinate operator +(FireGridCoordinate left, FireGridOffset right) =>
+      new(left.X + right.Dx, left.Y + right.Dy, left.Z + right.Dz);
+
+    public bool Equals(FireGridCoordinate other) => X == other.X && Y == other.Y && Z == other.Z;
+
+    public override bool Equals(object obj) => obj is FireGridCoordinate other && Equals(other);
+
+    public override int GetHashCode() {
+      unchecked {
+        var hash = X;
+        hash = (hash * 397) ^ Y;
+        hash = (hash * 397) ^ Z;
+        return hash;
+      }
+    }
+
+    public override string ToString() => $"{X},{Y},{Z}";
+
+  }
+
+  internal readonly struct FireGridOffset {
+
+    public int Dx { get; }
+    public int Dy { get; }
+    public int Dz { get; }
+
+    public FireGridOffset(int dx, int dy, int dz) {
+      Dx = dx;
+      Dy = dy;
+      Dz = dz;
+    }
+
+  }
+
+  internal readonly struct FireGridChunkCoordinate : IEquatable<FireGridChunkCoordinate> {
+
+    public const int Size = 8;
+
+    public int X { get; }
+    public int Y { get; }
+    public int Z { get; }
+
+    public FireGridChunkCoordinate(int x, int y, int z) {
+      X = x;
+      Y = y;
+      Z = z;
+    }
+
+    public static FireGridChunkCoordinate FromCell(FireGridCoordinate coordinate) =>
+      new(FloorDiv(coordinate.X, Size), FloorDiv(coordinate.Y, Size), FloorDiv(coordinate.Z, Size));
+
+    public static int LocalIndex(FireGridCoordinate coordinate) {
+      var localX = Mod(coordinate.X, Size);
+      var localY = Mod(coordinate.Y, Size);
+      var localZ = Mod(coordinate.Z, Size);
+      return localX + (localY * Size) + (localZ * Size * Size);
+    }
+
+    public bool Equals(FireGridChunkCoordinate other) => X == other.X && Y == other.Y && Z == other.Z;
+
+    public override bool Equals(object obj) => obj is FireGridChunkCoordinate other && Equals(other);
+
+    public override int GetHashCode() {
+      unchecked {
+        var hash = X;
+        hash = (hash * 397) ^ Y;
+        hash = (hash * 397) ^ Z;
+        return hash;
+      }
+    }
+
+    private static int FloorDiv(int value, int divisor) {
+      var quotient = value / divisor;
+      var remainder = value % divisor;
+      return remainder != 0 && ((remainder < 0) != (divisor < 0)) ? quotient - 1 : quotient;
+    }
+
+    private static int Mod(int value, int divisor) {
+      var result = value % divisor;
+      return result < 0 ? result + divisor : result;
+    }
+
+  }
+
+  internal enum FireGridStructureKind {
+    Unknown,
+    Air,
+    Terrain,
+    Building,
+    Vegetation,
+    Water,
+    Barrier,
+  }
+
+  internal enum FireGridBurnState {
+    Cold,
+    Heating,
+    Smoldering,
+    Burning,
+    Cooling,
+    BurnedOut,
+  }
+
+  internal readonly struct FireCellEnvironment {
+
+    public static FireCellEnvironment OpenAir { get; } = new(
+      FireGridStructureKind.Air,
+      0f,
+      0f,
+      0f,
+      1f,
+      0f,
+      0);
+
+    public FireGridStructureKind StructureKind { get; }
+    public float Fuel { get; }
+    public float Moisture { get; }
+    public float Barrier { get; }
+    public float OxygenAvailability { get; }
+    public float WaterDepth { get; }
+    public int ExposedFaceMask { get; }
+
+    public bool IsUnderwater => WaterDepth > 0.05f || StructureKind == FireGridStructureKind.Water;
+
+    public FireCellEnvironment(
+      FireGridStructureKind structureKind,
+      float fuel,
+      float moisture,
+      float barrier,
+      float oxygenAvailability,
+      float waterDepth,
+      int exposedFaceMask) {
+      StructureKind = structureKind;
+      Fuel = Mathf.Clamp01(fuel);
+      Moisture = Mathf.Clamp01(moisture);
+      Barrier = Mathf.Clamp01(barrier);
+      OxygenAvailability = Mathf.Clamp01(oxygenAvailability);
+      WaterDepth = Mathf.Max(0f, waterDepth);
+      ExposedFaceMask = exposedFaceMask;
+    }
+
+    public float TransferMultiplier =>
+      IsUnderwater ? 0f : Mathf.Clamp01((1f - Moisture) * (1f - Barrier));
+
+    public float EffectiveOxygen(float smoke) =>
+      IsUnderwater ? 0f : Mathf.Clamp01(OxygenAvailability - (Mathf.Clamp01(smoke) * 0.35f));
+
+  }
+
+  internal readonly struct FireCellState {
+
+    public static FireCellState Cold { get; } = new(0f, 0f, 0f, 0f, 0f, FireGridBurnState.Cold);
+
+    public float Heat { get; }
+    public float EmberPressure { get; }
+    public float Smoke { get; }
+    public float IgnitionProgress { get; }
+    public float FuelConsumed { get; }
+    public FireGridBurnState BurnState { get; }
+    public bool IsActive => Heat > 0.001f || EmberPressure > 0.001f || Smoke > 0.001f || IgnitionProgress > 0.001f;
+
+    public FireCellState(
+      float heat,
+      float emberPressure,
+      float smoke,
+      float ignitionProgress,
+      float fuelConsumed,
+      FireGridBurnState burnState) {
+      Heat = Mathf.Clamp01(heat);
+      EmberPressure = Mathf.Clamp01(emberPressure);
+      Smoke = Mathf.Clamp01(smoke);
+      IgnitionProgress = Mathf.Clamp01(ignitionProgress);
+      FuelConsumed = Mathf.Clamp01(fuelConsumed);
+      BurnState = burnState;
+    }
+
+    public FireCellState Add(FireCellState other) =>
+      With(
+        Heat + other.Heat,
+        EmberPressure + other.EmberPressure,
+        Smoke + other.Smoke,
+        IgnitionProgress + other.IgnitionProgress,
+        FuelConsumed + other.FuelConsumed);
+
+    public FireCellState With(
+      float? heat = null,
+      float? emberPressure = null,
+      float? smoke = null,
+      float? ignitionProgress = null,
+      float? fuelConsumed = null,
+      FireGridBurnState? burnState = null) =>
+      new(
+        heat ?? Heat,
+        emberPressure ?? EmberPressure,
+        smoke ?? Smoke,
+        ignitionProgress ?? IgnitionProgress,
+        fuelConsumed ?? FuelConsumed,
+        burnState ?? burnStateFromValues(heat ?? Heat, emberPressure ?? EmberPressure, ignitionProgress ?? IgnitionProgress));
+
+    private static FireGridBurnState burnStateFromValues(float heat, float emberPressure, float ignitionProgress) {
+      if (ignitionProgress >= 0.75f && heat >= 0.35f) {
+        return FireGridBurnState.Burning;
+      }
+
+      if (ignitionProgress >= 0.35f || emberPressure >= 0.2f) {
+        return FireGridBurnState.Smoldering;
+      }
+
+      return heat > 0.001f ? FireGridBurnState.Heating : FireGridBurnState.Cold;
+    }
+
+  }
+
+  internal readonly struct FireGridKernelEntry {
+
+    public FireGridOffset Offset { get; }
+    public float HeatWeight { get; }
+    public float EmberWeight { get; }
+    public float SmokeWeight { get; }
+    public bool IsSelf => Offset.Dx == 0 && Offset.Dy == 0 && Offset.Dz == 0;
+
+    public FireGridKernelEntry(FireGridOffset offset, float heatWeight, float emberWeight, float smokeWeight) {
+      Offset = offset;
+      HeatWeight = Mathf.Max(0f, heatWeight);
+      EmberWeight = Mathf.Max(0f, emberWeight);
+      SmokeWeight = Mathf.Max(0f, smokeWeight);
+    }
+
+  }
+
+  internal sealed class FireGridKernel {
+
+    public static FireGridKernel Full27 { get; } = CreateFull27();
+
+    public IReadOnlyList<FireGridKernelEntry> Entries { get; }
+
+    private FireGridKernel(IReadOnlyList<FireGridKernelEntry> entries) {
+      Entries = entries;
+    }
+
+    private static FireGridKernel CreateFull27() {
+      var entries = new List<FireGridKernelEntry>(27);
+      for (var dx = -1; dx <= 1; dx++) {
+        for (var dy = -1; dy <= 1; dy++) {
+          for (var dz = -1; dz <= 1; dz++) {
+            entries.Add(CreateEntry(dx, dy, dz));
+          }
+        }
+      }
+
+      return new FireGridKernel(entries);
+    }
+
+    private static FireGridKernelEntry CreateEntry(int dx, int dy, int dz) {
+      if (dx == 0 && dy == 0 && dz == 0) {
+        return new FireGridKernelEntry(new FireGridOffset(dx, dy, dz), 0.72f, 0.60f, 0.55f);
+      }
+
+      var manhattan = Mathf.Abs(dx) + Mathf.Abs(dy) + Mathf.Abs(dz);
+      var distancePenalty = 1f / manhattan;
+      var upward = dy > 0 ? 1.8f : dy < 0 ? 0.35f : 1f;
+      var smokeUpward = dy > 0 ? 2.2f : dy < 0 ? 0.08f : 0.35f;
+      var emberVertical = dy > 0 ? 0.7f : dy < 0 ? 0.25f : 1f;
+      return new FireGridKernelEntry(
+        new FireGridOffset(dx, dy, dz),
+        0.08f * distancePenalty * upward,
+        0.06f * distancePenalty * emberVertical,
+        0.07f * distancePenalty * smokeUpward);
+    }
+
+  }
+
+  internal sealed class FireGridRuntimeState {
+
+    private readonly Dictionary<FireGridChunkCoordinate, FireGridChunk> _chunks = new();
+
+    public int ActiveChunkCount => _chunks.Values.Count(chunk => chunk.ActiveCellCount > 0);
+
+    public int ActiveCellCount => _chunks.Values.Sum(chunk => chunk.ActiveCellCount);
+
+    public void SetEnvironment(FireGridCoordinate coordinate, FireCellEnvironment environment) {
+      GetOrCreateChunk(coordinate).SetEnvironment(coordinate, environment);
+    }
+
+    public FireCellEnvironment GetEnvironment(FireGridCoordinate coordinate) {
+      var chunkCoordinate = FireGridChunkCoordinate.FromCell(coordinate);
+      return _chunks.TryGetValue(chunkCoordinate, out var chunk)
+        ? chunk.GetEnvironment(coordinate)
+        : FireCellEnvironment.OpenAir;
+    }
+
+    public void Inject(FireGridCoordinate coordinate, FireCellState state) {
+      if (!state.IsActive) {
+        return;
+      }
+
+      var chunk = GetOrCreateChunk(coordinate);
+      chunk.SetState(coordinate, chunk.GetState(coordinate).Add(state));
+    }
+
+    public bool TryGetState(FireGridCoordinate coordinate, out FireCellState state) {
+      var chunkCoordinate = FireGridChunkCoordinate.FromCell(coordinate);
+      if (_chunks.TryGetValue(chunkCoordinate, out var chunk) && chunk.TryGetState(coordinate, out state)) {
+        return true;
+      }
+
+      state = FireCellState.Cold;
+      return false;
+    }
+
+    public void ClearCell(FireGridCoordinate coordinate) {
+      var chunkCoordinate = FireGridChunkCoordinate.FromCell(coordinate);
+      if (_chunks.TryGetValue(chunkCoordinate, out var chunk)) {
+        chunk.ClearState(coordinate);
+      }
+    }
+
+    public void Clear() {
+      _chunks.Clear();
+    }
+
+    public void Step(FireGridKernel kernel) {
+      var nextStates = new Dictionary<FireGridCoordinate, FireCellState>();
+      var currentEntries = _chunks.Values.SelectMany(chunk => chunk.StateEntries).ToArray();
+      for (var i = 0; i < currentEntries.Length; i++) {
+        var sourceCoordinate = currentEntries[i].Key;
+        var sourceState = currentEntries[i].Value;
+        var sourceEnvironment = GetEnvironment(sourceCoordinate);
+        for (var entryIndex = 0; entryIndex < kernel.Entries.Count; entryIndex++) {
+          var kernelEntry = kernel.Entries[entryIndex];
+          var targetCoordinate = sourceCoordinate + kernelEntry.Offset;
+          var targetEnvironment = GetEnvironment(targetCoordinate);
+          var transfer = Transfer(sourceState, sourceEnvironment, targetEnvironment, kernelEntry);
+          if (!transfer.IsActive) {
+            continue;
+          }
+
+          nextStates.TryGetValue(targetCoordinate, out var existing);
+          nextStates[targetCoordinate] = existing.Add(transfer);
+        }
+      }
+
+      foreach (var chunk in _chunks.Values) {
+        chunk.ClearStates();
+      }
+
+      foreach (var pair in nextStates) {
+        GetOrCreateChunk(pair.Key).SetState(pair.Key, FinalizeCell(pair.Value, GetEnvironment(pair.Key)));
+      }
+
+      PruneInactiveChunks();
+    }
+
+    public void PruneInactiveChunks() {
+      var emptyChunkKeys = _chunks
+        .Where(pair => pair.Value.ActiveCellCount == 0 && pair.Value.EnvironmentCount == 0)
+        .Select(pair => pair.Key)
+        .ToArray();
+      for (var i = 0; i < emptyChunkKeys.Length; i++) {
+        _chunks.Remove(emptyChunkKeys[i]);
+      }
+    }
+
+    private FireGridChunk GetOrCreateChunk(FireGridCoordinate coordinate) {
+      var chunkCoordinate = FireGridChunkCoordinate.FromCell(coordinate);
+      if (_chunks.TryGetValue(chunkCoordinate, out var chunk)) {
+        return chunk;
+      }
+
+      chunk = new FireGridChunk();
+      _chunks[chunkCoordinate] = chunk;
+      return chunk;
+    }
+
+    private static FireCellState Transfer(
+      FireCellState source,
+      FireCellEnvironment sourceEnvironment,
+      FireCellEnvironment targetEnvironment,
+      FireGridKernelEntry entry) {
+      var targetMultiplier = entry.IsSelf ? 1f : targetEnvironment.TransferMultiplier;
+      if (targetMultiplier <= 0f) {
+        return FireCellState.Cold;
+      }
+
+      var fuelMultiplier = entry.IsSelf ? 1f : Mathf.Max(0.2f, targetEnvironment.Fuel);
+      var oxygen = targetEnvironment.EffectiveOxygen(source.Smoke);
+      var heat = source.Heat * entry.HeatWeight * targetMultiplier;
+      var ember = source.EmberPressure * entry.EmberWeight * targetMultiplier * fuelMultiplier;
+      var smoke = source.Smoke * entry.SmokeWeight * targetMultiplier;
+      var ignition = (heat * 0.35f) + (ember * 0.45f * oxygen * fuelMultiplier);
+      var fuelConsumed = entry.IsSelf
+        ? source.FuelConsumed + (source.IgnitionProgress * sourceEnvironment.Fuel * 0.015f)
+        : 0f;
+      return new FireCellState(heat, ember, smoke, ignition, fuelConsumed, FireGridBurnState.Cold);
+    }
+
+    private static FireCellState FinalizeCell(FireCellState state, FireCellEnvironment environment) {
+      if (environment.IsUnderwater) {
+        return FireCellState.Cold;
+      }
+
+      var oxygen = environment.EffectiveOxygen(state.Smoke);
+      var combustion = (state.Heat + state.EmberPressure) * environment.Fuel * oxygen * (1f - environment.Moisture);
+      var ignitionProgress = Mathf.Clamp01(state.IgnitionProgress + (combustion * 0.12f));
+      var heat = ignitionProgress >= 0.75f
+        ? Mathf.Clamp01(state.Heat + (combustion * 0.08f))
+        : state.Heat;
+      return state.With(heat: heat, ignitionProgress: ignitionProgress);
+    }
+
+    private sealed class FireGridChunk {
+
+      private readonly Dictionary<int, FireCellState> _statesByLocalIndex = new();
+      private readonly Dictionary<int, FireCellEnvironment> _environmentsByLocalIndex = new();
+
+      public int ActiveCellCount => _statesByLocalIndex.Count(pair => pair.Value.IsActive);
+
+      public int EnvironmentCount => _environmentsByLocalIndex.Count;
+
+      public IEnumerable<KeyValuePair<FireGridCoordinate, FireCellState>> StateEntries =>
+        _statesByLocalIndex.Select(pair => new KeyValuePair<FireGridCoordinate, FireCellState>(_coordinatesByLocalIndex[pair.Key], pair.Value));
+
+      private readonly Dictionary<int, FireGridCoordinate> _coordinatesByLocalIndex = new();
+
+      public FireCellState GetState(FireGridCoordinate coordinate) {
+        var index = FireGridChunkCoordinate.LocalIndex(coordinate);
+        return _statesByLocalIndex.TryGetValue(index, out var state) ? state : FireCellState.Cold;
+      }
+
+      public bool TryGetState(FireGridCoordinate coordinate, out FireCellState state) {
+        var index = FireGridChunkCoordinate.LocalIndex(coordinate);
+        return _statesByLocalIndex.TryGetValue(index, out state);
+      }
+
+      public void SetState(FireGridCoordinate coordinate, FireCellState state) {
+        var index = FireGridChunkCoordinate.LocalIndex(coordinate);
+        if (!state.IsActive) {
+          ClearState(coordinate);
+          return;
+        }
+
+        _statesByLocalIndex[index] = state;
+        _coordinatesByLocalIndex[index] = coordinate;
+      }
+
+      public void ClearState(FireGridCoordinate coordinate) {
+        var index = FireGridChunkCoordinate.LocalIndex(coordinate);
+        _statesByLocalIndex.Remove(index);
+        if (!_environmentsByLocalIndex.ContainsKey(index)) {
+          _coordinatesByLocalIndex.Remove(index);
+        }
+      }
+
+      public void ClearStates() {
+        _statesByLocalIndex.Clear();
+        var stateOnlyCoordinates = _coordinatesByLocalIndex
+          .Where(pair => !_environmentsByLocalIndex.ContainsKey(pair.Key))
+          .Select(pair => pair.Key)
+          .ToArray();
+        for (var i = 0; i < stateOnlyCoordinates.Length; i++) {
+          _coordinatesByLocalIndex.Remove(stateOnlyCoordinates[i]);
+        }
+      }
+
+      public FireCellEnvironment GetEnvironment(FireGridCoordinate coordinate) {
+        var index = FireGridChunkCoordinate.LocalIndex(coordinate);
+        return _environmentsByLocalIndex.TryGetValue(index, out var environment) ? environment : FireCellEnvironment.OpenAir;
+      }
+
+      public void SetEnvironment(FireGridCoordinate coordinate, FireCellEnvironment environment) {
+        var index = FireGridChunkCoordinate.LocalIndex(coordinate);
+        _environmentsByLocalIndex[index] = environment;
+        _coordinatesByLocalIndex[index] = coordinate;
+      }
+
+    }
+
+  }
+}
