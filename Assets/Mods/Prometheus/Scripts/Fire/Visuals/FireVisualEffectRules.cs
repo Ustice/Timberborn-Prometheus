@@ -96,27 +96,27 @@ namespace Mods.Prometheus.Scripts {
   internal static class FireVisualEffectRules {
 
     internal static FireVisualEffectIntensity ComputeIntensity(
-      FireSimulationSnapshot simulation,
+      FireExposureSnapshot exposure,
       FireDamageStateSnapshot damageState,
       FireVisualEffectTuning tuning) {
       var heatPressure = Mathf.Clamp01(Mathf.Max(
-        simulation.Intensity,
-        simulation.EmberPressure,
-        simulation.HeatExposure));
-      var moistureDampening = Mathf.Clamp01(simulation.MoistureDampening);
+        exposure.Intensity,
+        exposure.EmberPressure,
+        exposure.HeatExposure));
+      var moistureDampening = Mathf.Clamp01(exposure.MoistureDampening);
       var severity = Mathf.Clamp01(damageState.Severity);
 
       // Local object fire progression is smoke/fire/smoke+ash. Sparks belong to the separate ember-field spread visual.
       var embers = 0f;
       var smokeBase = damageState.State switch {
         FireDamageState.Scorched => Mathf.Max(0.25f, severity),
-        FireDamageState.Burning => Mathf.Max(0.45f, Mathf.Max(simulation.Intensity, simulation.Smoke)),
+        FireDamageState.Burning => Mathf.Max(0.45f, Mathf.Max(exposure.Intensity, exposure.Smoke)),
         FireDamageState.Dead => 0.15f,
         _ => 0f,
       };
       var smoke = Mathf.Clamp01(smokeBase * (1f - (moistureDampening * 0.25f)) * tuning.SmokeScale);
-      var fire = simulation.Burning && damageState.State != FireDamageState.Dead
-        ? Mathf.Clamp01(Mathf.Max(0.15f, simulation.Intensity) * (1f - (moistureDampening * 0.35f)) * tuning.FireScale)
+      var fire = exposure.Burning && damageState.State != FireDamageState.Dead
+        ? Mathf.Clamp01(Mathf.Max(0.15f, exposure.Intensity) * (1f - (moistureDampening * 0.35f)) * tuning.FireScale)
         : 0f;
       var steam = Mathf.Clamp01(heatPressure * moistureDampening * tuning.SteamScale);
       var charAmount = damageState.State switch {

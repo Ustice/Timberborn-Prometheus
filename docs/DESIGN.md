@@ -4,7 +4,7 @@
 
 Prometheus is a fire-focused Timberborn mod built around three durable loops:
 
-1. Ignition and spread through a readable fire simulation.
+1. Ignition and spread through a readable fire exposure.
 2. In-world fire state presentation through embers, steam, smoke, flame, and char.
 3. Recovery and renewal through Fertile Ash from valid charred sources.
 
@@ -14,7 +14,7 @@ Design target: fire should be dangerous enough to matter, manageable with prepar
 
 - Preserve Timberborn's planning-first identity.
 - Make fire risk readable in the world, not only in debug panels.
-- Prefer terrain, moisture, firebreaks, and simulation shaping over direct beaver-control minigames.
+- Prefer terrain, moisture, firebreaks, and grid shaping over direct beaver-control minigames.
 - Keep gameplay decisions in dependency-light rules/runtime state; keep Unity/Timberborn adapters thin.
 - Make every applied runtime effect define how `Reset Fire Sim` clears it.
 - Keep fragile integration points centralized: type-name matching, entity identity assumptions, telemetry names, and reflection hooks.
@@ -50,11 +50,11 @@ Status: Accepted.
 
 Build the core spread model before adding containment, mitigation, or colony-response complexity. The earlier responder-first direction made debugging noisy before the fire behavior itself was coherent.
 
-### ADR-002: Debug Visual Authoring Is Temporary And Non-Simulation
+### ADR-002: Debug Visual Authoring Is Temporary And Non-Runtime
 
 Status: Accepted.
 
-The Visuals panel may apply temporary selected-entity previews and export JSON/log settings, but it must not change simulation, damage, recovery, entity profiles, or saved state.
+The Visuals panel may apply temporary selected-entity previews and export JSON/log settings, but it must not change runtime fire state, damage, recovery, entity profiles, or saved state.
 
 ### ADR-003: Source-Owned Facts Stay In Source
 

@@ -10,13 +10,13 @@ namespace Prometheus.Tests {
     public void SnapshotStore_RemovesAndClearsSnapshots_Test() => SnapshotStoreRemovesAndClearsSnapshots();
 
     [Fact]
-    public void SimulationRuntimeState_ForcedIgnitionConsumesAndClears_Test() => SimulationRuntimeStateForcedIgnitionConsumesAndClears();
+    public void ExposureRuntimeState_ForcedIgnitionConsumesAndClears_Test() => ExposureRuntimeStateForcedIgnitionConsumesAndClears();
 
     [Fact]
-    public void SimulationRuntimeState_DebugIgnitionBlockClearsQueuedRequests_Test() => SimulationRuntimeStateDebugIgnitionBlockClearsQueuedRequests();
+    public void ExposureRuntimeState_DebugIgnitionBlockClearsQueuedRequests_Test() => ExposureRuntimeStateDebugIgnitionBlockClearsQueuedRequests();
 
     [Fact]
-    public void SimulationReset_ClearsActiveFireAndIgnitions_Test() => SimulationResetClearsActiveFireAndIgnitions();
+    public void ExposureReset_ClearsActiveFireAndIgnitions_Test() => ExposureResetClearsActiveFireAndIgnitions();
 
     [Fact]
     public void RecoveryReset_ClearsAshenState_Test() => RecoveryResetClearsAshenState();
@@ -102,8 +102,8 @@ namespace Prometheus.Tests {
       Equal(0, state.SnapshotCount);
     }
 
-    private static void SimulationRuntimeStateForcedIgnitionConsumesAndClears() {
-      var state = new FireSimulationRuntimeState();
+    private static void ExposureRuntimeStateForcedIgnitionConsumesAndClears() {
+      var state = new FireExposureRuntimeState();
       state.RequestForcedIgnition(10);
 
       True(state.ConsumeForcedIgnitionRequest(10));
@@ -115,8 +115,8 @@ namespace Prometheus.Tests {
       Equal(0, state.PendingForcedIgnitionCount);
     }
 
-    private static void SimulationRuntimeStateDebugIgnitionBlockClearsQueuedRequests() {
-      var state = new FireSimulationRuntimeState();
+    private static void ExposureRuntimeStateDebugIgnitionBlockClearsQueuedRequests() {
+      var state = new FireExposureRuntimeState();
       state.RequestForcedIgnition(10);
       state.BlockDebugIgnitionsForSeconds(30f);
       state.RequestForcedIgnition(11);
@@ -130,15 +130,15 @@ namespace Prometheus.Tests {
       True(state.ConsumeForcedIgnitionRequest(11));
     }
 
-    private static void SimulationResetClearsActiveFireAndIgnitions() {
-      var simulation = new FireSimulationRuntimeState();
-      simulation.SetSnapshot(8, CreateSimulationSnapshot(burning: true, intensity: 0.8f));
-      simulation.RequestForcedIgnition(8);
+    private static void ExposureResetClearsActiveFireAndIgnitions() {
+      var exposure = new FireExposureRuntimeState();
+      exposure.SetSnapshot(8, CreateExposureSnapshot(burning: true, intensity: 0.8f));
+      exposure.RequestForcedIgnition(8);
 
-      simulation.ClearSnapshotsAndIgnitionRequests();
+      exposure.ClearSnapshotsAndIgnitionRequests();
 
-      Equal(0, simulation.SnapshotCount);
-      Equal(0, simulation.PendingForcedIgnitionCount);
+      Equal(0, exposure.SnapshotCount);
+      Equal(0, exposure.PendingForcedIgnitionCount);
     }
 
     private static void RecoveryResetClearsAshenState() {
@@ -152,7 +152,7 @@ namespace Prometheus.Tests {
     }
 
     private static void TerminalDeadBuildingSnapshotCannotBurn() {
-      var snapshot = FireSimulationRules.CreateTerminalDeadBuildingSnapshot();
+      var snapshot = FireExposureRules.CreateTerminalDeadBuildingSnapshot();
 
       False(snapshot.Burning);
       NearlyEqual(0f, snapshot.Intensity);
@@ -187,7 +187,7 @@ namespace Prometheus.Tests {
       True(FireWorkplaceRules.IsOperationalComponentName("SimpleManufactoryBehaviors"));
       True(FireWorkplaceRules.IsOperationalComponentName("Workshop"));
       True(FireWorkplaceRules.IsOperationalComponentName("RecipeSelector"));
-      False(FireWorkplaceRules.IsOperationalComponentName("FireSimulationController"));
+      False(FireWorkplaceRules.IsOperationalComponentName("FireExposureController"));
       False(FireWorkplaceRules.IsOperationalComponentName("Workplace"));
       False(FireWorkplaceRules.IsOperationalComponentName("WorkplaceBonuses"));
       False(FireWorkplaceRules.IsOperationalComponentName("Deteriorable"));
@@ -223,14 +223,14 @@ namespace Prometheus.Tests {
     private static void FireTelemetryEventsAreCentralizedAndUnique() {
       True(FireTelemetryEvents.All.Length >= 20);
       Equal(FireTelemetryEvents.All.Length, new HashSet<string>(FireTelemetryEvents.All).Count);
-      True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.DebugResetFireSimulation) >= 0);
+      True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.DebugResetFireExposure) >= 0);
       True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.WorkplaceIndoorExposure) >= 0);
       True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.GridIgnitionSeeded) >= 0);
     }
 
     private static void FireVisualEffectRulesDryBurningFireProducesReadableEffects() {
       var intensity = FireVisualEffectRules.ComputeIntensity(
-        CreateSimulationSnapshot(burning: true, intensity: 0.8f),
+        CreateExposureSnapshot(burning: true, intensity: 0.8f),
         new FireDamageStateSnapshot(FireDamageCategory.Building, FireDamageState.Burning, 0.7f, 0.5f, 4),
         FireVisualEffectTuning.Default);
 
@@ -243,11 +243,11 @@ namespace Prometheus.Tests {
     }
 
     private static void FireVisualEffectRulesMoistureTradesFireForSteam() {
-      var drySimulation = CreateSimulationSnapshot(burning: true, intensity: 0.8f, moistureDampening: 0f);
-      var wetSimulation = CreateSimulationSnapshot(burning: true, intensity: 0.8f, moistureDampening: 0.9f);
+      var dryExposure = CreateExposureSnapshot(burning: true, intensity: 0.8f, moistureDampening: 0f);
+      var wetExposure = CreateExposureSnapshot(burning: true, intensity: 0.8f, moistureDampening: 0.9f);
       var damage = new FireDamageStateSnapshot(FireDamageCategory.Tree, FireDamageState.Burning, 0.65f, 0.5f, 3);
-      var dry = FireVisualEffectRules.ComputeIntensity(drySimulation, damage, FireVisualEffectTuning.Default);
-      var wet = FireVisualEffectRules.ComputeIntensity(wetSimulation, damage, FireVisualEffectTuning.Default);
+      var dry = FireVisualEffectRules.ComputeIntensity(dryExposure, damage, FireVisualEffectTuning.Default);
+      var wet = FireVisualEffectRules.ComputeIntensity(wetExposure, damage, FireVisualEffectTuning.Default);
 
       True(wet.Steam > dry.Steam);
       True(wet.Fire < dry.Fire);
@@ -256,7 +256,7 @@ namespace Prometheus.Tests {
 
     private static void FireVisualEffectRulesDeadDamageStateKeepsCharWithoutFire() {
       var intensity = FireVisualEffectRules.ComputeIntensity(
-        CreateSimulationSnapshot(burning: true, intensity: 1f),
+        CreateExposureSnapshot(burning: true, intensity: 1f),
         new FireDamageStateSnapshot(FireDamageCategory.Building, FireDamageState.Dead, 1f, 1f, 12),
         FireVisualEffectTuning.Default);
 
@@ -457,11 +457,11 @@ namespace Prometheus.Tests {
       True(lowOxygenState.IgnitionProgress < highOxygenState.IgnitionProgress);
     }
 
-    private static FireSimulationSnapshot CreateSimulationSnapshot(
+    private static FireExposureSnapshot CreateExposureSnapshot(
       bool burning,
       float intensity,
       float moistureDampening = 0f) {
-      return new FireSimulationSnapshot(
+      return new FireExposureSnapshot(
         burning,
         intensity,
         intensity * 0.7f,

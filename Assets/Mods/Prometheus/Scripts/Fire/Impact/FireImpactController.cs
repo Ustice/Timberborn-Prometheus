@@ -8,7 +8,7 @@ namespace Mods.Prometheus.Scripts {
 
     private const float UpdateIntervalInSeconds = 1f;
 
-    private FireSimulationRuntimeState _fireSimulationRuntimeState;
+    private FireExposureRuntimeState _fireExposureRuntimeState;
     private FireImpactRuntimeState _fireImpactRuntimeState;
     private FireTuningRuntimeState _fireTuningRuntimeState;
 
@@ -16,10 +16,10 @@ namespace Mods.Prometheus.Scripts {
 
     [Inject]
     public void InjectDependencies(
-      FireSimulationRuntimeState fireSimulationRuntimeState,
+      FireExposureRuntimeState fireExposureRuntimeState,
       FireImpactRuntimeState fireImpactRuntimeState,
       FireTuningRuntimeState fireTuningRuntimeState) {
-      _fireSimulationRuntimeState = fireSimulationRuntimeState;
+      _fireExposureRuntimeState = fireExposureRuntimeState;
       _fireImpactRuntimeState = fireImpactRuntimeState;
       _fireTuningRuntimeState = fireTuningRuntimeState;
     }
@@ -30,15 +30,15 @@ namespace Mods.Prometheus.Scripts {
       }
 
       var entityId = GameObject.GetInstanceID();
-      if (!_fireSimulationRuntimeState.TryGetSnapshot(entityId, out var simulationSnapshot)) {
+      if (!_fireExposureRuntimeState.TryGetSnapshot(entityId, out var exposureSnapshot)) {
         return;
       }
 
       var effectiveIntensity = Mathf.Clamp01(Mathf.Max(
-        simulationSnapshot.Intensity,
-        simulationSnapshot.HeatExposure,
-        simulationSnapshot.EmberPressure * 0.75f));
-      var dehydrationPressure = Mathf.Clamp01((simulationSnapshot.HeatExposure * 0.85f) + (simulationSnapshot.Smoke * 0.25f));
+        exposureSnapshot.Intensity,
+        exposureSnapshot.HeatExposure,
+        exposureSnapshot.EmberPressure * 0.75f));
+      var dehydrationPressure = Mathf.Clamp01((exposureSnapshot.HeatExposure * 0.85f) + (exposureSnapshot.Smoke * 0.25f));
 
       var cropDamagePressure = effectiveIntensity * 0.8f;
       var treeDamagePressure = effectiveIntensity * 0.65f;

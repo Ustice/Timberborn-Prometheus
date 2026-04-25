@@ -26,7 +26,7 @@
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Grid/FireGridRuntimeState.cs" Link="Source/Fire/Grid/FireGridRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Impact/FireImpactRuntimeState.cs" Link="Source/Fire/Impact/FireImpactRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Recovery/FireRecoveryRuntimeState.cs" Link="Source/Fire/Recovery/FireRecoveryRuntimeState.cs" />
-    <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Simulation/FireSimulationRuntimeState.cs" Link="Source/Fire/Simulation/FireSimulationRuntimeState.cs" />
+    <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Exposure/FireExposureRuntimeState.cs" Link="Source/Fire/Exposure/FireExposureRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Visuals/FireVisualEffectAuthoring.cs" Link="Source/Fire/Visuals/FireVisualEffectAuthoring.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Visuals/FireVisualEffectRules.cs" Link="Source/Fire/Visuals/FireVisualEffectRules.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Workplace/FireWorkplaceRules.cs" Link="Source/Fire/Workplace/FireWorkplaceRules.cs" />

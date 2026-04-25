@@ -9,7 +9,7 @@ namespace Mods.Prometheus.Scripts {
     public const string DebugIgnitionConsumed = "debug_ignition_consumed";
     public const string DebugStopAllFires = "debug_stop_all_fires";
     public const string DebugStopAllFiresResult = "debug_stop_all_fires_result";
-    public const string DebugResetFireSimulation = "debug_reset_fire_simulation";
+    public const string DebugResetFireExposure = "debug_reset_fire_exposure";
     public const string DebugClearBeaverFireEffectsResult = "debug_clear_beaver_fire_effects_result";
     public const string DebugClearBeaverFireEffects = "debug_clear_beaver_fire_effects";
     public const string DebugViewFocus = "debug_view_focus";
@@ -20,14 +20,12 @@ namespace Mods.Prometheus.Scripts {
     public const string DamageStateChanged = "damage_state_changed";
     public const string DamageTickApplied = "damage_tick_applied";
     public const string DamageStateReset = "damage_state_reset";
-    public const string WorkplaceSuppressed = "workplace_suppressed";
-    public const string WorkplaceRestored = "workplace_restored";
     public const string WorkplaceIndoorExposure = "workplace_indoor_exposure";
     public const string WorkplaceSpeedApiResolved = "workplace_speed_api_resolved";
     public const string WorkplaceSpeedPenaltyState = "workplace_speed_penalty_state";
-    public const string WorkplaceSupportSuppressed = "workplace_support_suppressed";
+    public const string WorkplaceSupportDisabled = "workplace_support_disabled";
     public const string WorkplaceSupportRestored = "workplace_support_restored";
-    public const string BuildingOperationsSuppressed = "building_operations_suppressed";
+    public const string BuildingOperationsDisabled = "building_operations_disabled";
     public const string BuildingOperationsRestored = "building_operations_restored";
     public const string BeaverExposureApplied = "beaver_exposure_applied";
     public const string BeaverExposureCleared = "beaver_exposure_cleared";
@@ -51,7 +49,7 @@ namespace Mods.Prometheus.Scripts {
       DebugIgnitionConsumed,
       DebugStopAllFires,
       DebugStopAllFiresResult,
-      DebugResetFireSimulation,
+      DebugResetFireExposure,
       DebugClearBeaverFireEffectsResult,
       DebugClearBeaverFireEffects,
       DebugViewFocus,
@@ -62,14 +60,12 @@ namespace Mods.Prometheus.Scripts {
       DamageStateChanged,
       DamageTickApplied,
       DamageStateReset,
-      WorkplaceSuppressed,
-      WorkplaceRestored,
       WorkplaceIndoorExposure,
       WorkplaceSpeedApiResolved,
       WorkplaceSpeedPenaltyState,
-      WorkplaceSupportSuppressed,
+      WorkplaceSupportDisabled,
       WorkplaceSupportRestored,
-      BuildingOperationsSuppressed,
+      BuildingOperationsDisabled,
       BuildingOperationsRestored,
       BeaverExposureApplied,
       BeaverExposureCleared,
@@ -90,7 +86,7 @@ namespace Mods.Prometheus.Scripts {
 
   }
 
-  internal readonly struct FireSimulationSnapshot {
+  internal readonly struct FireExposureSnapshot {
 
     public bool Burning { get; }
     public float Intensity { get; }
@@ -103,7 +99,7 @@ namespace Mods.Prometheus.Scripts {
     public float OxygenAvailability { get; }
     public string DominantSource { get; }
 
-    public FireSimulationSnapshot(
+    public FireExposureSnapshot(
       bool burning,
       float intensity,
       float heatExposure,
@@ -128,7 +124,7 @@ namespace Mods.Prometheus.Scripts {
 
   }
 
-  internal class FireSimulationRuntimeState : EntitySnapshotStore<FireSimulationSnapshot> {
+  internal class FireExposureRuntimeState : EntitySnapshotStore<FireExposureSnapshot> {
 
     private readonly HashSet<int> _forcedIgnitionEntityIds = new();
     private float _debugIgnitionBlockSecondsRemaining;
@@ -166,7 +162,7 @@ namespace Mods.Prometheus.Scripts {
           continue;
         }
 
-        SetSnapshot(entry.Key, FireSimulationRules.CreateColdSnapshot("DebugStopAllFires"));
+        SetSnapshot(entry.Key, FireExposureRules.CreateColdSnapshot("DebugStopAllFires"));
         extinguishedCount++;
       }
 
@@ -194,12 +190,12 @@ namespace Mods.Prometheus.Scripts {
 
   }
 
-  internal static class FireSimulationRules {
+  internal static class FireExposureRules {
 
-    internal static FireSimulationSnapshot CreateColdSnapshot(string source = "None") =>
+    internal static FireExposureSnapshot CreateColdSnapshot(string source = "None") =>
       new(false, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 1f, source);
 
-    internal static FireSimulationSnapshot CreateTerminalDeadBuildingSnapshot() =>
+    internal static FireExposureSnapshot CreateTerminalDeadBuildingSnapshot() =>
       new(false, 0f, 0f, 0f, 0.15f, 0f, 1f, 0f, 1f, "DeadBuilding");
 
   }

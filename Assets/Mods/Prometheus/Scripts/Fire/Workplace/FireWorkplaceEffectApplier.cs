@@ -21,8 +21,8 @@ namespace Mods.Prometheus.Scripts {
     private readonly Dictionary<Worker, float> _appliedWorkerSpeedPenalties = new();
     private readonly Dictionary<Worker, float> _originalWorkerSpeedMultipliers = new();
     private readonly List<Worker> _workersToRestore = new();
-    private bool _workplaceSupportSuppressed;
-    private bool _operationalSuppressed;
+    private bool _workplaceSupportDisabled;
+    private bool _operationalDisabled;
     private bool _loggedWorkplaceSpeedApiResolved;
     private float _lastLoggedPenaltyDelta = float.NaN;
     private int _lastLoggedAssignedWorkerCount = -1;
@@ -74,8 +74,8 @@ namespace Mods.Prometheus.Scripts {
       var workingSpeedMultiplier = Mathf.Min(baseWorkingSpeedMultiplier, stateWorkingSpeedMultiplier);
 
       if (buildingDead) {
-        SuppressWorkplaceSupport();
-        SuppressOperationalBehaviours();
+        DisableWorkplaceSupport();
+        DisableOperationalBehaviours();
       } else {
         RestoreWorkplaceSupport();
         RestoreOperationalBehaviours();
@@ -256,7 +256,7 @@ namespace Mods.Prometheus.Scripts {
     }
 
     private void EnsureWorkplaceSupportBehavioursBound() {
-      if (_workplaceSupportBehaviours.Count > 0 || _workplaceSupportSuppressed) {
+      if (_workplaceSupportBehaviours.Count > 0 || _workplaceSupportDisabled) {
         return;
       }
 
@@ -278,8 +278,8 @@ namespace Mods.Prometheus.Scripts {
       }
     }
 
-    private void SuppressWorkplaceSupport() {
-      if (_workplaceSupportSuppressed) {
+    private void DisableWorkplaceSupport() {
+      if (_workplaceSupportDisabled) {
         return;
       }
 
@@ -292,12 +292,12 @@ namespace Mods.Prometheus.Scripts {
         behaviour.enabled = false;
       }
 
-      _workplaceSupportSuppressed = true;
-      FireTelemetry.Log($"event={FireTelemetryEvents.WorkplaceSupportSuppressed} entity={GameObject.name} id={GameObject.GetInstanceID()} reason=building_dead components={_workplaceSupportBehaviours.Count}");
+      _workplaceSupportDisabled = true;
+      FireTelemetry.Log($"event={FireTelemetryEvents.WorkplaceSupportDisabled} entity={GameObject.name} id={GameObject.GetInstanceID()} reason=building_dead components={_workplaceSupportBehaviours.Count}");
     }
 
     private void RestoreWorkplaceSupport() {
-      if (!_workplaceSupportSuppressed) {
+      if (!_workplaceSupportDisabled) {
         return;
       }
 
@@ -310,12 +310,12 @@ namespace Mods.Prometheus.Scripts {
         behaviour.enabled = pair.Value;
       }
 
-      _workplaceSupportSuppressed = false;
+      _workplaceSupportDisabled = false;
       FireTelemetry.Log($"event={FireTelemetryEvents.WorkplaceSupportRestored} entity={GameObject.name} id={GameObject.GetInstanceID()} components={_workplaceSupportOriginalEnabledState.Count}");
     }
 
     private void EnsureOperationalBehavioursBound() {
-      if (_operationalBehaviours.Count > 0 || _operationalSuppressed) {
+      if (_operationalBehaviours.Count > 0 || _operationalDisabled) {
         return;
       }
 
@@ -337,8 +337,8 @@ namespace Mods.Prometheus.Scripts {
       }
     }
 
-    private void SuppressOperationalBehaviours() {
-      if (_operationalSuppressed) {
+    private void DisableOperationalBehaviours() {
+      if (_operationalDisabled) {
         return;
       }
 
@@ -351,12 +351,12 @@ namespace Mods.Prometheus.Scripts {
         behaviour.enabled = false;
       }
 
-      _operationalSuppressed = true;
-      FireTelemetry.Log($"event={FireTelemetryEvents.BuildingOperationsSuppressed} entity={GameObject.name} id={GameObject.GetInstanceID()} reason=building_dead components={_operationalBehaviours.Count}");
+      _operationalDisabled = true;
+      FireTelemetry.Log($"event={FireTelemetryEvents.BuildingOperationsDisabled} entity={GameObject.name} id={GameObject.GetInstanceID()} reason=building_dead components={_operationalBehaviours.Count}");
     }
 
     private void RestoreOperationalBehaviours() {
-      if (!_operationalSuppressed) {
+      if (!_operationalDisabled) {
         return;
       }
 
@@ -369,7 +369,7 @@ namespace Mods.Prometheus.Scripts {
         behaviour.enabled = pair.Value;
       }
 
-      _operationalSuppressed = false;
+      _operationalDisabled = false;
       FireTelemetry.Log($"event={FireTelemetryEvents.BuildingOperationsRestored} entity={GameObject.name} id={GameObject.GetInstanceID()} components={_operationalOriginalEnabledState.Count}");
     }
 

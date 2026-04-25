@@ -9,7 +9,7 @@ namespace Mods.Prometheus.Scripts {
     private const float UpdateIntervalInSeconds = 1f;
     private const float SimHoursPerTick = 0.25f;
 
-    private FireSimulationRuntimeState _fireSimulationRuntimeState;
+    private FireExposureRuntimeState _fireExposureRuntimeState;
     private FireRecoveryRuntimeState _fireRecoveryRuntimeState;
 
     private float _timeSinceLastUpdate;
@@ -19,9 +19,9 @@ namespace Mods.Prometheus.Scripts {
 
     [Inject]
     public void InjectDependencies(
-      FireSimulationRuntimeState fireSimulationRuntimeState,
+      FireExposureRuntimeState fireExposureRuntimeState,
       FireRecoveryRuntimeState fireRecoveryRuntimeState) {
-      _fireSimulationRuntimeState = fireSimulationRuntimeState;
+      _fireExposureRuntimeState = fireExposureRuntimeState;
       _fireRecoveryRuntimeState = fireRecoveryRuntimeState;
     }
 
@@ -31,16 +31,16 @@ namespace Mods.Prometheus.Scripts {
       }
 
       var entityId = GameObject.GetInstanceID();
-      if (!_fireSimulationRuntimeState.TryGetSnapshot(entityId, out var simulationSnapshot)) {
+      if (!_fireExposureRuntimeState.TryGetSnapshot(entityId, out var exposureSnapshot)) {
         return;
       }
 
-      if (simulationSnapshot.Burning) {
+      if (exposureSnapshot.Burning) {
         _sawBurnPhase = true;
-        _peakIntensityDuringBurn = Mathf.Max(_peakIntensityDuringBurn, simulationSnapshot.Intensity);
+        _peakIntensityDuringBurn = Mathf.Max(_peakIntensityDuringBurn, exposureSnapshot.Intensity);
       }
 
-      if (!simulationSnapshot.Burning && _sawBurnPhase) {
+      if (!exposureSnapshot.Burning && _sawBurnPhase) {
         _recoveryHoursRemaining = 18f;
 
         _sawBurnPhase = false;

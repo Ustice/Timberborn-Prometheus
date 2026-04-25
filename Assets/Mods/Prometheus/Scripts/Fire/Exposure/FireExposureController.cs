@@ -3,13 +3,13 @@ using Timberborn.BaseComponentSystem;
 using UnityEngine;
 
 namespace Mods.Prometheus.Scripts {
-  internal class FireSimulationController : BaseComponent,
+  internal class FireExposureController : BaseComponent,
                                             IAwakableComponent,
                                             IUpdatableComponent {
 
     private const float UpdateIntervalInSeconds = 0.5f;
 
-    private FireSimulationRuntimeState _fireSimulationRuntimeState;
+    private FireExposureRuntimeState _fireExposureRuntimeState;
     private FireGridRuntimeState _fireGridRuntimeState;
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
     private FireProfile _fireProfile;
@@ -18,10 +18,10 @@ namespace Mods.Prometheus.Scripts {
 
     [Inject]
     public void InjectDependencies(
-      FireSimulationRuntimeState fireSimulationRuntimeState,
+      FireExposureRuntimeState fireExposureRuntimeState,
       FireGridRuntimeState fireGridRuntimeState,
       FireDamageStateRuntimeState fireDamageStateRuntimeState) {
-      _fireSimulationRuntimeState = fireSimulationRuntimeState;
+      _fireExposureRuntimeState = fireExposureRuntimeState;
       _fireGridRuntimeState = fireGridRuntimeState;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
     }
@@ -31,7 +31,7 @@ namespace Mods.Prometheus.Scripts {
     }
 
     public void Update() {
-      _fireSimulationRuntimeState.TickIgnitionBlock(Time.deltaTime);
+      _fireExposureRuntimeState.TickIgnitionBlock(Time.deltaTime);
       if (!TickGate.ShouldRun(ref _timeSinceLastUpdate, UpdateIntervalInSeconds)) {
         return;
       }
@@ -44,11 +44,11 @@ namespace Mods.Prometheus.Scripts {
       if (_fireDamageStateRuntimeState.TryGetSnapshot(entityId, out var damageState)
           && damageState.State == FireDamageState.Dead) {
         _fireGridRuntimeState.ClearCell(coordinate);
-        PublishSnapshot(entityId, FireSimulationRules.CreateTerminalDeadBuildingSnapshot());
+        PublishSnapshot(entityId, FireExposureRules.CreateTerminalDeadBuildingSnapshot());
         return;
       }
 
-      if (_fireSimulationRuntimeState.ConsumeForcedIgnitionRequest(entityId)) {
+      if (_fireExposureRuntimeState.ConsumeForcedIgnitionRequest(entityId)) {
         _fireGridRuntimeState.Inject(coordinate, CreateDebugIgnitionCell());
         FireTelemetry.Log($"event={FireTelemetryEvents.GridIgnitionSeeded} entity={GameObject.name} id={entityId}");
       }
@@ -59,28 +59,28 @@ namespace Mods.Prometheus.Scripts {
 
     internal bool DebugForceExtinguish() {
       var entityId = GameObject.GetInstanceID();
-      var hadActiveFire = _fireSimulationRuntimeState.TryGetSnapshot(entityId, out var snapshot)
+      var hadActiveFire = _fireExposureRuntimeState.TryGetSnapshot(entityId, out var snapshot)
                           && (snapshot.Burning || snapshot.Intensity > 0f);
-      _fireSimulationRuntimeState.SetSnapshot(entityId, FireSimulationRules.CreateColdSnapshot("DebugExtinguish"));
+      _fireExposureRuntimeState.SetSnapshot(entityId, FireExposureRules.CreateColdSnapshot("DebugExtinguish"));
       _fireGridRuntimeState.ClearCell(GetGridCoordinate());
       _wasBurning = false;
       return hadActiveFire;
     }
 
-    internal void DebugResetFireSimulationState() {
-      _fireSimulationRuntimeState.RemoveSnapshot(GameObject.GetInstanceID());
+    internal void DebugResetFireExposureState() {
+      _fireExposureRuntimeState.RemoveSnapshot(GameObject.GetInstanceID());
       _fireGridRuntimeState.ClearCell(GetGridCoordinate());
       _wasBurning = false;
     }
 
-    private FireSimulationSnapshot CreateSnapshotFromGrid(FireGridFootprint footprint) {
+    private FireExposureSnapshot CreateSnapshotFromGrid(FireGridFootprint footprint) {
       var sample = _fireGridRuntimeState.Sample(footprint);
       if (!sample.HasActivity) {
-        return FireSimulationRules.CreateColdSnapshot();
+        return FireExposureRules.CreateColdSnapshot();
       }
 
       var intensity = Mathf.Clamp01(Mathf.Max(sample.Heat, sample.IgnitionProgress));
-      return new FireSimulationSnapshot(
+      return new FireExposureSnapshot(
         sample.Burning,
         intensity,
         sample.Heat,
@@ -168,8 +168,8 @@ namespace Mods.Prometheus.Scripts {
     private static FireCellState CreateDebugIgnitionCell() =>
       new(1f, 0.85f, 0.35f, 1f, 0f, FireGridBurnState.Burning);
 
-    private void PublishSnapshot(int entityId, FireSimulationSnapshot snapshot) {
-      _fireSimulationRuntimeState.SetSnapshot(entityId, snapshot);
+    private void PublishSnapshot(int entityId, FireExposureSnapshot snapshot) {
+      _fireExposureRuntimeState.SetSnapshot(entityId, snapshot);
       if (snapshot.Burning && !_wasBurning) {
         FireTelemetry.Log($"event={FireTelemetryEvents.Ignited} entity={GameObject.name} id={entityId} source={snapshot.DominantSource}");
       } else if (!snapshot.Burning && _wasBurning) {

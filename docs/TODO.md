@@ -6,7 +6,7 @@
 - [x] Remove spread ignition queues and nearest-target spread helpers.
 - [x] Remove responder/dispatch scoring runtime state.
 - [x] Remove water context probe and entity water snapshots.
-- [x] Remove suppression applier/runtime state.
+- [x] Remove legacy suppression applier/runtime state.
 - [x] Remove floating `FIRE` / `DEAD` text marker path.
 - [x] Replace legacy response-profile blueprint keys with neutral `FireProfileSpec`.
 - [x] Rewrite old tests so they only cover still-active code.
@@ -19,7 +19,7 @@
 - [x] Add chunk coordinates and default `8x8x8` chunk indexing.
 - [x] Store dynamic fire cell state separately from environment samples.
 - [x] Add sparse active-cell storage and chunk cleanup.
-- [x] Add double-buffered simulation stepping.
+- [x] Add double-buffered grid stepping.
 - [x] Add 27-direction kernel shape including self-retention.
 - [x] Add foundation tests for coordinate lookup, boundary writes, cleanup, and order independence.
 
