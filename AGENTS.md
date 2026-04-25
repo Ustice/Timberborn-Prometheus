@@ -22,4 +22,4 @@ Use Typescript for all projects, including skills and automations.
 - Keep final replies concise. Prefer outcome, verification, and any next action over a full recap of already-streamed work.
 - A light funny quip is welcome when it fits, but keep the signal high.
 - When closing out meaningful work, update the relevant docs/status files before the final response.
-- Keep project status current in `README.md`, `Assets/Mods/Prometheus/SESSION_HANDOFF.md`, `Assets/Mods/Prometheus/DESIGN.md`, and `Assets/Mods/Prometheus/TEST_PLAN.md` when the milestone or validation state changes.
+- Keep project status current in `README.md`, `docs/HANDOFF.md`, `docs/DESIGN.md`, and `docs/TEST_PLAN.md` when the milestone or validation state changes.

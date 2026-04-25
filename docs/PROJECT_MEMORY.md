@@ -1,55 +1,26 @@
-# Project Memory — Prometheus
+# Project Memory
 
-Purpose: durable, human-readable memory for stable project conventions and decisions.
+Purpose: durable repo conventions that are stable across sessions and do not belong in live handoff notes.
 
-## Scope and repo boundaries
+## Repo Boundaries
 
 - Primary working repository: `Timberborn-Prometheus`.
-- Do **not** modify `timberborn-modding` source as part of Prometheus feature/debug/tuning work.
-- Unity compile output consumed by deploy is produced from sibling project `../timberborn-modding` (default), but Prometheus code/design changes stay in this repository.
-- Keep code edits, deploy tooling changes, and handoff docs in this repository.
+- Do not modify `../timberborn-modding` source as part of Prometheus feature, debug, or tuning work unless explicitly requested.
+- Prometheus code, deploy tooling, tests, and human/developer docs stay in this repository.
 
-## Build and deploy workflow
+## Source Of Truth
 
-- Build source of truth for deploy: `Library/ScriptAssemblies/Timberborn.ModExamples.Prometheus.dll`.
-- Deploy is symlink-first by default:
-  - non-`Scripts` mod content in `~/Documents/Timberborn/Mods/Prometheus` is symlinked to `Assets/Mods/Prometheus/*`
-  - runtime `Scripts/Timberborn.ModExamples.Prometheus.(dll|pdb)` are symlinked to build output
-- Standard gated build/deploy command:
-  - `bash scripts/build.sh`
-- Launch-safe command for playtests:
-  - `bash scripts/build.sh --launch`
-- Launch timing guard:
-  - `--launch` waits 5s before opening Timberborn.
-- Build script enforces stale-build protection (source `.cs` newer than DLL blocks deploy; no bypass flag).
-- `--launch` now includes build wait behavior and requires DLL freshness and stability across polls before deploy/launch continues, reducing Unity compile race risk.
+| Topic | Source |
+| --- | --- |
+| Build and launch behavior | `bash scripts/build.sh --help` and `scripts/build.sh` |
+| Test behavior | `bash scripts/test.sh` and `tests/Prometheus.Tests` |
+| Runtime telemetry names | `FireTelemetryEvents` |
+| Current live project state | [HANDOFF.md](HANDOFF.md) |
+| Validation workflow | [TEST_PLAN.md](TEST_PLAN.md) |
+| Durable design decisions | [DESIGN.md](DESIGN.md) |
 
-## Runtime telemetry conventions
+## Documentation Rules
 
-- Primary runtime log: `~/Library/Logs/Mechanistry/Timberborn/Player.log`
-- Filter token: `[Prometheus/Fire]`
-- Baseline capture convention: single `Ignite` press per measurement window.
-
-## Tuning methodology
-
-- Change one variable set at a time.
-- Capture before/after from the same scenario window.
-- Prefer small, conservative adjustments first.
-
-## Living documents
-
-- Session checkpoint: `Assets/Mods/Prometheus/SESSION_HANDOFF.md`
-- Test runbook: `Assets/Mods/Prometheus/TEST_PLAN.md`
-- Design and roadmap: `Assets/Mods/Prometheus/DESIGN.md`
-
-## Update rules
-
-- Add entries that are stable across sessions (conventions, workflows, known constraints).
-- Keep temporary experiments and scratch notes out of this file.
-- If a rule changes, update this file in the same commit as the change.
-
-## Documentation style conventions
-
-- Prefer concise, operational markdown in handoff docs (clear sections, short bullets, explicit next actions).
-- Avoid deep nested bullets when possible; flatten to single-line bullets if markdown lint flags list indentation.
-- Keep handoff/status updates evidence-based (test/deploy/log outputs) and aligned with repo runbooks.
+- Keep `Assets/Mods/Prometheus/` limited to shippable mod content because the deploy script symlinks non-`Scripts` assets into the local Timberborn mod folder.
+- Keep live status in [HANDOFF.md](HANDOFF.md), validation gates in [TEST_PLAN.md](TEST_PLAN.md), and durable design in [DESIGN.md](DESIGN.md).
+- Prefer links to source, commands, tests, and logs over copied inventories that can drift.
