@@ -115,7 +115,7 @@ add_missing_prometheus_compile_items() {
     fi
 
     perl -0pi -e "s#(\\s*</ItemGroup>\\s*<ItemGroup>\\s*<None Include=\"Assets/Mods/Prometheus/Scripts/Timberborn\\.ModExamples\\.Prometheus\\.asmdef\")#    <Compile Include=\"$relative_source\" />\\n\\1#" "$PROJECT_CSPROJ"
-  done < <(find "$BUILD_PROJECT_DIR/Assets/Mods/Prometheus/Scripts" -maxdepth 1 -type f -name '*.cs' | sort)
+  done < <(find "$BUILD_PROJECT_DIR/Assets/Mods/Prometheus/Scripts" -type f -name '*.cs' | sort)
 }
 
 prune_stale_prometheus_compile_items() {

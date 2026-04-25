@@ -30,7 +30,7 @@ The active rewrite replaces direct entity-neighbor spread and responder-first as
 | Appliers | Translation from runtime decisions into Unity/Timberborn effects |
 | Debug UI | Commands, inspection, evidence capture, and temporary visual authoring |
 
-Source of truth: exact runtime types and telemetry names live in source, especially `FireTelemetryEvents` and current `Scripts/*.cs` files.
+Source of truth: exact runtime types and telemetry names live in source, especially `FireTelemetryEvents` and current `Scripts/**/*.cs` files.
 
 ## Fire Model
 
