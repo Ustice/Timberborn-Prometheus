@@ -27,23 +27,17 @@ namespace Mods.Prometheus.Scripts {
     }
 
     private void BindRuntimeStates() {
-      Bind<FireSuppressionRuntimeState>().AsSingleton();
       Bind<FireTuningRuntimeState>().AsSingleton();
       Bind<FireSimulationRuntimeState>().AsSingleton();
-      Bind<FireDispatchScoringRuntimeState>().AsSingleton();
-      Bind<FireEntityRegistryRuntimeState>().AsSingleton();
       Bind<FireImpactRuntimeState>().AsSingleton();
       Bind<FireDamageStateRuntimeState>().AsSingleton();
-      Bind<FireWaterContextRuntimeState>().AsSingleton();
       Bind<FireRecoveryRuntimeState>().AsSingleton();
       Bind<FireVisualEffectRuntimeState>().AsSingleton();
       Bind<FireVisualEffectPreviewRuntimeState>().AsSingleton();
     }
 
     private void BindFireResponseComponents() {
-      Bind<FireResponseProfile>().AsTransient();
-      Bind<FireWaterContextProbe>().AsTransient();
-      Bind<FireSuppressionProfileApplier>().AsTransient();
+      Bind<FireProfile>().AsTransient();
       Bind<FireSimulationController>().AsTransient();
       Bind<FireImpactController>().AsTransient();
       Bind<FireDamageStateController>().AsTransient();
@@ -71,19 +65,17 @@ namespace Mods.Prometheus.Scripts {
     }
 
     private static void AddFireResponseDecorators(TemplateModule.Builder builder) {
-      builder.AddDecorator<FireResponseProfileSpec, FireResponseProfile>();
-      builder.AddDecorator<FireResponseProfileSpec, FireWaterContextProbe>();
-      builder.AddDecorator<FireResponseProfileSpec, FireSuppressionProfileApplier>();
-      builder.AddDecorator<FireResponseProfileSpec, FireSimulationController>();
-      builder.AddDecorator<FireResponseProfileSpec, FireImpactController>();
-      builder.AddDecorator<FireResponseProfileSpec, FireDamageStateController>();
-      builder.AddDecorator<FireResponseProfileSpec, FireDamageEffectApplier>();
-      builder.AddDecorator<FireResponseProfileSpec, FireVisualEffectApplier>();
-      builder.AddDecorator<FireResponseProfileSpec, FireRecoveryController>();
-      builder.AddDecorator<FireResponseProfileSpec, FireRecoveryEffectApplier>();
-      builder.AddDecorator<FireResponseProfileSpec, FireWorkplaceEffectApplier>();
-      builder.AddDecorator<FireResponseProfileSpec, FireBeaverEffectApplier>();
-      builder.AddDecorator<FireResponseProfileSpec, FireEntityLifecycleCleanup>();
+      builder.AddDecorator<FireProfileSpec, FireProfile>();
+      builder.AddDecorator<FireProfileSpec, FireSimulationController>();
+      builder.AddDecorator<FireProfileSpec, FireImpactController>();
+      builder.AddDecorator<FireProfileSpec, FireDamageStateController>();
+      builder.AddDecorator<FireProfileSpec, FireDamageEffectApplier>();
+      builder.AddDecorator<FireProfileSpec, FireVisualEffectApplier>();
+      builder.AddDecorator<FireProfileSpec, FireRecoveryController>();
+      builder.AddDecorator<FireProfileSpec, FireRecoveryEffectApplier>();
+      builder.AddDecorator<FireProfileSpec, FireWorkplaceEffectApplier>();
+      builder.AddDecorator<FireProfileSpec, FireBeaverEffectApplier>();
+      builder.AddDecorator<FireProfileSpec, FireEntityLifecycleCleanup>();
     }
 
     private class EntityPanelModuleProvider : IProvider<EntityPanelModule> {
@@ -120,55 +112,35 @@ namespace Mods.Prometheus.Scripts {
 
   internal class FireEntityLifecycleCleanup : BaseComponent {
 
-    private FireSuppressionRuntimeState _fireSuppressionRuntimeState;
     private FireSimulationRuntimeState _fireSimulationRuntimeState;
-    private FireDispatchScoringRuntimeState _fireDispatchScoringRuntimeState;
-    private FireEntityRegistryRuntimeState _fireEntityRegistryRuntimeState;
     private FireImpactRuntimeState _fireImpactRuntimeState;
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
-    private FireWaterContextRuntimeState _fireWaterContextRuntimeState;
     private FireRecoveryRuntimeState _fireRecoveryRuntimeState;
 
     [Inject]
     public void InjectDependencies(
-      FireSuppressionRuntimeState fireSuppressionRuntimeState,
       FireSimulationRuntimeState fireSimulationRuntimeState,
-      FireDispatchScoringRuntimeState fireDispatchScoringRuntimeState,
-      FireEntityRegistryRuntimeState fireEntityRegistryRuntimeState,
       FireImpactRuntimeState fireImpactRuntimeState,
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
-      FireWaterContextRuntimeState fireWaterContextRuntimeState,
       FireRecoveryRuntimeState fireRecoveryRuntimeState) {
-      _fireSuppressionRuntimeState = fireSuppressionRuntimeState;
       _fireSimulationRuntimeState = fireSimulationRuntimeState;
-      _fireDispatchScoringRuntimeState = fireDispatchScoringRuntimeState;
-      _fireEntityRegistryRuntimeState = fireEntityRegistryRuntimeState;
       _fireImpactRuntimeState = fireImpactRuntimeState;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
-      _fireWaterContextRuntimeState = fireWaterContextRuntimeState;
       _fireRecoveryRuntimeState = fireRecoveryRuntimeState;
     }
 
     private void OnDestroy() {
-      if (_fireSuppressionRuntimeState == null
-          || _fireSimulationRuntimeState == null
-          || _fireDispatchScoringRuntimeState == null
-          || _fireEntityRegistryRuntimeState == null
+      if (_fireSimulationRuntimeState == null
           || _fireImpactRuntimeState == null
           || _fireDamageStateRuntimeState == null
-          || _fireWaterContextRuntimeState == null
           || _fireRecoveryRuntimeState == null) {
         return;
       }
 
       var entityId = GameObject.GetInstanceID();
-      _fireSuppressionRuntimeState.RemoveSnapshot(entityId);
       _fireSimulationRuntimeState.RemoveSnapshot(entityId);
-      _fireDispatchScoringRuntimeState.RemoveSnapshot(entityId);
-      _fireEntityRegistryRuntimeState.RemoveSnapshot(entityId);
       _fireImpactRuntimeState.RemoveSnapshot(entityId);
       _fireDamageStateRuntimeState.RemoveSnapshot(entityId);
-      _fireWaterContextRuntimeState.RemoveSnapshot(entityId);
       _fireRecoveryRuntimeState.RemoveSnapshot(entityId);
 
       FireTelemetry.Log($"event={FireTelemetryEvents.EntityDestroyCleanup} entity={GameObject.name} id={entityId}");

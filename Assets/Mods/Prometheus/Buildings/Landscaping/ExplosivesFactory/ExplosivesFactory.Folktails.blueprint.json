@@ -1,21 +1,15 @@
 {
-  "FireResponseProfileSpec": {
-    "FactionApproach": "BucketBrigade",
-    "SuppressionSpeedMultiplier": 1.05,
-    "HeatResistanceBonus": 0.08,
-    "WaterEfficiencyMultiplier": 1.18,
-    "WeatherIgnitionChance": 0.006,
-    "IndustrialIgnitionChance": 0.020,
-    "SupportsControlledBurns": false,
-    "ControlledBurnIgnitionChance": 0.0,
-    "FuelSpreadMultiplier": 1.1,
-    "SpreadBarrierResistance": 0.015,
-    "IgnitionSensitivity": 1.15,
-    "DispatchSeverityWeight": 0.45,
-    "DispatchAssetRiskWeight": 0.35,
-    "DispatchTravelCostWeight": 0.15,
-    "DispatchContainmentLeverageWeight": 0.25,
-    "DispatchAssignmentLockDurationInSeconds": 7.0,
-    "DispatchRetargetHysteresisThreshold": 0.09
+  "FireProfileSpec": {
+    "StructureKind": "Explosives Factory",
+    "Fuel": 1.1,
+    "MoistureResistance": 0.15,
+    "BarrierResistance": 0.2,
+    "IgnitionThreshold": 0.38,
+    "OxygenDemand": 0.4,
+    "HeatSourceIntensity": 0.0,
+    "EmberSourceIntensity": 0.0,
+    "SmokeSourceIntensity": 0.0,
+    "SourceRadius": 1.0,
+    "RequiresOperation": false
   }
 }

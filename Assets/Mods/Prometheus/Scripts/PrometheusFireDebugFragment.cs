@@ -41,11 +41,7 @@ namespace Mods.Prometheus.Scripts {
   internal class PrometheusFireDebugFragment : IEntityPanelFragment {
 
     private readonly FireTuningRuntimeState _fireTuningRuntimeState;
-    private readonly FireSuppressionRuntimeState _fireSuppressionRuntimeState;
     private readonly FireSimulationRuntimeState _fireSimulationRuntimeState;
-    private readonly FireEntityRegistryRuntimeState _fireEntityRegistryRuntimeState;
-    private readonly FireDispatchScoringRuntimeState _fireDispatchScoringRuntimeState;
-    private readonly FireWaterContextRuntimeState _fireWaterContextRuntimeState;
     private readonly FireImpactRuntimeState _fireImpactRuntimeState;
     private readonly FireDamageStateRuntimeState _fireDamageStateRuntimeState;
     private readonly FireRecoveryRuntimeState _fireRecoveryRuntimeState;
@@ -55,37 +51,23 @@ namespace Mods.Prometheus.Scripts {
     private int _selectedEntityId;
     private bool _selectedEntityHasFireProfile;
     private bool _selectedEntityHasSimulationController;
-    private bool _selectedEntityHasSuppressionApplier;
     private string _selectedEntityDebugTitle = "No selected fire entity";
     private string _latestDebugText = string.Empty;
-    private int _baselineSuppressionSnapshotCount;
     private int _baselineSimulationSnapshotCount;
-    private int _baselineDispatchSnapshotCount;
-    private int _baselineWaterSnapshotCount;
     private int _baselineImpactSnapshotCount;
     private int _baselineDamageSnapshotCount;
     private int _baselineRecoverySnapshotCount;
-    private int _baselineRegistrySnapshotCount;
     private int _baselinePendingForcedIgnitionCount;
-    private int _baselinePendingSpreadIgnitionCount;
 
     public PrometheusFireDebugFragment(
       FireTuningRuntimeState fireTuningRuntimeState,
-      FireSuppressionRuntimeState fireSuppressionRuntimeState,
       FireSimulationRuntimeState fireSimulationRuntimeState,
-      FireEntityRegistryRuntimeState fireEntityRegistryRuntimeState,
-      FireDispatchScoringRuntimeState fireDispatchScoringRuntimeState,
-      FireWaterContextRuntimeState fireWaterContextRuntimeState,
       FireImpactRuntimeState fireImpactRuntimeState,
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
       FireRecoveryRuntimeState fireRecoveryRuntimeState,
       PrometheusDebugPanel prometheusDebugPanel) {
       _fireTuningRuntimeState = fireTuningRuntimeState;
-      _fireSuppressionRuntimeState = fireSuppressionRuntimeState;
       _fireSimulationRuntimeState = fireSimulationRuntimeState;
-      _fireEntityRegistryRuntimeState = fireEntityRegistryRuntimeState;
-      _fireDispatchScoringRuntimeState = fireDispatchScoringRuntimeState;
-      _fireWaterContextRuntimeState = fireWaterContextRuntimeState;
       _fireImpactRuntimeState = fireImpactRuntimeState;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
       _fireRecoveryRuntimeState = fireRecoveryRuntimeState;
@@ -108,10 +90,9 @@ namespace Mods.Prometheus.Scripts {
     }
 
     public void ShowFragment(BaseComponent entity) {
-      var fireProfile = entity.GetComponent<FireResponseProfile>();
+      var fireProfile = entity.GetComponent<FireProfile>();
       _selectedEntityHasFireProfile = fireProfile is not null;
       _selectedEntityHasSimulationController = entity.GetComponent<FireSimulationController>() is not null;
-      _selectedEntityHasSuppressionApplier = entity.GetComponent<FireSuppressionProfileApplier>() is not null;
 
       _selectedEntityId = entity.GameObject.GetInstanceID();
       _selectedEntityDebugTitle = _selectedEntityHasFireProfile
@@ -127,7 +108,6 @@ namespace Mods.Prometheus.Scripts {
       _selectedEntityId = 0;
       _selectedEntityHasFireProfile = false;
       _selectedEntityHasSimulationController = false;
-      _selectedEntityHasSuppressionApplier = false;
       _selectedEntityDebugTitle = "No selected fire entity";
       _latestDebugText = string.Empty;
       _prometheusDebugPanel.ClearSelectedEntityDebug();
@@ -142,77 +122,39 @@ namespace Mods.Prometheus.Scripts {
       var stringBuilder = new StringBuilder();
 
       stringBuilder.AppendLine("Entity");
-      stringBuilder.AppendLine($"- FireResponseProfile component: {_selectedEntityHasFireProfile}");
+      stringBuilder.AppendLine($"- FireProfile component: {_selectedEntityHasFireProfile}");
       stringBuilder.AppendLine($"- FireSimulationController component: {_selectedEntityHasSimulationController}");
-      stringBuilder.AppendLine($"- FireSuppressionProfileApplier component: {_selectedEntityHasSuppressionApplier}");
       stringBuilder.AppendLine();
 
       var tuning = _fireTuningRuntimeState.Current;
       stringBuilder.AppendLine("Tuning");
       stringBuilder.AppendLine($"- Profile: {tuning.Profile}");
       stringBuilder.AppendLine($"- Ignition x{tuning.IgnitionMultiplier:0.00}");
-      stringBuilder.AppendLine($"- Spread x{tuning.SpreadMultiplier:0.00}");
-      stringBuilder.AppendLine($"- Quenching x{tuning.QuenchingMultiplier:0.00}");
       stringBuilder.AppendLine($"- Impact x{tuning.ImpactMultiplier:0.00}");
       stringBuilder.AppendLine($"- Damage ticks x{tuning.DamageTickMultiplier:0.00}");
-      stringBuilder.AppendLine($"- Ignition/weather x{tuning.WeatherIgnitionMultiplier:0.00}");
-      stringBuilder.AppendLine($"- Ignition/controlled burn x{tuning.ControlledBurnIgnitionMultiplier:0.00}");
-      stringBuilder.AppendLine($"- Ignition/neighbor x{tuning.NeighborIgnitionMultiplier:0.00}");
-      stringBuilder.AppendLine($"- Ignition/explosion x{tuning.ExplosionIgnitionMultiplier:0.00} ({tuning.ExplosionIgnitionMode})");
-      stringBuilder.AppendLine($"- Spread/dryness x{tuning.DrynessSpreadMultiplier:0.00}");
-      stringBuilder.AppendLine($"- Spread/fuel x{tuning.FuelSpreadMultiplier:0.00}");
-      stringBuilder.AppendLine($"- Spread/barrier x{tuning.BarrierResistanceMultiplier:0.00}");
 
       stringBuilder.AppendLine();
 
       stringBuilder.AppendLine("Runtime store counts");
-      AppendRuntimeCountLine(stringBuilder, "Suppression snapshots", _fireSuppressionRuntimeState.SnapshotCount, _baselineSuppressionSnapshotCount);
       AppendRuntimeCountLine(stringBuilder, "Simulation snapshots", _fireSimulationRuntimeState.SnapshotCount, _baselineSimulationSnapshotCount);
-      AppendRuntimeCountLine(stringBuilder, "Dispatch snapshots", _fireDispatchScoringRuntimeState.SnapshotCount, _baselineDispatchSnapshotCount);
-      AppendRuntimeCountLine(stringBuilder, "Water snapshots", _fireWaterContextRuntimeState.SnapshotCount, _baselineWaterSnapshotCount);
       AppendRuntimeCountLine(stringBuilder, "Impact snapshots", _fireImpactRuntimeState.SnapshotCount, _baselineImpactSnapshotCount);
       AppendRuntimeCountLine(stringBuilder, "Damage snapshots", _fireDamageStateRuntimeState.SnapshotCount, _baselineDamageSnapshotCount);
       AppendRuntimeCountLine(stringBuilder, "Recovery snapshots", _fireRecoveryRuntimeState.SnapshotCount, _baselineRecoverySnapshotCount);
-      AppendRuntimeCountLine(stringBuilder, "Registry snapshots", _fireEntityRegistryRuntimeState.SnapshotCount, _baselineRegistrySnapshotCount);
       AppendRuntimeCountLine(stringBuilder, "Pending forced ignitions", _fireSimulationRuntimeState.PendingForcedIgnitionCount, _baselinePendingForcedIgnitionCount);
-      AppendRuntimeCountLine(stringBuilder, "Pending spread ignitions", _fireSimulationRuntimeState.PendingSpreadIgnitionCount, _baselinePendingSpreadIgnitionCount);
       stringBuilder.AppendLine();
-
-      if (_fireSuppressionRuntimeState.TryGetSnapshot(_selectedEntityId, out var suppression)) {
-        AppendSnapshotSection(stringBuilder, "Suppression", suppression, static (builder, snapshot) => {
-          builder.AppendLine($"- Approach: {snapshot.FactionApproach}");
-          builder.AppendLine($"- Power: {snapshot.SuppressionPower:0.000}");
-          builder.AppendLine($"- Heat mitigation: {snapshot.HeatMitigation:0.000}");
-          builder.AppendLine($"- Water efficiency: {snapshot.WaterEfficiency:0.000}");
-          builder.AppendLine($"- Dispatch lock (s): {snapshot.AssignmentLockDurationInSeconds:0.0}");
-          builder.AppendLine($"- Dispatch hysteresis: {snapshot.RetargetHysteresisThreshold:0.000}");
-        });
-      } else {
-        AppendWarmupSnapshotUnavailableSection(
-          stringBuilder,
-          "Suppression",
-          _selectedEntityHasSuppressionApplier,
-          "- Snapshot unavailable (suppression applier not attached)");
-      }
 
       if (_fireSimulationRuntimeState.TryGetSnapshot(_selectedEntityId, out var simulation)) {
         AppendSnapshotSection(stringBuilder, "Simulation", simulation, static (builder, snapshot) => {
           builder.AppendLine($"- Burning: {snapshot.Burning}");
           builder.AppendLine($"- Intensity: {snapshot.Intensity:0.000}");
-          builder.AppendLine($"- Ignition chance: {snapshot.IgnitionChance:0.000}");
-          builder.AppendLine($"- Dominant ignition source: {snapshot.DominantIgnitionSource}");
-          builder.AppendLine($"- Ignition/weather: {snapshot.WeatherIgnitionContribution:0.000}");
-          builder.AppendLine($"- Ignition/industrial: {snapshot.IndustrialIgnitionContribution:0.000}");
-          builder.AppendLine($"- Ignition/fireworks: {snapshot.FireworksIgnitionContribution:0.000}");
-          builder.AppendLine($"- Ignition/controlled burn: {snapshot.ControlledBurnIgnitionContribution:0.000}");
-          builder.AppendLine($"- Ignition/explosion: {snapshot.ExplosionIgnitionContribution:0.000}");
           builder.AppendLine($"- Heat exposure: {snapshot.HeatExposure:0.000}");
-          builder.AppendLine($"- Quenching: {snapshot.QuenchingPower:0.000}");
-          builder.AppendLine($"- Spread pressure: {snapshot.SpreadPressure:0.000}");
-          builder.AppendLine($"- Neighbor spread pressure: {snapshot.NeighborSpreadPressure:0.000}");
-          builder.AppendLine($"- Spread dryness factor: {snapshot.DrynessFactor:0.000}");
-          builder.AppendLine($"- Spread fuel factor: {snapshot.FuelFactor:0.000}");
-          builder.AppendLine($"- Spread barrier factor: {snapshot.BarrierFactor:0.000}");
+          builder.AppendLine($"- Ember pressure: {snapshot.EmberPressure:0.000}");
+          builder.AppendLine($"- Smoke: {snapshot.Smoke:0.000}");
+          builder.AppendLine($"- Ignition progress: {snapshot.IgnitionProgress:0.000}");
+          builder.AppendLine($"- Fuel consumed: {snapshot.FuelConsumed:0.000}");
+          builder.AppendLine($"- Moisture dampening: {snapshot.MoistureDampening:0.000}");
+          builder.AppendLine($"- Oxygen availability: {snapshot.OxygenAvailability:0.000}");
+          builder.AppendLine($"- Dominant source: {snapshot.DominantSource}");
         });
       } else {
         AppendWarmupSnapshotUnavailableSection(
@@ -220,38 +162,6 @@ namespace Mods.Prometheus.Scripts {
           "Simulation",
           _selectedEntityHasSimulationController,
           "- Snapshot unavailable (simulation controller not attached)");
-      }
-
-      if (_fireDispatchScoringRuntimeState.TryGetSnapshot(_selectedEntityId, out var dispatchScoring)) {
-        AppendSnapshotSection(stringBuilder, "Dispatch scoring", dispatchScoring, static (builder, snapshot) => {
-          builder.AppendLine($"- Candidate score: {snapshot.CandidateScore:0.000}");
-          builder.AppendLine($"- Assigned score: {snapshot.AssignedScore:0.000}");
-          builder.AppendLine($"- Severity factor: {snapshot.SeverityFactor:0.000}");
-          builder.AppendLine($"- Asset risk factor: {snapshot.AssetRiskFactor:0.000}");
-          builder.AppendLine($"- Travel cost factor: {snapshot.TravelCostFactor:0.000}");
-          builder.AppendLine($"- Containment leverage factor: {snapshot.ContainmentLeverageFactor:0.000}");
-          builder.AppendLine($"- Assignment locked: {snapshot.AssignmentLocked}");
-          builder.AppendLine($"- Lock remaining (s): {snapshot.AssignmentLockRemainingSeconds:0.0}");
-          builder.AppendLine($"- Hysteresis threshold: {snapshot.HysteresisThreshold:0.000}");
-          builder.AppendLine($"- Retarget suppressed: {snapshot.RetargetSuppressed}");
-          builder.AppendLine($"- Response state: {snapshot.ResponseState}");
-          builder.AppendLine($"- Top factor: {snapshot.TopFactor}");
-        });
-      } else {
-        AppendSnapshotUnavailableSection(stringBuilder, "Dispatch scoring");
-      }
-
-      if (_fireWaterContextRuntimeState.TryGetSnapshot(_selectedEntityId, out var waterContext)) {
-        AppendSnapshotSection(stringBuilder, "Water context", waterContext, static (builder, snapshot) => {
-          builder.AppendLine($"- Flooded: {snapshot.IsFlooded}");
-          builder.AppendLine($"- Water above base: {snapshot.WaterAboveBase:0.000}");
-          builder.AppendLine($"- Water needs met: {snapshot.WaterNeedsMet}");
-          builder.AppendLine($"- Local exposure: {snapshot.LocalWaterExposure:0.000}");
-          builder.AppendLine($"- Quenching bonus: {snapshot.QuenchingBonus:0.000}");
-          builder.AppendLine($"- Spread reduction: {snapshot.SpreadReduction:0.000}");
-        });
-      } else {
-        AppendSnapshotUnavailableSection(stringBuilder, "Water context");
       }
 
       if (_fireImpactRuntimeState.TryGetSnapshot(_selectedEntityId, out var impact)) {
@@ -280,7 +190,6 @@ namespace Mods.Prometheus.Scripts {
 
       if (_fireRecoveryRuntimeState.TryGetSnapshot(_selectedEntityId, out var recovery)) {
         AppendSnapshotSection(stringBuilder, "Recovery", recovery, static (builder, snapshot) => {
-          builder.AppendLine($"- Controlled burn: {snapshot.ControlledBurn}");
           builder.AppendLine($"- Fertile ash available: {snapshot.FertileAshAvailable}");
           builder.AppendLine($"- Fertility boost: {snapshot.FertilityBoost:0.000}");
           builder.AppendLine($"- Growth speed bonus: {snapshot.GrowthSpeedBonus:0.000}");
@@ -301,16 +210,11 @@ namespace Mods.Prometheus.Scripts {
     }
 
     private void CaptureRuntimeCountBaselines() {
-      _baselineSuppressionSnapshotCount = _fireSuppressionRuntimeState.SnapshotCount;
       _baselineSimulationSnapshotCount = _fireSimulationRuntimeState.SnapshotCount;
-      _baselineDispatchSnapshotCount = _fireDispatchScoringRuntimeState.SnapshotCount;
-      _baselineWaterSnapshotCount = _fireWaterContextRuntimeState.SnapshotCount;
       _baselineImpactSnapshotCount = _fireImpactRuntimeState.SnapshotCount;
       _baselineDamageSnapshotCount = _fireDamageStateRuntimeState.SnapshotCount;
       _baselineRecoverySnapshotCount = _fireRecoveryRuntimeState.SnapshotCount;
-      _baselineRegistrySnapshotCount = _fireEntityRegistryRuntimeState.SnapshotCount;
       _baselinePendingForcedIgnitionCount = _fireSimulationRuntimeState.PendingForcedIgnitionCount;
-      _baselinePendingSpreadIgnitionCount = _fireSimulationRuntimeState.PendingSpreadIgnitionCount;
     }
 
     private static void AppendRuntimeCountLine(StringBuilder stringBuilder, string label, int current, int baseline) {
@@ -425,18 +329,14 @@ namespace Mods.Prometheus.Scripts {
 
     private readonly UILayout _uiLayout;
     private readonly VisualElementInitializer _visualElementInitializer;
-    private readonly FireSuppressionRuntimeState _fireSuppressionRuntimeState;
     private readonly FireSimulationRuntimeState _fireSimulationRuntimeState;
-    private readonly FireDispatchScoringRuntimeState _fireDispatchScoringRuntimeState;
-    private readonly FireEntityRegistryRuntimeState _fireEntityRegistryRuntimeState;
     private readonly FireImpactRuntimeState _fireImpactRuntimeState;
     private readonly FireDamageStateRuntimeState _fireDamageStateRuntimeState;
-    private readonly FireWaterContextRuntimeState _fireWaterContextRuntimeState;
     private readonly FireRecoveryRuntimeState _fireRecoveryRuntimeState;
     private readonly FireVisualEffectPreviewRuntimeState _fireVisualEffectPreviewRuntimeState;
     private readonly EntitySelectionService _entitySelectionService;
     private readonly ILoc _loc;
-    private const float DebugStopAllFiresIgnitionSuppressionSeconds = 60f;
+    private const float DebugStopAllFiresIgnitionBlockSeconds = 60f;
 
     public event Action<bool> OpenStateChanged;
     public event Action<int> UnreadCountChanged;
@@ -495,26 +395,18 @@ namespace Mods.Prometheus.Scripts {
     public PrometheusDebugPanel(
       UILayout uiLayout,
       VisualElementInitializer visualElementInitializer,
-      FireSuppressionRuntimeState fireSuppressionRuntimeState,
       FireSimulationRuntimeState fireSimulationRuntimeState,
-      FireDispatchScoringRuntimeState fireDispatchScoringRuntimeState,
-      FireEntityRegistryRuntimeState fireEntityRegistryRuntimeState,
       FireImpactRuntimeState fireImpactRuntimeState,
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
-      FireWaterContextRuntimeState fireWaterContextRuntimeState,
       FireRecoveryRuntimeState fireRecoveryRuntimeState,
       FireVisualEffectPreviewRuntimeState fireVisualEffectPreviewRuntimeState,
       EntitySelectionService entitySelectionService,
       ILoc loc) {
       _uiLayout = uiLayout;
       _visualElementInitializer = visualElementInitializer;
-      _fireSuppressionRuntimeState = fireSuppressionRuntimeState;
       _fireSimulationRuntimeState = fireSimulationRuntimeState;
-      _fireDispatchScoringRuntimeState = fireDispatchScoringRuntimeState;
-      _fireEntityRegistryRuntimeState = fireEntityRegistryRuntimeState;
       _fireImpactRuntimeState = fireImpactRuntimeState;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
-      _fireWaterContextRuntimeState = fireWaterContextRuntimeState;
       _fireRecoveryRuntimeState = fireRecoveryRuntimeState;
       _fireVisualEffectPreviewRuntimeState = fireVisualEffectPreviewRuntimeState;
       _entitySelectionService = entitySelectionService;
@@ -1259,7 +1151,7 @@ namespace Mods.Prometheus.Scripts {
     }
 
     private void ExtinguishAllFires() {
-      _fireSimulationRuntimeState.SuppressDebugIgnitionsForSeconds(DebugStopAllFiresIgnitionSuppressionSeconds);
+      _fireSimulationRuntimeState.BlockDebugIgnitionsForSeconds(DebugStopAllFiresIgnitionBlockSeconds);
       var liveExtinguishedCount = 0;
       foreach (var simulationController in FindLoadedFireSimulationControllers()) {
         if (simulationController.DebugForceExtinguish()) {
@@ -1268,16 +1160,13 @@ namespace Mods.Prometheus.Scripts {
       }
 
       var simulationExtinguishedCount = _fireSimulationRuntimeState.ExtinguishAllBurning();
-      var registryExtinguishedCount = _fireEntityRegistryRuntimeState.ExtinguishAllBurning();
 
-      var effectiveCount = simulationExtinguishedCount > registryExtinguishedCount
-        ? simulationExtinguishedCount
-        : registryExtinguishedCount;
+      var effectiveCount = simulationExtinguishedCount;
       effectiveCount = effectiveCount > liveExtinguishedCount
         ? effectiveCount
         : liveExtinguishedCount;
 
-      FireTelemetry.Log($"event={FireTelemetryEvents.DebugStopAllFires} liveExtinguished={liveExtinguishedCount} simulationExtinguished={simulationExtinguishedCount} registryExtinguished={registryExtinguishedCount} ignitionSuppressionSeconds={DebugStopAllFiresIgnitionSuppressionSeconds:0}");
+      FireTelemetry.Log($"event={FireTelemetryEvents.DebugStopAllFires} liveExtinguished={liveExtinguishedCount} simulationExtinguished={simulationExtinguishedCount} ignitionBlockSeconds={DebugStopAllFiresIgnitionBlockSeconds:0}");
       FireTelemetry.Log(effectiveCount > 0
         ? $"event={FireTelemetryEvents.DebugStopAllFiresResult} result=success count={effectiveCount}"
         : $"event={FireTelemetryEvents.DebugStopAllFiresResult} result=no_active_fires");
@@ -1451,13 +1340,9 @@ namespace Mods.Prometheus.Scripts {
     }
 
     private void ClearAllRuntimeStores() {
-      _fireSuppressionRuntimeState.ClearSnapshots();
       _fireSimulationRuntimeState.ClearSnapshotsAndIgnitionRequests();
-      _fireDispatchScoringRuntimeState.ClearSnapshots();
-      _fireEntityRegistryRuntimeState.ClearSnapshots();
       _fireImpactRuntimeState.ClearSnapshots();
       _fireDamageStateRuntimeState.ClearSnapshots();
-      _fireWaterContextRuntimeState.ClearSnapshots();
       _fireRecoveryRuntimeState.ClearSnapshots();
     }
 
@@ -1508,13 +1393,9 @@ namespace Mods.Prometheus.Scripts {
     }
 
     private void RemoveEntityFromRuntimeStores(int entityId) {
-      _fireSuppressionRuntimeState.RemoveSnapshot(entityId);
       _fireSimulationRuntimeState.RemoveSnapshot(entityId);
-      _fireDispatchScoringRuntimeState.RemoveSnapshot(entityId);
-      _fireEntityRegistryRuntimeState.RemoveSnapshot(entityId);
       _fireImpactRuntimeState.RemoveSnapshot(entityId);
       _fireDamageStateRuntimeState.RemoveSnapshot(entityId);
-      _fireWaterContextRuntimeState.RemoveSnapshot(entityId);
       _fireRecoveryRuntimeState.RemoveSnapshot(entityId);
     }
 

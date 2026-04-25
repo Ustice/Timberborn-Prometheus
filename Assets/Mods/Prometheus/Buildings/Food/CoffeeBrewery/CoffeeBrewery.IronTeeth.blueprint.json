@@ -1,15 +1,15 @@
 {
-  "FireResponseProfileSpec": {
-    "FactionApproach": "IndustrialControl",
-    "SuppressionSpeedMultiplier": 1.1,
-    "HeatResistanceBonus": 0.2,
-    "WaterEfficiencyMultiplier": 1.05,
-    "WeatherIgnitionChance": 0.007,
-    "IndustrialIgnitionChance": 0.012,
-    "SupportsControlledBurns": false,
-    "ControlledBurnIgnitionChance": 0.0,
-    "FuelSpreadMultiplier": 0.95,
-    "SpreadBarrierResistance": 0.03,
-    "IgnitionSensitivity": 0.92
+  "FireProfileSpec": {
+    "StructureKind": "Coffee Brewery",
+    "Fuel": 0.95,
+    "MoistureResistance": 0.25,
+    "BarrierResistance": 0.25,
+    "IgnitionThreshold": 0.5,
+    "OxygenDemand": 0.35,
+    "HeatSourceIntensity": 0.0,
+    "EmberSourceIntensity": 0.0,
+    "SmokeSourceIntensity": 0.0,
+    "SourceRadius": 1.0,
+    "RequiresOperation": false
   }
 }

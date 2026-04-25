@@ -1,10 +1,4 @@
 namespace Mods.Prometheus.Scripts {
-  internal enum ExplosionIgnitionMode {
-    Off,
-    HighOnly,
-    Always,
-  }
-
   internal enum FireTuningProfile {
     Low,
     Standard,
@@ -15,51 +9,18 @@ namespace Mods.Prometheus.Scripts {
 
     public FireTuningProfile Profile { get; }
     public float IgnitionMultiplier { get; }
-    public float SpreadMultiplier { get; }
-    public float QuenchingMultiplier { get; }
     public float ImpactMultiplier { get; }
     public float DamageTickMultiplier { get; }
-    public float WeatherIgnitionMultiplier { get; }
-    public float IndustrialIgnitionMultiplier { get; }
-    public float ControlledBurnIgnitionMultiplier { get; }
-    public float NeighborIgnitionMultiplier { get; }
-    public float ExplosionIgnitionMultiplier { get; }
-    public ExplosionIgnitionMode ExplosionIgnitionMode { get; }
-    public float DrynessSpreadMultiplier { get; }
-    public float FuelSpreadMultiplier { get; }
-    public float BarrierResistanceMultiplier { get; }
 
     public FireTuningSnapshot(
       FireTuningProfile profile,
       float ignitionMultiplier,
-      float spreadMultiplier,
-      float quenchingMultiplier,
       float impactMultiplier,
-      float damageTickMultiplier,
-      float weatherIgnitionMultiplier,
-      float industrialIgnitionMultiplier,
-      float controlledBurnIgnitionMultiplier,
-      float neighborIgnitionMultiplier,
-      float explosionIgnitionMultiplier,
-      ExplosionIgnitionMode explosionIgnitionMode,
-      float drynessSpreadMultiplier,
-      float fuelSpreadMultiplier,
-      float barrierResistanceMultiplier) {
+      float damageTickMultiplier) {
       Profile = profile;
       IgnitionMultiplier = ignitionMultiplier;
-      SpreadMultiplier = spreadMultiplier;
-      QuenchingMultiplier = quenchingMultiplier;
       ImpactMultiplier = impactMultiplier;
       DamageTickMultiplier = damageTickMultiplier;
-      WeatherIgnitionMultiplier = weatherIgnitionMultiplier;
-      IndustrialIgnitionMultiplier = industrialIgnitionMultiplier;
-      ControlledBurnIgnitionMultiplier = controlledBurnIgnitionMultiplier;
-      NeighborIgnitionMultiplier = neighborIgnitionMultiplier;
-      ExplosionIgnitionMultiplier = explosionIgnitionMultiplier;
-      ExplosionIgnitionMode = explosionIgnitionMode;
-      DrynessSpreadMultiplier = drynessSpreadMultiplier;
-      FuelSpreadMultiplier = fuelSpreadMultiplier;
-      BarrierResistanceMultiplier = barrierResistanceMultiplier;
     }
 
   }
@@ -70,32 +31,10 @@ namespace Mods.Prometheus.Scripts {
       FireTuningProfile.Low,
       0.65f,
       0.7f,
-      1.2f,
-      0.7f,
-      0.75f,
-      0.8f,
-      0.75f,
-      0.95f,
-      0.85f,
-      0.85f,
-      ExplosionIgnitionMode.Off,
-      0.85f,
-      0.85f,
-      1.15f);
+      0.75f);
 
     private static readonly FireTuningSnapshot StandardSnapshot = new(
       FireTuningProfile.Standard,
-      1f,
-      1f,
-      1.15f,
-      1f,
-      1f,
-      1f,
-      1f,
-      1f,
-      1f,
-      1f,
-      ExplosionIgnitionMode.Off,
       1f,
       1f,
       1f);
@@ -103,67 +42,19 @@ namespace Mods.Prometheus.Scripts {
     private static readonly FireTuningSnapshot HighSnapshot = new(
       FireTuningProfile.High,
       1.4f,
-      1.35f,
-      0.9f,
       1.3f,
-      1.4f,
-      1.25f,
-      1.35f,
-      0.9f,
-      1.35f,
-      1.25f,
-      ExplosionIgnitionMode.HighOnly,
-      1.2f,
-      1.2f,
-      0.85f);
+      1.4f);
 
     private FireTuningSnapshot _currentSnapshot = StandardSnapshot;
-    private ExplosionIgnitionMode? _explosionIgnitionModeOverride;
 
     public FireTuningSnapshot Current => _currentSnapshot;
 
     public void SetProfile(FireTuningProfile profile) {
-      var baseSnapshot = profile switch {
+      _currentSnapshot = profile switch {
         FireTuningProfile.Low => LowSnapshot,
         FireTuningProfile.High => HighSnapshot,
         _ => StandardSnapshot,
       };
-
-      if (_explosionIgnitionModeOverride is null) {
-        _currentSnapshot = baseSnapshot;
-        return;
-      }
-
-      _currentSnapshot = WithExplosionIgnitionMode(baseSnapshot, _explosionIgnitionModeOverride.Value);
-    }
-
-    public void SetExplosionIgnitionMode(ExplosionIgnitionMode mode) {
-      _explosionIgnitionModeOverride = mode;
-      SetProfile(_currentSnapshot.Profile);
-    }
-
-    public void ClearExplosionIgnitionModeOverride() {
-      _explosionIgnitionModeOverride = null;
-      SetProfile(_currentSnapshot.Profile);
-    }
-
-    private static FireTuningSnapshot WithExplosionIgnitionMode(FireTuningSnapshot baseSnapshot, ExplosionIgnitionMode explosionIgnitionMode) {
-      return new FireTuningSnapshot(
-        baseSnapshot.Profile,
-        baseSnapshot.IgnitionMultiplier,
-        baseSnapshot.SpreadMultiplier,
-        baseSnapshot.QuenchingMultiplier,
-        baseSnapshot.ImpactMultiplier,
-        baseSnapshot.DamageTickMultiplier,
-        baseSnapshot.WeatherIgnitionMultiplier,
-        baseSnapshot.IndustrialIgnitionMultiplier,
-        baseSnapshot.ControlledBurnIgnitionMultiplier,
-        baseSnapshot.NeighborIgnitionMultiplier,
-        baseSnapshot.ExplosionIgnitionMultiplier,
-        explosionIgnitionMode,
-        baseSnapshot.DrynessSpreadMultiplier,
-        baseSnapshot.FuelSpreadMultiplier,
-        baseSnapshot.BarrierResistanceMultiplier);
     }
 
   }

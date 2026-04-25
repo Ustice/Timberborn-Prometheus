@@ -1,58 +1,40 @@
 using Timberborn.BlueprintSystem;
 
 namespace Mods.Prometheus.Scripts {
-  internal record FireResponseProfileSpec : ComponentSpec {
+  internal record FireProfileSpec : ComponentSpec {
 
     [Serialize]
-    public string FactionApproach { get; init; }
+    public string StructureKind { get; init; }
 
     [Serialize]
-    public float SuppressionSpeedMultiplier { get; init; }
+    public float Fuel { get; init; }
 
     [Serialize]
-    public float HeatResistanceBonus { get; init; }
+    public float MoistureResistance { get; init; }
 
     [Serialize]
-    public float WaterEfficiencyMultiplier { get; init; }
+    public float BarrierResistance { get; init; }
 
     [Serialize]
-    public float WeatherIgnitionChance { get; init; }
+    public float IgnitionThreshold { get; init; }
 
     [Serialize]
-    public float IndustrialIgnitionChance { get; init; }
+    public float OxygenDemand { get; init; }
 
     [Serialize]
-    public bool SupportsControlledBurns { get; init; }
+    public float HeatSourceIntensity { get; init; }
 
     [Serialize]
-    public float ControlledBurnIgnitionChance { get; init; }
+    public float EmberSourceIntensity { get; init; }
 
     [Serialize]
-    public float FuelSpreadMultiplier { get; init; }
+    public float SmokeSourceIntensity { get; init; }
 
     [Serialize]
-    public float SpreadBarrierResistance { get; init; }
+    public float SourceRadius { get; init; }
 
     [Serialize]
-    public float IgnitionSensitivity { get; init; }
-
-    [Serialize]
-    public float DispatchSeverityWeight { get; init; }
-
-    [Serialize]
-    public float DispatchAssetRiskWeight { get; init; }
-
-    [Serialize]
-    public float DispatchTravelCostWeight { get; init; }
-
-    [Serialize]
-    public float DispatchContainmentLeverageWeight { get; init; }
-
-    [Serialize]
-    public float DispatchAssignmentLockDurationInSeconds { get; init; }
-
-    [Serialize]
-    public float DispatchRetargetHysteresisThreshold { get; init; }
+    public bool RequiresOperation { get; init; }
 
   }
 }

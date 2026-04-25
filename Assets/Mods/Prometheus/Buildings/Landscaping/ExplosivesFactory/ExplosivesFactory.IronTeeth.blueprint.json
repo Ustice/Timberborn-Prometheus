@@ -1,21 +1,15 @@
 {
-  "FireResponseProfileSpec": {
-    "FactionApproach": "IndustrialControl",
-    "SuppressionSpeedMultiplier": 1.08,
-    "HeatResistanceBonus": 0.22,
-    "WaterEfficiencyMultiplier": 1.02,
-    "WeatherIgnitionChance": 0.005,
-    "IndustrialIgnitionChance": 0.026,
-    "SupportsControlledBurns": false,
-    "ControlledBurnIgnitionChance": 0.0,
-    "FuelSpreadMultiplier": 1.05,
-    "SpreadBarrierResistance": 0.03,
-    "IgnitionSensitivity": 1.12,
-    "DispatchSeverityWeight": 0.48,
-    "DispatchAssetRiskWeight": 0.36,
-    "DispatchTravelCostWeight": 0.13,
-    "DispatchContainmentLeverageWeight": 0.23,
-    "DispatchAssignmentLockDurationInSeconds": 7.5,
-    "DispatchRetargetHysteresisThreshold": 0.10
+  "FireProfileSpec": {
+    "StructureKind": "Explosives Factory",
+    "Fuel": 1.05,
+    "MoistureResistance": 0.2,
+    "BarrierResistance": 0.25,
+    "IgnitionThreshold": 0.4,
+    "OxygenDemand": 0.4,
+    "HeatSourceIntensity": 0.0,
+    "EmberSourceIntensity": 0.0,
+    "SmokeSourceIntensity": 0.0,
+    "SourceRadius": 1.0,
+    "RequiresOperation": false
   }
 }

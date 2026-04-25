@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Mods.Prometheus.Scripts;
-using UnityEngine;
 using Xunit;
 
 namespace Prometheus.Tests {
@@ -14,19 +13,7 @@ namespace Prometheus.Tests {
     public void SimulationRuntimeState_ForcedIgnitionConsumesAndClears_Test() => SimulationRuntimeStateForcedIgnitionConsumesAndClears();
 
     [Fact]
-    public void SimulationRuntimeState_SpreadIgnitionKeepsStrongestRequest_Test() => SimulationRuntimeStateSpreadIgnitionKeepsStrongestRequest();
-
-    [Fact]
-    public void SimulationRuntimeState_SpreadIgnitionIgnoresInvalidIds_Test() => SimulationRuntimeStateSpreadIgnitionIgnoresInvalidIds();
-
-    [Fact]
-    public void EntityRegistry_ComputesSpreadPressureOnlyFromBurningNeighbors_Test() => EntityRegistryComputesSpreadPressureOnlyFromBurningNeighbors();
-
-    [Fact]
-    public void EntityRegistry_FindsNearestNonBurningTarget_Test() => EntityRegistryFindsNearestNonBurningTarget();
-
-    [Fact]
-    public void DamageResetSnapshot_CanPublishHealthy_Test() => DamageResetSnapshotCanPublishHealthy();
+    public void SimulationRuntimeState_DebugIgnitionBlockClearsQueuedRequests_Test() => SimulationRuntimeStateDebugIgnitionBlockClearsQueuedRequests();
 
     [Fact]
     public void SimulationReset_ClearsActiveFireAndIgnitions_Test() => SimulationResetClearsActiveFireAndIgnitions();
@@ -35,22 +22,13 @@ namespace Prometheus.Tests {
     public void RecoveryReset_ClearsAshenState_Test() => RecoveryResetClearsAshenState();
 
     [Fact]
-    public void TerminalDeadBuildingSnapshot_CannotBurnOrSpread_Test() => TerminalDeadBuildingSnapshotCannotBurnOrSpread();
+    public void TerminalDeadBuildingSnapshot_CannotBurn_Test() => TerminalDeadBuildingSnapshotCannotBurn();
 
     [Fact]
     public void DamageStateThresholds_EncodeLifecycleDecisions_Test() => DamageStateThresholdsEncodeLifecycleDecisions();
 
     [Fact]
-    public void ResponseStateThresholds_EncodeDispatchReadability_Test() => ResponseStateThresholdsEncodeDispatchReadability();
-
-    [Fact]
-    public void QuenchingRules_EncodeFactionResponseIdentity_Test() => QuenchingRulesEncodeFactionResponseIdentity();
-
-    [Fact]
-    public void DispatchDecisionRules_EncodeLockAndHysteresis_Test() => DispatchDecisionRulesEncodeLockAndHysteresis();
-
-    [Fact]
-    public void WorkplaceSupportComponentClassification_PreservesSuppressionBoundary_Test() => WorkplaceSupportComponentClassificationPreservesSuppressionBoundary();
+    public void WorkplaceSupportComponentClassification_PreservesWorkplaceBoundary_Test() => WorkplaceSupportComponentClassificationPreservesWorkplaceBoundary();
 
     [Fact]
     public void OperationalComponentClassification_AvoidsFireAndWorkplaceInternals_Test() => OperationalComponentClassificationAvoidsFireAndWorkplaceInternals();
@@ -77,13 +55,13 @@ namespace Prometheus.Tests {
     public void FireVisualPreset_DefaultsUsePromotedAuthoringValues_Test() => FireVisualPresetDefaultsUsePromotedAuthoringValues();
 
     private static void SnapshotStoreRemovesAndClearsSnapshots() {
-      var state = new FireSuppressionRuntimeState();
-      var snapshot = new FireSuppressionSnapshot("BucketBrigade", 1f, 0.25f, 0.5f, 6f, 0.08f);
+      var state = new FireImpactRuntimeState();
+      var snapshot = new FireImpactSnapshot(0.1f, 0.2f, 0.3f, 0.4f, 0.5f);
 
       state.SetSnapshot(42, snapshot);
       Equal(1, state.SnapshotCount);
       True(state.TryGetSnapshot(42, out var storedSnapshot));
-      Equal("BucketBrigade", storedSnapshot.FactionApproach);
+      NearlyEqual(0.3f, storedSnapshot.BuildingDamagePressure);
 
       state.RemoveSnapshot(42);
       False(state.TryGetSnapshot(42, out _));
@@ -107,88 +85,35 @@ namespace Prometheus.Tests {
       Equal(0, state.PendingForcedIgnitionCount);
     }
 
-    private static void SimulationRuntimeStateSpreadIgnitionKeepsStrongestRequest() {
+    private static void SimulationRuntimeStateDebugIgnitionBlockClearsQueuedRequests() {
       var state = new FireSimulationRuntimeState();
+      state.RequestForcedIgnition(10);
+      state.BlockDebugIgnitionsForSeconds(30f);
+      state.RequestForcedIgnition(11);
 
-      state.RequestSpreadIgnition(20, 10, 0.4f);
-      state.RequestSpreadIgnition(20, 11, 0.2f);
-      True(state.ConsumeSpreadIgnitionRequest(20, out var request));
-      Equal(10, request.SourceEntityId);
-      NearlyEqual(0.4f, request.PropagationChance);
+      Equal(0, state.PendingForcedIgnitionCount);
+      False(state.ConsumeForcedIgnitionRequest(10));
+      False(state.ConsumeForcedIgnitionRequest(11));
 
-      state.RequestSpreadIgnition(20, 10, 0.2f);
-      state.RequestSpreadIgnition(20, 11, 0.7f, PropagationIgnitionSourceKind.Explosion);
-      True(state.ConsumeSpreadIgnitionRequest(20, out request));
-      Equal(11, request.SourceEntityId);
-      NearlyEqual(0.7f, request.PropagationChance);
-      Equal(PropagationIgnitionSourceKind.Explosion, request.SourceKind);
-    }
-
-    private static void SimulationRuntimeStateSpreadIgnitionIgnoresInvalidIds() {
-      var state = new FireSimulationRuntimeState();
-
-      state.RequestSpreadIgnition(0, 10, 0.4f);
-      state.RequestSpreadIgnition(20, 0, 0.4f);
-      state.RequestSpreadIgnition(20, 20, 0.4f);
-
-      Equal(0, state.PendingSpreadIgnitionCount);
-      False(state.ConsumeSpreadIgnitionRequest(20, out _));
-    }
-
-    private static void EntityRegistryComputesSpreadPressureOnlyFromBurningNeighbors() {
-      var state = new FireEntityRegistryRuntimeState();
-      state.SetSnapshot(1, new FireEntityRegistrySnapshot(new Vector3(0f, 0f, 0f), false, 0f, 0.1f));
-      state.SetSnapshot(2, new FireEntityRegistrySnapshot(new Vector3(5f, 0f, 0f), true, 0.5f, 0.1f));
-      state.SetSnapshot(3, new FireEntityRegistrySnapshot(new Vector3(1f, 0f, 0f), false, 1f, 0.1f));
-      state.SetSnapshot(4, new FireEntityRegistrySnapshot(new Vector3(20f, 0f, 0f), true, 1f, 0.1f));
-
-      NearlyEqual(0.025f, state.ComputeNeighborSpreadPressure(1, Vector3.zero, 10f));
-    }
-
-    private static void EntityRegistryFindsNearestNonBurningTarget() {
-      var state = new FireEntityRegistryRuntimeState();
-      state.SetSnapshot(1, new FireEntityRegistrySnapshot(Vector3.zero, true, 1f, 0.1f));
-      state.SetSnapshot(2, new FireEntityRegistrySnapshot(new Vector3(7f, 0f, 0f), false, 0f, 0.1f));
-      state.SetSnapshot(3, new FireEntityRegistrySnapshot(new Vector3(4f, 0f, 0f), false, 0f, 0.1f));
-
-      True(state.TryGetNearestSpreadTarget(1, Vector3.zero, 10f, out var targetEntityId, out var normalizedDistance));
-      Equal(3, targetEntityId);
-      NearlyEqual(0.4f, normalizedDistance);
-    }
-
-    private static void DamageResetSnapshotCanPublishHealthy() {
-      var state = new FireDamageStateRuntimeState();
-
-      state.SetSnapshot(5, new FireDamageStateSnapshot(FireDamageCategory.Building, FireDamageState.Dead, 1f, 1f, 12));
-      state.SetSnapshot(5, new FireDamageStateSnapshot(FireDamageCategory.Building, FireDamageState.Healthy, 0f, 0f, 0));
-
-      True(state.TryGetSnapshot(5, out var snapshot));
-      Equal(FireDamageState.Healthy, snapshot.State);
-      NearlyEqual(0f, snapshot.Severity);
-      NearlyEqual(0f, snapshot.TickProgress);
-      Equal(0, snapshot.DamageTicksApplied);
+      state.TickIgnitionBlock(31f);
+      state.RequestForcedIgnition(11);
+      True(state.ConsumeForcedIgnitionRequest(11));
     }
 
     private static void SimulationResetClearsActiveFireAndIgnitions() {
       var simulation = new FireSimulationRuntimeState();
-      var registry = new FireEntityRegistryRuntimeState();
       simulation.SetSnapshot(8, CreateSimulationSnapshot(burning: true, intensity: 0.8f));
       simulation.RequestForcedIgnition(8);
-      simulation.RequestSpreadIgnition(9, 8, 0.4f);
-      registry.SetSnapshot(8, new FireEntityRegistrySnapshot(Vector3.zero, true, 0.8f, 0.1f));
 
       simulation.ClearSnapshotsAndIgnitionRequests();
-      registry.ClearSnapshots();
 
       Equal(0, simulation.SnapshotCount);
       Equal(0, simulation.PendingForcedIgnitionCount);
-      Equal(0, simulation.PendingSpreadIgnitionCount);
-      Equal(0, registry.SnapshotCount);
     }
 
     private static void RecoveryResetClearsAshenState() {
       var state = new FireRecoveryRuntimeState();
-      state.SetSnapshot(2, new FireRecoverySnapshot(true, true, 0.2f, 0.1f, 0.1f, 12f));
+      state.SetSnapshot(2, new FireRecoverySnapshot(true, 0.2f, 0.1f, 0.1f, 12f));
 
       state.ClearSnapshots();
 
@@ -196,15 +121,14 @@ namespace Prometheus.Tests {
       False(state.TryGetSnapshot(2, out _));
     }
 
-    private static void TerminalDeadBuildingSnapshotCannotBurnOrSpread() {
+    private static void TerminalDeadBuildingSnapshotCannotBurn() {
       var snapshot = FireSimulationRules.CreateTerminalDeadBuildingSnapshot();
 
       False(snapshot.Burning);
       NearlyEqual(0f, snapshot.Intensity);
       NearlyEqual(0f, snapshot.HeatExposure);
-      NearlyEqual(0f, snapshot.SpreadPressure);
-      NearlyEqual(0f, snapshot.IgnitionChance);
-      Equal("DeadBuilding", snapshot.DominantIgnitionSource);
+      NearlyEqual(0f, snapshot.EmberPressure);
+      Equal("DeadBuilding", snapshot.DominantSource);
     }
 
     private static void DamageStateThresholdsEncodeLifecycleDecisions() {
@@ -218,77 +142,7 @@ namespace Prometheus.Tests {
       Equal(FireDamageState.Dead, FireDamageStateRules.DetermineState(1f));
     }
 
-    private static void ResponseStateThresholdsEncodeDispatchReadability() {
-      Equal("Stabilized", FireSimulationRules.DetermineResponseState(false, 0f, 0f, 0f));
-      Equal("Overwhelmed", FireSimulationRules.DetermineResponseState(true, 0.7f, 0.3f, 0.2f));
-      Equal("Contained", FireSimulationRules.DetermineResponseState(true, 0.4f, 0.1f, 0.12f));
-      Equal("Stabilized", FireSimulationRules.DetermineResponseState(true, 0.5f, 0.1f, 0.12f));
-    }
-
-    private static void QuenchingRulesEncodeFactionResponseIdentity() {
-      var baseQuenching = FireSimulationRules.ComputeQuenchingPower(true, 1f, 1f, 0f, "Neutral", 0.8f, 0.2f, 1f, false);
-      var folktailsFarWater = FireSimulationRules.ComputeQuenchingPower(true, 1f, 1f, 0f, "BucketBrigade", 0.8f, 0.2f, 1f, false);
-      var folktailsNearWater = FireSimulationRules.ComputeQuenchingPower(true, 1f, 1f, 0f, "BucketBrigade", 0.8f, 0.95f, 1f, false);
-      var ironteethHighHeat = FireSimulationRules.ComputeQuenchingPower(true, 1f, 1f, 0f, "IndustrialControl", 0.8f, 0.2f, 1f, false);
-      var disrupted = FireSimulationRules.ComputeQuenchingPower(true, 1f, 1f, 0f, "IndustrialControl", 0.8f, 0.2f, 1f, true);
-
-      True(folktailsFarWater < baseQuenching);
-      True(folktailsNearWater > folktailsFarWater);
-      True(ironteethHighHeat > baseQuenching);
-      NearlyEqual(ironteethHighHeat * 0.65f, disrupted, 0.000001f);
-      NearlyEqual(0f, FireSimulationRules.ComputeQuenchingPower(false, 1f, 1f, 1f, "IndustrialControl", 1f, 1f, 1f, false));
-    }
-
-    private static void DispatchDecisionRulesEncodeLockAndHysteresis() {
-      var firstDecision = FireSimulationRules.ComputeDispatchDecision(
-        0.8f,
-        0.25f,
-        0.4f,
-        0.3f,
-        0.5f,
-        0.2f,
-        0.8f,
-        0.7f,
-        0.45f,
-        0.35f,
-        0.15f,
-        0.25f,
-        0f,
-        0f,
-        7f,
-        0.09f);
-
-      True(firstDecision.CandidateScore > 0f);
-      NearlyEqual(firstDecision.CandidateScore, firstDecision.AssignedScore, 0.000001f);
-      NearlyEqual(7f, firstDecision.AssignmentLockRemainingSeconds);
-      False(firstDecision.AssignmentLocked);
-      False(firstDecision.RetargetSuppressed);
-
-      var lockedDecision = FireSimulationRules.ComputeDispatchDecision(
-        1f,
-        0.4f,
-        0.6f,
-        0.5f,
-        0.8f,
-        0f,
-        0.6f,
-        0.9f,
-        0.45f,
-        0.35f,
-        0.15f,
-        0.25f,
-        firstDecision.AssignedScore,
-        5f,
-        7f,
-        0.02f);
-
-      True(lockedDecision.AssignmentLocked);
-      True(lockedDecision.RetargetSuppressed);
-      True(lockedDecision.AssignedScore > firstDecision.AssignedScore);
-      True(lockedDecision.AssignedScore < lockedDecision.CandidateScore);
-    }
-
-    private static void WorkplaceSupportComponentClassificationPreservesSuppressionBoundary() {
+    private static void WorkplaceSupportComponentClassificationPreservesWorkplaceBoundary() {
       True(FireWorkplaceRules.IsWorkplaceSupportComponentName("Workplace"));
       True(FireWorkplaceRules.IsWorkplaceSupportComponentName("BakeryWorkplace"));
       True(FireWorkplaceRules.IsWorkplaceSupportComponentName("WorkplaceWorkerTracker"));
@@ -337,17 +191,16 @@ namespace Prometheus.Tests {
     }
 
     private static void FireTelemetryEventsAreCentralizedAndUnique() {
-      True(FireTelemetryEvents.All.Length >= 30);
+      True(FireTelemetryEvents.All.Length >= 20);
       Equal(FireTelemetryEvents.All.Length, new HashSet<string>(FireTelemetryEvents.All).Count);
       True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.DebugResetFireSimulation) >= 0);
       True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.WorkplaceIndoorExposure) >= 0);
-      True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.ExplosionIgnitionRequestQueued) >= 0);
+      True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.GridIgnitionSeeded) >= 0);
     }
 
     private static void FireVisualEffectRulesDryBurningFireProducesReadableEffects() {
       var intensity = FireVisualEffectRules.ComputeIntensity(
         CreateSimulationSnapshot(burning: true, intensity: 0.8f),
-        CreateWaterContextSnapshot(0f),
         new FireDamageStateSnapshot(FireDamageCategory.Building, FireDamageState.Burning, 0.7f, 0.5f, 4),
         FireVisualEffectTuning.Default);
 
@@ -360,18 +213,11 @@ namespace Prometheus.Tests {
     }
 
     private static void FireVisualEffectRulesMoistureTradesFireForSteam() {
-      var simulation = CreateSimulationSnapshot(burning: true, intensity: 0.8f);
+      var drySimulation = CreateSimulationSnapshot(burning: true, intensity: 0.8f, moistureDampening: 0f);
+      var wetSimulation = CreateSimulationSnapshot(burning: true, intensity: 0.8f, moistureDampening: 0.9f);
       var damage = new FireDamageStateSnapshot(FireDamageCategory.Tree, FireDamageState.Burning, 0.65f, 0.5f, 3);
-      var dry = FireVisualEffectRules.ComputeIntensity(
-        simulation,
-        CreateWaterContextSnapshot(0f),
-        damage,
-        FireVisualEffectTuning.Default);
-      var wet = FireVisualEffectRules.ComputeIntensity(
-        simulation,
-        CreateWaterContextSnapshot(0.9f),
-        damage,
-        FireVisualEffectTuning.Default);
+      var dry = FireVisualEffectRules.ComputeIntensity(drySimulation, damage, FireVisualEffectTuning.Default);
+      var wet = FireVisualEffectRules.ComputeIntensity(wetSimulation, damage, FireVisualEffectTuning.Default);
 
       True(wet.Steam > dry.Steam);
       True(wet.Fire < dry.Fire);
@@ -381,7 +227,6 @@ namespace Prometheus.Tests {
     private static void FireVisualEffectRulesDeadDamageStateKeepsCharWithoutFire() {
       var intensity = FireVisualEffectRules.ComputeIntensity(
         CreateSimulationSnapshot(burning: true, intensity: 1f),
-        CreateWaterContextSnapshot(0f),
         new FireDamageStateSnapshot(FireDamageCategory.Building, FireDamageState.Dead, 1f, 1f, 12),
         FireVisualEffectTuning.Default);
 
@@ -430,34 +275,21 @@ namespace Prometheus.Tests {
       NearlyEqual(0.4f, sparks.NoiseStrength);
     }
 
-    private static FireSimulationSnapshot CreateSimulationSnapshot(bool burning, float intensity) {
+    private static FireSimulationSnapshot CreateSimulationSnapshot(
+      bool burning,
+      float intensity,
+      float moistureDampening = 0f) {
       return new FireSimulationSnapshot(
         burning,
         intensity,
         intensity * 0.7f,
-        0.2f,
-        intensity * 0.1f,
-        intensity * 0.05f,
-        intensity * 0.2f,
-        burning ? "Weather" : "None",
-        0.1f,
-        0.1f,
-        0f,
-        0f,
-        0f,
-        0.4f,
-        0.5f,
-        0.2f);
-    }
-
-    private static FireWaterContextSnapshot CreateWaterContextSnapshot(float exposure) {
-      return new FireWaterContextSnapshot(
-        exposure > 0f,
-        exposure,
-        exposure > 0f,
-        exposure,
-        exposure * 0.5f,
-        exposure * 0.25f);
+        intensity * 0.4f,
+        intensity * 0.5f,
+        burning ? 1f : 0f,
+        burning ? 0.15f : 0f,
+        moistureDampening,
+        1f,
+        burning ? "Grid" : "None");
     }
 
     private static void True(bool value) {

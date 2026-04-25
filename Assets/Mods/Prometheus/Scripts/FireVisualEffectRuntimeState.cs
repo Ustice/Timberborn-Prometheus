@@ -2,21 +2,9 @@ namespace Mods.Prometheus.Scripts {
   internal class FireVisualEffectRuntimeState {
 
     public FireVisualEffectTuning CurrentTuning { get; private set; } = FireVisualEffectTuning.Default;
-    public bool TextMarkersEnabled { get; private set; }
-    public float TextMarkerScale { get; private set; } = 1f;
 
     public void ResetDefaults() {
       CurrentTuning = FireVisualEffectTuning.Default;
-      TextMarkersEnabled = false;
-      TextMarkerScale = 1f;
-    }
-
-    public void SetTextMarkersEnabled(bool enabled) {
-      TextMarkersEnabled = enabled;
-    }
-
-    public void SetTextMarkerScale(float scale) {
-      TextMarkerScale = UnityEngine.Mathf.Clamp(scale, 0f, 3f);
     }
 
     public void SetEmberScale(float scale) {

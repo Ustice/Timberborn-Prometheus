@@ -61,7 +61,7 @@ namespace Mods.Prometheus.Scripts {
       } else {
         var canDecay = !(_category == FireDamageCategory.Building && previousState == FireDamageState.Dead);
         if (canDecay) {
-          _severity = Mathf.Clamp01(_severity - (0.05f * Mathf.Max(0.5f, _fireTuningRuntimeState.Current.QuenchingMultiplier)));
+          _severity = Mathf.Clamp01(_severity - 0.05f);
           _tickProgress = Mathf.Clamp01(_tickProgress - 0.1f);
         } else {
           _severity = 1f;
