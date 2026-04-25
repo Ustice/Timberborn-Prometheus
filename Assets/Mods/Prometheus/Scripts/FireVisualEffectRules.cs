@@ -8,25 +8,63 @@ namespace Mods.Prometheus.Scripts {
       1.0f,
       1.0f,
       1.0f,
-      1.0f);
+      1.0f,
+      0f,
+      0f,
+      1.0f,
+      1.25f);
 
     public float EmberScale { get; }
     public float SmokeScale { get; }
     public float FireScale { get; }
     public float SteamScale { get; }
     public float CharScale { get; }
+    public float HeightOffset { get; }
+    public float DepthOffset { get; }
+    public float EffectSize { get; }
+    public float EmberSpread { get; }
 
     public FireVisualEffectTuning(
       float emberScale,
       float smokeScale,
       float fireScale,
       float steamScale,
-      float charScale) {
+      float charScale,
+      float heightOffset,
+      float depthOffset,
+      float effectSize,
+      float emberSpread) {
       EmberScale = Mathf.Max(0f, emberScale);
       SmokeScale = Mathf.Max(0f, smokeScale);
       FireScale = Mathf.Max(0f, fireScale);
       SteamScale = Mathf.Max(0f, steamScale);
       CharScale = Mathf.Max(0f, charScale);
+      HeightOffset = Mathf.Clamp(heightOffset, -2f, 4f);
+      DepthOffset = Mathf.Clamp(depthOffset, -3f, 3f);
+      EffectSize = Mathf.Clamp(effectSize, 0.25f, 4f);
+      EmberSpread = Mathf.Clamp(emberSpread, 0f, 4f);
+    }
+
+    public FireVisualEffectTuning With(
+      float? emberScale = null,
+      float? smokeScale = null,
+      float? fireScale = null,
+      float? steamScale = null,
+      float? charScale = null,
+      float? heightOffset = null,
+      float? depthOffset = null,
+      float? effectSize = null,
+      float? emberSpread = null) {
+      return new FireVisualEffectTuning(
+        emberScale ?? EmberScale,
+        smokeScale ?? SmokeScale,
+        fireScale ?? FireScale,
+        steamScale ?? SteamScale,
+        charScale ?? CharScale,
+        heightOffset ?? HeightOffset,
+        depthOffset ?? DepthOffset,
+        effectSize ?? EffectSize,
+        emberSpread ?? EmberSpread);
     }
 
   }

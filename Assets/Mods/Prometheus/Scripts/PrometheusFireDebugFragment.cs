@@ -732,6 +732,10 @@ namespace Mods.Prometheus.Scripts {
       AddVisualSlider(visualSection, "Fire", tuning.FireScale, _fireVisualEffectRuntimeState.SetFireScale);
       AddVisualSlider(visualSection, "Steam", tuning.SteamScale, _fireVisualEffectRuntimeState.SetSteamScale);
       AddVisualSlider(visualSection, "Char", tuning.CharScale, _fireVisualEffectRuntimeState.SetCharScale);
+      AddVisualSlider(visualSection, "Height", tuning.HeightOffset, _fireVisualEffectRuntimeState.SetHeightOffset, -2f, 4f, "");
+      AddVisualSlider(visualSection, "Z offset", tuning.DepthOffset, _fireVisualEffectRuntimeState.SetDepthOffset, -3f, 3f, "");
+      AddVisualSlider(visualSection, "Size", tuning.EffectSize, _fireVisualEffectRuntimeState.SetEffectSize, 0.25f, 4f, "x");
+      AddVisualSlider(visualSection, "Ember spread", tuning.EmberSpread, _fireVisualEffectRuntimeState.SetEmberSpread, 0f, 4f, "");
       AddVisualSlider(visualSection, "Text marker", _fireVisualEffectRuntimeState.TextMarkerScale, _fireVisualEffectRuntimeState.SetTextMarkerScale);
 
       var controlRow = visualSection.AddHorizontalContainer();
@@ -763,18 +767,29 @@ namespace Mods.Prometheus.Scripts {
                      + $"fire={tuning.FireScale:0.00}, "
                      + $"steam={tuning.SteamScale:0.00}, "
                      + $"char={tuning.CharScale:0.00}, "
+                     + $"height={tuning.HeightOffset:0.00}, "
+                     + $"z={tuning.DepthOffset:0.00}, "
+                     + $"size={tuning.EffectSize:0.00}, "
+                     + $"emberSpread={tuning.EmberSpread:0.00}, "
                      + $"textMarkers={_fireVisualEffectRuntimeState.TextMarkersEnabled}, "
                      + $"textMarkerScale={_fireVisualEffectRuntimeState.TextMarkerScale:0.00}";
       GUIUtility.systemCopyBuffer = settings;
       SetVisualTuningFeedback("Copied visual tuning.");
     }
 
-    private void AddVisualSlider(VisualElement parent, string labelText, float initialValue, Action<float> setter) {
-      var slider = parent.AddSlider(label: labelText, values: new SliderValues<float>(0, 3, initialValue));
+    private void AddVisualSlider(
+      VisualElement parent,
+      string labelText,
+      float initialValue,
+      Action<float> setter,
+      float min = 0f,
+      float max = 3f,
+      string valuePrefix = "x") {
+      var slider = parent.AddSlider(label: labelText, values: new SliderValues<float>(min, max, initialValue));
       slider.RegisterChange(newValue => {
         var rounded = Mathf.Round(newValue * 20f) / 20f;
         setter(rounded);
-        SetVisualTuningFeedback($"{labelText} x{rounded:0.00}");
+        SetVisualTuningFeedback($"{labelText} {valuePrefix}{rounded:0.00}");
       });
     }
 

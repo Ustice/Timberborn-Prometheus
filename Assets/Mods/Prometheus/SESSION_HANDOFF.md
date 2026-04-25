@@ -88,6 +88,9 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
 - Debug panel UI is intentionally excluded from automated tests for now and remains manual QA because the workflow is still evolving.
 - First Phase 2 worker/beaver exposure slice landed: assigned workers in burning workplaces receive indoor beaver need exposure through the same NeedManager path as proximity exposure, while proximity and indoor exposure magnitudes are computed by `FireBeaverExposureRules` and covered by plain C# tests.
 - First fire presentation slice landed: `FireVisualEffectRules` computes tunable ember/smoke/fire/steam/char intensities from fire, water, and damage snapshots, while `FireVisualEffectApplier` applies Unity particles plus char tint to loaded fire-profiled entities and clears them through `Reset Fire Sim`.
+- Native-particle replacement pass landed: `FireVisualEffectApplier` now loads Timberborn Resource particle prefabs, clones the best native ember/smoke/fire/steam source by name/material scoring, controls each cloned effect group from Prometheus intensity, and logs `native_visual_effect_resolved` or `native_visual_effect_unavailable` once per channel.
+- Latest launch resolved native sources as `Sparks_Trail` for embers, `SmelterSmoke` for smoke, `CampfireFire` for fire, and `SteamEngineSmoke` for steam.
+- Visual tuning now exposes height, local Z offset, overall effect size, and ember spread. Ember spread rewrites the cloned ember particle shape to a sphere so sparks do not emit from a single point.
 - Screenshot QA showed the legacy `DEAD` text markers rendered as huge magenta blocks; they now default off and can be re-enabled/tuned from the debug panel.
 - The global Prometheus debug panel now has a `Visual Tuning` section with live sliders for ember, smoke, fire, steam, char, and text-marker scale.
 - Previous panel pass converted the global debug panel from a tall stack into compact tabs; the current Moddable Tool Groups migration supersedes that navigation with bottom-bar submenu entries.
@@ -163,6 +166,8 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
    - smoke for smoldering/scorched states,
    - fire for active burning,
    - light steam for moisture dampening,
+   - native Timberborn particle systems are resolved for the visible channels, or fallback gaps are documented from `Fire.log`,
+   - height/Z/size/ember-spread sliders can tune native clone placement and footprint live,
    - charred material tint for terminal burned buildings and vegetation,
    - reset clears active effects and tint.
 4. Add Fertile Ash source tagging for charred vegetation and selected ruined buildings, with foresters as the natural vegetation collection path.
@@ -234,5 +239,6 @@ Recent work closed the early fire-spread proof of concept and prioritized three 
 2. Select a fire-profiled building and open the debug panel.
 3. Confirm the reorganized `Actions`/`Visuals`/`Selection`/`Log` submenu views are readable and do not cover core Timberborn controls.
 4. Trigger one ignite event.
-5. Verify: filtered/colored/searchable log rows + `View` button camera jump.
-6. Confirm dead-building suppression/restore behavior and capture logs.
+5. Verify `Fire.log` contains `native_visual_effect_resolved` for the visible channels, or note any `native_visual_effect_unavailable` fallback channel.
+6. Verify: filtered/colored/searchable log rows + `View` button camera jump.
+7. Confirm dead-building suppression/restore behavior and capture logs.

@@ -119,8 +119,12 @@ Pass criteria:
 - [ ] Lower-risk heat buildings (e.g., Bakery) do not produce ember fields unless explicitly configured.
 - [ ] Fireworks and unstable explosive events can create short-lived ember fields without adding a fireworks-control minigame.
 - [ ] Smoke, active fire, steam, embers, and charred presentation match runtime states.
+- [ ] `Fire.log` records `native_visual_effect_resolved` for Timberborn-sourced particle channels when visible effects are initialized; current expected sources are `Sparks_Trail`, `SmelterSmoke`, `CampfireFire`, and `SteamEngineSmoke`.
+- [ ] Any `native_visual_effect_unavailable` fallback channel is captured with the selected entity, save, and visible effect state.
 - [ ] Reset Fire Sim clears active particles and char tint on loaded fire-profiled entities.
 - [ ] `Visual Tuning` sliders visibly change ember/smoke/fire/steam/char intensity without a rebuild.
+- [ ] `Visual Tuning` height, Z offset, size, and ember-spread sliders visibly affect native particle placement/footprint without a rebuild.
+- [ ] Ember spread prevents sparks from reading as a single fixed point at normal zoom.
 - [ ] Legacy text markers stay off by default and only appear when `Text markers` is enabled.
 - [ ] Valid charred vegetation/buildings expose Fertile Ash source state.
 

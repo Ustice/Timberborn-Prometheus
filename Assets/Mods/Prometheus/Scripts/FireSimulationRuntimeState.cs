@@ -35,6 +35,8 @@ namespace Mods.Prometheus.Scripts {
     public const string ExplosionIgnitionRequestReplaced = "explosion_ignition_request_replaced";
     public const string Extinguished = "extinguished";
     public const string Ignited = "ignited";
+    public const string NativeVisualEffectResolved = "native_visual_effect_resolved";
+    public const string NativeVisualEffectUnavailable = "native_visual_effect_unavailable";
     public const string PreviewExcluded = "preview_excluded";
     public const string ResponseState = "response_state";
     public const string SpreadIgniteApplied = "spread_ignite_applied";
@@ -73,6 +75,8 @@ namespace Mods.Prometheus.Scripts {
       ExplosionIgnitionRequestReplaced,
       Extinguished,
       Ignited,
+      NativeVisualEffectResolved,
+      NativeVisualEffectUnavailable,
       PreviewExcluded,
       ResponseState,
       SpreadIgniteApplied,

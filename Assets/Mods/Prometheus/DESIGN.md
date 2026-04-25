@@ -161,6 +161,10 @@ Fire state should be readable from in-world effects before the player opens a pa
 
 The visual layer should be an adapter over fire runtime state, not a separate gameplay system.
 
+The preferred particle source is Timberborn's own runtime particle systems, cloned and intensity-controlled by Prometheus. Generated particles are a fallback only when no matching native source is loaded or discoverable.
+
+Visual tuning should stay runtime-adjustable while Phase 2 readability is unsettled: intensity, local height/Z placement, overall particle size, and ember source spread are all adapter-level controls.
+
 ### 2) Spread
 
 Fire spread should be influenced by:
