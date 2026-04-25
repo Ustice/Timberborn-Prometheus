@@ -39,16 +39,16 @@ Source of truth: exact runtime types and telemetry names live in source, especia
 | Ignition | Buildings and events can be data-driven fire sources with profile-tuned risk. |
 | Spread | The next model is sparse 3D cellular propagation with local fuel, moisture, barriers, source intensity, and decay. |
 | Visuals | Local object fire should read as smoke to fire to smoke/ash/char; sparks/embers belong to field/spread pressure. |
-| Suppression | Water/moisture dampen pressure; faction-specific suppression stays behind core spread coherence. |
+| Dampening | Water/moisture dampen pressure; any future containment mechanics stay behind core spread coherence. |
 | Recovery | Fertile Ash is the only core post-fire resource unless future playtesting proves another loop is needed. |
 
 ## Durable Decisions
 
-### ADR-001: Ember/Grid First, Responders Later
+### ADR-001: Ember/Grid First
 
 Status: Accepted.
 
-Build the core spread model before adding fire-brigade, relay, or responder complexity. The earlier responder-first direction made debugging noisy before the fire behavior itself was coherent.
+Build the core spread model before adding containment, mitigation, or colony-response complexity. The earlier responder-first direction made debugging noisy before the fire behavior itself was coherent.
 
 ### ADR-002: Debug Visual Authoring Is Temporary And Non-Simulation
 

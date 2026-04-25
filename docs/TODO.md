@@ -8,7 +8,7 @@
 - [x] Remove water context probe and entity water snapshots.
 - [x] Remove suppression applier/runtime state.
 - [x] Remove floating `FIRE` / `DEAD` text marker path.
-- [x] Replace `FireResponseProfileSpec` blueprint keys with neutral `FireProfileSpec`.
+- [x] Replace legacy response-profile blueprint keys with neutral `FireProfileSpec`.
 - [x] Rewrite old tests so they only cover still-active code.
 - [x] Validate with `bash scripts/test.sh && bash scripts/build.sh --launch`.
 - [x] Confirm Timberborn loads with the cleaned baseline.

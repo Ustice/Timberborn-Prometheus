@@ -12,14 +12,15 @@ Prometheus is moving into the 3D grid fire rewrite. The old entity-neighbor spre
 | --- | --- | --- | --- |
 | 2026-04-25 | `bash scripts/test.sh && bash scripts/build.sh --launch` | Pass | Removal pass launched Timberborn successfully. |
 | 2026-04-25 | Source inspection and build | Pass | Direct spread registry, spread ignition queue, dispatch scoring store, water context probe/store, suppression applier/store, response-state labels, and floating `FIRE`/`DEAD` markers are out of active source. |
-| 2026-04-25 | Blueprint update | Pass | Blueprint components now use neutral `FireProfileSpec` data instead of `FireResponseProfileSpec`. |
-| 2026-04-25 | Runtime bridge | Pass | Temporary simulation controller supports debug ignition/cooling snapshots until grid state replaces it. |
+| 2026-04-25 | Blueprint update | Pass | Blueprint components now use neutral `FireProfileSpec` data. |
+| 2026-04-25 | Runtime bridge | Pass | Simulation controller projects grid activity into debug, damage, recovery, and visual snapshots while grid state becomes the source of truth. |
 | 2026-04-25 | `bash scripts/test.sh` | Pass | Grid foundation tests increased the plain C# suite to 21 tests. |
 | 2026-04-25 | `bash scripts/build.sh --launch` + startup log scan | Pass | Debug ignition now seeds grid state; startup logs showed `Prometheus (v0.2)` and no Prometheus errors in the scanned window. |
 | 2026-04-25 | `bash scripts/test.sh` | Pass | Footprint sampling and aggregate grid reads increased the plain C# suite to 23 tests. |
 | 2026-04-25 | `bash scripts/build.sh --launch` + startup log scan | Pass | Entity snapshots now sample grid state across renderer-derived footprints; startup logs remained clean in the scanned window. |
 | 2026-04-25 | `bash scripts/test.sh` | Pass | Environment-rule coverage increased the plain C# suite to 26 tests: underwater suppression, moisture/barrier dampening, and oxygen-driven ignition differences. |
 | 2026-04-25 | `bash scripts/test.sh && bash scripts/build.sh --launch` + startup log scan | Pass | Script source is organized by feature area under `Scripts/Core`, `Scripts/Debug`, and `Scripts/Fire`; startup logs showed `Prometheus (v0.2)` with no scanned Prometheus errors. |
+| 2026-04-25 | `bash scripts/test.sh && bash scripts/build.sh --launch` + startup log scan | Pass | Removed leftover response-profile filenames/helper names and unused debug snapshot factory; startup logs showed `Prometheus (v0.2)` with no scanned Prometheus errors. |
 
 ## Durable Context
 

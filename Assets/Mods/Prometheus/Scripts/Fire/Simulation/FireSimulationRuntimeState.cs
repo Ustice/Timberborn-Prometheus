@@ -202,20 +202,5 @@ namespace Mods.Prometheus.Scripts {
     internal static FireSimulationSnapshot CreateTerminalDeadBuildingSnapshot() =>
       new(false, 0f, 0f, 0f, 0.15f, 0f, 1f, 0f, 1f, "DeadBuilding");
 
-    internal static FireSimulationSnapshot CreateSeededDebugSnapshot(float intensity = 1f) {
-      var clamped = Mathf.Clamp01(intensity);
-      return new FireSimulationSnapshot(
-        true,
-        clamped,
-        clamped,
-        clamped * 0.7f,
-        clamped * 0.35f,
-        1f,
-        0f,
-        0f,
-        1f,
-        "DebugIgnite");
-    }
-
   }
 }

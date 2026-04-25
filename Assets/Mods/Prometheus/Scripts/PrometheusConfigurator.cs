@@ -12,7 +12,7 @@ namespace Mods.Prometheus.Scripts {
 
     protected override void Configure() {
       BindRuntimeStates();
-      BindFireResponseComponents();
+      BindFireComponents();
       Bind<PrometheusFireDebugFragment>().AsSingleton();
       Bind<PrometheusDebugPanel>().AsSingleton();
       Bind<PrometheusDebugActionsTool>().AsSingleton();
@@ -37,7 +37,7 @@ namespace Mods.Prometheus.Scripts {
       Bind<FireVisualEffectPreviewRuntimeState>().AsSingleton();
     }
 
-    private void BindFireResponseComponents() {
+    private void BindFireComponents() {
       Bind<FireProfile>().AsTransient();
       Bind<FireSimulationController>().AsTransient();
       Bind<FireImpactController>().AsTransient();
@@ -61,11 +61,11 @@ namespace Mods.Prometheus.Scripts {
 
     private static TemplateModule ProvideTemplateModule() {
       var builder = new TemplateModule.Builder();
-      AddFireResponseDecorators(builder);
+      AddFireDecorators(builder);
       return builder.Build();
     }
 
-    private static void AddFireResponseDecorators(TemplateModule.Builder builder) {
+    private static void AddFireDecorators(TemplateModule.Builder builder) {
       builder.AddDecorator<FireProfileSpec, FireProfile>();
       builder.AddDecorator<FireProfileSpec, FireSimulationController>();
       builder.AddDecorator<FireProfileSpec, FireImpactController>();
