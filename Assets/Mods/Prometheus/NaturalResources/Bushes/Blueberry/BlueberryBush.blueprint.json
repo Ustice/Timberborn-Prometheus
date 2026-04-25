@@ -1,0 +1,8 @@
+{
+  "FireProfileSpec": {
+    "StructureKind": "Blueberry Bush",
+    "Fuel": 0.75,
+    "MoistureResistance": 0.25,
+    "BarrierResistance": 0.02
+  }
+}

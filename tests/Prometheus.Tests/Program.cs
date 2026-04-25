@@ -84,6 +84,24 @@ namespace Prometheus.Tests {
     [Fact]
     public void FireGridRuntimeState_OxygenAvailabilityChangesIgnition_Test() => FireGridRuntimeStateOxygenAvailabilityChangesIgnition();
 
+    [Fact]
+    public void FireGridRuntimeState_BurningVegetationEmitsAcrossForestLine_Test() => FireGridRuntimeStateBurningVegetationEmitsAcrossForestLine();
+
+    [Fact]
+    public void FireGridRuntimeState_ExposedFacesLimitTransfer_Test() => FireGridRuntimeStateExposedFacesLimitTransfer();
+
+    [Fact]
+    public void FireGridEnvironmentSampler_ProfileParsesFuelAndResistances_Test() => FireGridEnvironmentSamplerProfileParsesFuelAndResistances();
+
+    [Fact]
+    public void FireGridEnvironmentSampler_WorldWaterOverridesProfileKind_Test() => FireGridEnvironmentSamplerWorldWaterOverridesProfileKind();
+
+    [Fact]
+    public void FireGridEnvironmentSampler_MergeKeepsReadOnlyWorldConstraints_Test() => FireGridEnvironmentSamplerMergeKeepsReadOnlyWorldConstraints();
+
+    [Fact]
+    public void FireGridEnvironmentSampler_TerrainColumnSeparatesTopSurfaceAndMass_Test() => FireGridEnvironmentSamplerTerrainColumnSeparatesTopSurfaceAndMass();
+
     private static void SnapshotStoreRemovesAndClearsSnapshots() {
       var state = new FireImpactRuntimeState();
       var snapshot = new FireImpactSnapshot(0.1f, 0.2f, 0.3f, 0.4f, 0.5f);
@@ -455,6 +473,117 @@ namespace Prometheus.Tests {
       True(highOxygenGrid.TryGetState(target, out var highOxygenState));
       True(lowOxygenGrid.TryGetState(target, out var lowOxygenState));
       True(lowOxygenState.IgnitionProgress < highOxygenState.IgnitionProgress);
+    }
+
+    private static void FireGridRuntimeStateBurningVegetationEmitsAcrossForestLine() {
+      var grid = new FireGridRuntimeState();
+      for (var x = 0; x < 5; x++) {
+        grid.SetEnvironment(new FireGridCoordinate(x, 0, 0), BurnableEnvironment());
+      }
+
+      grid.Inject(new FireGridCoordinate(0, 0, 0), HotCell());
+      for (var step = 0; step < 12; step++) {
+        grid.Step(FireGridKernel.Full27);
+      }
+
+      True(grid.TryGetState(new FireGridCoordinate(3, 0, 0), out var distantTreeState));
+      True(distantTreeState.BurnState == FireGridBurnState.Burning || distantTreeState.BurnState == FireGridBurnState.Smoldering);
+      True(distantTreeState.IgnitionProgress > 0.35f);
+    }
+
+    private static void FireGridRuntimeStateExposedFacesLimitTransfer() {
+      var openGrid = CreateTwoCellTransferGrid(BurnableEnvironment());
+      var blockedGrid = CreateTwoCellTransferGrid(new FireCellEnvironment(
+        FireGridStructureKind.Vegetation,
+        1f,
+        0f,
+        0f,
+        1f,
+        0f,
+        FireGridExposedFaces.PositiveY));
+      var target = new FireGridCoordinate(1, 0, 0);
+
+      openGrid.Step(FireGridKernel.Full27);
+      blockedGrid.Step(FireGridKernel.Full27);
+
+      True(openGrid.TryGetState(target, out var openState));
+      False(blockedGrid.TryGetState(target, out var blockedState) && blockedState.IsActive);
+    }
+
+    private static void FireGridEnvironmentSamplerProfileParsesFuelAndResistances() {
+      var sample = FireGridEnvironmentSampler.FromProfile("berry-bush", 1.15f, 0.25f, 0.4f);
+
+      Equal(FireGridStructureKind.Vegetation, sample.StructureKind);
+      NearlyEqual(1.15f, sample.Fuel);
+      NearlyEqual(0.75f, sample.Moisture);
+      NearlyEqual(0.4f, sample.Barrier);
+      NearlyEqual(1f, sample.OxygenAvailability);
+      Equal(FireGridExposedFaces.All, sample.ExposedFaceMask);
+    }
+
+    private static void FireGridEnvironmentSamplerWorldWaterOverridesProfileKind() {
+      var profile = FireGridEnvironmentSampler.FromProfile("bakery", 0.9f, 0.1f, 0.2f);
+      var world = new FireGridEnvironmentSample(
+        FireGridStructureKind.Water,
+        0f,
+        0.3f,
+        0f,
+        0.6f,
+        0.8f,
+        FireGridExposedFaces.PositiveY);
+
+      var environment = FireGridEnvironmentSampler.Merge(profile, world).ToEnvironment();
+
+      Equal(FireGridStructureKind.Water, environment.StructureKind);
+      True(environment.IsUnderwater);
+      NearlyEqual(0.9f, environment.Fuel);
+      NearlyEqual(0.9f, environment.Moisture);
+      NearlyEqual(0.8f, environment.WaterDepth);
+      NearlyEqual(0.6f, environment.OxygenAvailability);
+      Equal(FireGridExposedFaces.PositiveY, environment.ExposedFaceMask);
+    }
+
+    private static void FireGridEnvironmentSamplerMergeKeepsReadOnlyWorldConstraints() {
+      var profile = FireGridEnvironmentSampler.FromProfile("platform-barrier", 0.2f, 0.8f, 0.25f);
+      var world = new FireGridEnvironmentSample(
+        FireGridStructureKind.Terrain,
+        0.6f,
+        0.7f,
+        0.5f,
+        0.4f,
+        0f,
+        FireGridExposedFaces.PositiveY | FireGridExposedFaces.PositiveX);
+
+      var sample = FireGridEnvironmentSampler.Merge(profile, world);
+
+      Equal(FireGridStructureKind.Barrier, sample.StructureKind);
+      NearlyEqual(0.6f, sample.Fuel);
+      NearlyEqual(0.7f, sample.Moisture);
+      NearlyEqual(0.5f, sample.Barrier);
+      NearlyEqual(0.4f, sample.OxygenAvailability);
+      Equal(FireGridExposedFaces.PositiveY | FireGridExposedFaces.PositiveX, sample.ExposedFaceMask);
+    }
+
+    private static void FireGridEnvironmentSamplerTerrainColumnSeparatesTopSurfaceAndMass() {
+      var belowFloor = FireGridEnvironmentSampler.FromTerrainColumn(new FireGridCoordinate(2, 3, 4), 4, 8);
+      var mass = FireGridEnvironmentSampler.FromTerrainColumn(new FireGridCoordinate(2, 6, 4), 4, 8);
+      var top = FireGridEnvironmentSampler.FromTerrainColumn(new FireGridCoordinate(2, 8, 4), 4, 8);
+      var aboveTop = FireGridEnvironmentSampler.FromTerrainColumn(new FireGridCoordinate(2, 9, 4), 4, 8);
+
+      Equal(FireGridStructureKind.Air, belowFloor.StructureKind);
+      Equal(FireGridStructureKind.Terrain, mass.StructureKind);
+      Equal(FireGridExposedFaces.None, mass.ExposedFaceMask);
+      True(mass.Barrier > top.Barrier);
+      True(mass.OxygenAvailability < top.OxygenAvailability);
+      Equal(FireGridStructureKind.Terrain, top.StructureKind);
+      Equal(
+        FireGridExposedFaces.PositiveY
+        | FireGridExposedFaces.NegativeX
+        | FireGridExposedFaces.PositiveX
+        | FireGridExposedFaces.NegativeZ
+        | FireGridExposedFaces.PositiveZ,
+        top.ExposedFaceMask);
+      Equal(FireGridStructureKind.Air, aboveTop.StructureKind);
     }
 
     private static FireExposureSnapshot CreateExposureSnapshot(

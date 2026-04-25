@@ -1,0 +1,8 @@
+{
+  "FireProfileSpec": {
+    "StructureKind": "Oak Tree",
+    "Fuel": 1.0,
+    "MoistureResistance": 0.2,
+    "BarrierResistance": 0.05
+  }
+}

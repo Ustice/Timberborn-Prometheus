@@ -26,30 +26,46 @@
 ## 3. Environment Sampling
 
 - [x] Sample entity footprints into grid cells.
+- [x] Add a Timberborn-facing environment sampling adapter owned outside the dependency-light grid rules.
+- [x] Add dependency-light terrain column policy for terrain mass vs top-surface cells.
+- [x] Add vegetation `FireProfileSpec` overlays for common trees and bushes.
 - [ ] Sample terrain occupancy and terrain top surfaces.
 - [ ] Sample block/building occupancy.
 - [ ] Sample exposed face masks.
 - [ ] Sample water columns/depth as read-only inputs.
 - [ ] Sample soil moisture as read-only input.
+- [x] Merge entity profile values with terrain, block, water, and moisture inputs into one cell environment.
+- [ ] Keep all Timberborn world inputs read-only; write only to Prometheus runtime grid state.
 - [x] Derive fuel, moisture dampening, barrier resistance, oxygen availability, and structure kind.
+- [x] Add plain C# coverage for merged environment samples where Unity/Timberborn adapters can be isolated.
+- [ ] Validate environment sampling in-game with `bash scripts/build.sh --launch` or `bash scripts/build.sh --qa`.
 
 ## 4. Combustion And Propagation
 
-- [ ] Model heat, ember pressure, smoke, ignition progress, fuel consumption, and burn state.
+- [x] Model initial heat, ember pressure, smoke, ignition progress, fuel consumption, and burn state.
 - [x] Use oxygen only for combustion efficiency and flame sustainment.
 - [x] Let smoke reduce effective combustion oxygen locally.
 - [ ] Bias heat and smoke upward.
 - [ ] Bias embers outward across exposed/reachable fuel.
 - [x] Make moisture and barriers reduce transfer.
+- [x] Use exposed face masks to limit or weight propagation between cells.
 - [ ] Keep kernel definitions swappable for 27, 18, 6, or exposed-surface modes.
+- [x] Add tests for forest-line spread and face-mask-limited transfer.
+- [ ] Add tests for upward heat/smoke bias and outward ember bias.
 
-## 5. Source Injection
+## 5. Emitting And Source Injection
 
 - [x] Make debug ignite seed grid cells instead of entity burn state.
-- [ ] Make active burning cells emit into nearby cells.
+- [x] Make active burning cells emit heat into nearby cells.
+- [x] Make active burning cells emit smoke through exposed neighboring cells.
+- [x] Make active burning cells emit ember pressure outward across exposed/reachable fuel.
+- [ ] Keep emitted heat, smoke, and embers attributable to grid/source telemetry.
 - [ ] Add configured heat-source building injection.
 - [ ] Add explosion/firework burst fields without direct nearest-target ignition.
 - [ ] Add source telemetry for debugging attribution.
+- [x] Add tests proving emission can carry fire through vegetation and is limited by exposed faces.
+- [ ] Add tests proving emission is deterministic, bounded, and affected by moisture, barriers, water, and oxygen.
+- [ ] Validate visible, attributable spread from one debug-ignited source in game.
 
 ## 6. Outcomes
 
@@ -72,5 +88,16 @@
 
 - [ ] Run plain C# tests for each new grid rule.
 - [ ] Run `bash scripts/test.sh && bash scripts/build.sh --launch` after implementation slices.
+- [ ] Prefer `bash scripts/build.sh --qa` when a slice needs tests, fresh launch, cleared logs, and startup readiness.
+- [ ] For CLI save autoload, launch Timberborn with `-settlementName "<settlement>" -saveName "<save without .timber>"`.
+- [ ] Avoid the current `Prometheus Testing` Day 4-15 autosave for QA until its `SleepNeedBehavior.SleepAtHome()` crash is resolved or a cleaner save is chosen.
 - [ ] Use `Fire.log` for runtime evidence.
 - [ ] Update [HANDOFF.md](HANDOFF.md), [DESIGN.md](DESIGN.md), and [TEST_PLAN.md](TEST_PLAN.md) when milestone state changes.
+
+## 9. Standing Project Habit
+
+- [ ] Keep this TODO updated before and after each meaningful implementation slice.
+- [ ] Move completed milestone facts into [HANDOFF.md](HANDOFF.md) when they are verified.
+- [ ] Update [DESIGN.md](DESIGN.md) when a durable design decision changes.
+- [ ] Update [TEST_PLAN.md](TEST_PLAN.md) when validation gates or QA workflows change.
+- [ ] Keep final session closeouts anchored to outcome, verification, and the next unchecked TODO item.

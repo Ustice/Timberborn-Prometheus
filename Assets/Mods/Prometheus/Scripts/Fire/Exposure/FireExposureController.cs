@@ -100,35 +100,15 @@ namespace Mods.Prometheus.Scripts {
     }
 
     private FireCellEnvironment CreateEnvironment() {
-      if (_fireProfile == null) {
-        return new FireCellEnvironment(FireGridStructureKind.Unknown, 1f, 0f, 0f, 1f, 0f, 63);
-      }
-
-      return new FireCellEnvironment(
-        ParseStructureKind(_fireProfile.StructureKind),
-        _fireProfile.Fuel,
-        1f - _fireProfile.MoistureResistance,
-        _fireProfile.BarrierResistance,
-        1f,
-        0f,
-        63);
-    }
-
-    private static FireGridStructureKind ParseStructureKind(string structureKind) {
-      if (string.IsNullOrWhiteSpace(structureKind)) {
-        return FireGridStructureKind.Unknown;
-      }
-
-      var normalized = structureKind.ToLowerInvariant();
-      if (normalized.Contains("tree") || normalized.Contains("berry") || normalized.Contains("crop")) {
-        return FireGridStructureKind.Vegetation;
-      }
-
-      if (normalized.Contains("barrier")) {
-        return FireGridStructureKind.Barrier;
-      }
-
-      return FireGridStructureKind.Building;
+      var profileSample = _fireProfile == null
+        ? new FireGridEnvironmentSample(FireGridStructureKind.Unknown, 1f, 0f, 0f, 1f, 0f, FireGridExposedFaces.All)
+        : FireGridEnvironmentSampler.FromProfile(
+          _fireProfile.StructureKind,
+          _fireProfile.Fuel,
+          _fireProfile.MoistureResistance,
+          _fireProfile.BarrierResistance);
+      var worldSample = FireGridEnvironmentSampler.CreateDefaultWorldSample();
+      return FireGridEnvironmentSampler.Merge(profileSample, worldSample).ToEnvironment();
     }
 
     private FireGridFootprint GetGridFootprint() {

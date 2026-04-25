@@ -1,0 +1,8 @@
+{
+  "FireProfileSpec": {
+    "StructureKind": "Chestnut Tree",
+    "Fuel": 1.05,
+    "MoistureResistance": 0.2,
+    "BarrierResistance": 0.05
+  }
+}

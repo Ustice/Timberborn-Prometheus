@@ -17,6 +17,7 @@ This is the authoritative runbook for active Prometheus validation.
 - [ ] Run `bash scripts/test.sh`.
 - [ ] Run `bash scripts/build.sh --launch` for in-game QA.
 - [ ] Prefer `bash scripts/build.sh --qa` when you want tests, launch, cleared logs, and Prometheus startup readiness in one command.
+- [ ] For direct save QA, Timberborn accepts `-settlementName "<settlement>" -saveName "<save without .timber>"`.
 - [ ] Confirm Timberborn launches with Prometheus enabled.
 - [ ] Confirm fresh logs are available for the measurement window.
 - [ ] Keep each repro scoped to one intent when possible.
@@ -77,6 +78,8 @@ Use this section as the next validation gate once the sparse grid lands.
 ## Ember/Grid Spread Validation Matrix
 
 Run across each profile once behavior is coherent.
+
+Current QA caveat: the latest `Prometheus Testing` experimental autosave from 2026-04-25 18h49m loads through CLI autoload but crashes on the first tick in Timberborn's sleep system before Prometheus fire QA can begin. Use a cleaner save or resolve that save-state issue before treating forest-spread QA as a Prometheus failure.
 
 | Profile | Dry fuel propagation | Moisture/steam dampening | Firebreak/barrier | High-risk source | Low-risk non-source | Outcome |
 | --- | --- | --- | --- | --- | --- | --- |

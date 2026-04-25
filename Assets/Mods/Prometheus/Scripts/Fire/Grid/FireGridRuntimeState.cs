@@ -128,7 +128,7 @@ namespace Mods.Prometheus.Scripts {
       0f,
       1f,
       0f,
-      0);
+      FireGridExposedFaces.All);
 
     public FireGridStructureKind StructureKind { get; }
     public float Fuel { get; }
@@ -149,7 +149,7 @@ namespace Mods.Prometheus.Scripts {
       float waterDepth,
       int exposedFaceMask) {
       StructureKind = structureKind;
-      Fuel = Mathf.Clamp01(fuel);
+      Fuel = Mathf.Clamp(fuel, 0f, 2f);
       Moisture = Mathf.Clamp01(moisture);
       Barrier = Mathf.Clamp01(barrier);
       OxygenAvailability = Mathf.Clamp01(oxygenAvailability);
@@ -567,6 +567,10 @@ namespace Mods.Prometheus.Scripts {
       FireCellEnvironment sourceEnvironment,
       FireCellEnvironment targetEnvironment,
       FireGridKernelEntry entry) {
+      if (!entry.IsSelf && !FacesAllowTransfer(sourceEnvironment, targetEnvironment, entry.Offset)) {
+        return FireCellState.Cold;
+      }
+
       var targetMultiplier = entry.IsSelf ? 1f : targetEnvironment.TransferMultiplier;
       if (targetMultiplier <= 0f) {
         return FireCellState.Cold;
@@ -574,10 +578,14 @@ namespace Mods.Prometheus.Scripts {
 
       var fuelMultiplier = entry.IsSelf ? 1f : Mathf.Max(0.2f, targetEnvironment.Fuel);
       var oxygen = targetEnvironment.EffectiveOxygen(source.Smoke);
-      var heat = source.Heat * entry.HeatWeight * targetMultiplier;
-      var ember = source.EmberPressure * entry.EmberWeight * targetMultiplier * fuelMultiplier;
-      var smoke = source.Smoke * entry.SmokeWeight * targetMultiplier;
-      var ignition = (heat * 0.35f) + (ember * 0.45f * oxygen * fuelMultiplier);
+      var emissionMultiplier = entry.IsSelf ? 1f : EmissionMultiplier(source);
+      var activeHeat = Mathf.Max(source.Heat, source.IgnitionProgress * 0.65f);
+      var activeEmberPressure = Mathf.Max(source.EmberPressure, source.IgnitionProgress * 0.55f);
+      var activeSmoke = Mathf.Max(source.Smoke, source.IgnitionProgress * 0.35f);
+      var heat = activeHeat * entry.HeatWeight * targetMultiplier * emissionMultiplier;
+      var ember = activeEmberPressure * entry.EmberWeight * targetMultiplier * fuelMultiplier * emissionMultiplier;
+      var smoke = activeSmoke * entry.SmokeWeight * targetMultiplier * emissionMultiplier;
+      var ignition = (heat * 0.55f) + (ember * 0.85f * oxygen * fuelMultiplier);
       var fuelConsumed = entry.IsSelf
         ? source.FuelConsumed + (source.IgnitionProgress * sourceEnvironment.Fuel * 0.015f)
         : 0f;
@@ -596,6 +604,54 @@ namespace Mods.Prometheus.Scripts {
         ? Mathf.Clamp01(state.Heat + (combustion * 0.08f))
         : state.Heat;
       return state.With(heat: heat, ignitionProgress: ignitionProgress);
+    }
+
+    private static float EmissionMultiplier(FireCellState source) {
+      if (source.BurnState == FireGridBurnState.Burning) {
+        return 7.5f;
+      }
+
+      if (source.BurnState == FireGridBurnState.Smoldering) {
+        return 3.5f;
+      }
+
+      return source.IgnitionProgress >= 0.75f ? 5f : 1f;
+    }
+
+    private static bool FacesAllowTransfer(
+      FireCellEnvironment sourceEnvironment,
+      FireCellEnvironment targetEnvironment,
+      FireGridOffset offset) {
+      var sourceMask = sourceEnvironment.ExposedFaceMask == FireGridExposedFaces.None
+        ? FireGridExposedFaces.None
+        : sourceEnvironment.ExposedFaceMask;
+      var targetMask = targetEnvironment.ExposedFaceMask == FireGridExposedFaces.None
+        ? FireGridExposedFaces.None
+        : targetEnvironment.ExposedFaceMask;
+      return HasFace(sourceMask, offset) && HasFace(targetMask, new FireGridOffset(-offset.Dx, -offset.Dy, -offset.Dz));
+    }
+
+    private static bool HasFace(int faceMask, FireGridOffset offset) {
+      var requiredFaces = FireGridExposedFaces.None;
+      if (offset.Dx < 0) {
+        requiredFaces |= FireGridExposedFaces.NegativeX;
+      } else if (offset.Dx > 0) {
+        requiredFaces |= FireGridExposedFaces.PositiveX;
+      }
+
+      if (offset.Dy < 0) {
+        requiredFaces |= FireGridExposedFaces.NegativeY;
+      } else if (offset.Dy > 0) {
+        requiredFaces |= FireGridExposedFaces.PositiveY;
+      }
+
+      if (offset.Dz < 0) {
+        requiredFaces |= FireGridExposedFaces.NegativeZ;
+      } else if (offset.Dz > 0) {
+        requiredFaces |= FireGridExposedFaces.PositiveZ;
+      }
+
+      return requiredFaces == FireGridExposedFaces.None || (faceMask & requiredFaces) == requiredFaces;
     }
 
     private sealed class FireGridChunk {

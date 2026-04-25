@@ -1,0 +1,8 @@
+{
+  "FireProfileSpec": {
+    "StructureKind": "Coffee Bush",
+    "Fuel": 0.8,
+    "MoistureResistance": 0.25,
+    "BarrierResistance": 0.02
+  }
+}

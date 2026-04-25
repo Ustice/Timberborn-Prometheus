@@ -1,0 +1,8 @@
+{
+  "FireProfileSpec": {
+    "StructureKind": "Dandelion",
+    "Fuel": 0.55,
+    "MoistureResistance": 0.15,
+    "BarrierResistance": 0.01
+  }
+}

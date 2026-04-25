@@ -1,0 +1,8 @@
+{
+  "FireProfileSpec": {
+    "StructureKind": "Mangrove Tree",
+    "Fuel": 0.8,
+    "MoistureResistance": 0.45,
+    "BarrierResistance": 0.08
+  }
+}

@@ -26,12 +26,17 @@ Prometheus is moving into the 3D grid fire rewrite. The old entity-neighbor spre
 | 2026-04-25 | `bash -n scripts/build.sh && bash scripts/build.sh --help && bash scripts/test.sh` | Pass | Added `--test` and `--qa` startup workflows; plain C# suite remains at 26 passing tests. |
 | 2026-04-25 | `bash scripts/build.sh --qa` | Pass | QA workflow ran tests, compiled/deployed, stopped the previous Timberborn process, cleared logs, launched Steam app 1062090, and reached `ready` after Prometheus startup was detected. |
 | 2026-04-25 | `bash scripts/test.sh` + `bash scripts/build.sh --launch` + in-game inspection | Pass | Added `Prometheus` -> `QA` instruction/result panel backed by `~/Library/Application Support/Timberborn/PrometheusQA`; tests stayed at 26 passing, startup logs showed `Prometheus (v0.2)`, the panel rendered in-game, and a `Passed` result was appended/logged. |
+| 2026-04-25 | `bash scripts/test.sh` + `bash scripts/build.sh` | Pass | Added the grid environment sampler/merge layer, moved profile-to-environment policy out of `FireExposureController`, and raised the plain C# suite to 29 passing tests. |
+| 2026-04-25 | `bash scripts/test.sh` + `bash scripts/build.sh` | Pass | Added dependency-light terrain column sampling policy for terrain mass vs top-surface cells; plain C# suite is now 30 passing tests. |
+| 2026-04-25 | `bash scripts/test.sh` + `bash scripts/build.sh --test` | Pass | Added active-cell heat/smoke/ember emission, exposed-face transfer limits, forest-line spread coverage, and vegetation profiles for common trees and bushes; plain C# suite is now 32 passing tests. |
+| 2026-04-25 | CLI autoload + log scan | Blocked | `-settlementName "Prometheus Testing" -saveName "2026-04-25 18h49m, Day 4-15.autosave"` loads the latest experimental test-colony save, but that save crashes on the first tick in `Timberborn.SleepSystem.SleepNeedBehavior.SleepAtHome()` for entity `BeaverAdult Bie` before fire QA can begin. |
 
 ## Durable Context
 
 - Phase 1 live QA previously validated ignition, spread, extinguish, damage, dead/ash terminal behavior, and `Reset Fire Sim` clean-slate recovery.
 - The Prometheus debug UI uses TimberUi and Moddable Tool Groups through `Prometheus` -> `Actions`, `Visuals`, `Selection`, `QA`, and `Log`.
 - The `QA` panel reads live instructions from `~/Library/Application Support/Timberborn/PrometheusQA/instructions.md` and appends `Passed` / `Failed` / `Blocked` results to `~/Library/Application Support/Timberborn/PrometheusQA/results.md`.
+- Timberborn can autoload saves from the command line with `-settlementName "<settlement>" -saveName "<save without .timber>"`; experimental saves are used when the game is in experimental mode.
 - The visual authoring tool remains available for `Smoke`, `Ash`, `Steam`, `Fire`, `Sparks`, and `Char`, including selected-entity temporary preview and JSON/log export.
 - `Reset Fire Sim` must clear fire, damage, recovery, preview, and pending debug-ignition state without changing saved design data.
 - Old bucket-kit, firefighting-foam, fire-control-gear, fireworks-crate, and festival-risk scaffolding has been pruned from active content; Fertile Ash remains the core post-fire resource direction.
@@ -43,6 +48,7 @@ Source of truth: current UI labels and telemetry event names should be checked i
 | Blocker | Status | Next Check |
 | --- | --- | --- |
 | Sparse 3D grid needs environment sampling | Active | Foundation exists; next slice should sample footprints/terrain/block/water/moisture inputs. |
+| Latest `Prometheus Testing` experimental autosave crashes before QA | Active | Choose a cleaner save or repair the beaver/home state; current crash is a Timberborn sleep-system null reference before Prometheus fire runtime runs. |
 | Runtime visuals need reconnection to grid state | Active | Keep authoring tool intact, then map grid fire state into visual rules. |
 | Explosion request/apply policy needs broader re-validation | Carryover | Use [VALIDATION/explosion-policy.md](VALIDATION/explosion-policy.md) if gaps reappear. |
 | Worker/building exposure needs Phase 2 live validation | Carryover | Validate after the grid model stabilizes. |
@@ -52,16 +58,19 @@ Source of truth: current UI labels and telemetry event names should be checked i
 
 Continue the sparse chunked 3D fire grid rewrite:
 
-1. Add environment sampling adapters for entity footprints first.
-2. Expand sampling toward terrain/block/water/moisture inputs.
-3. Keep all Timberborn inputs read-only.
-4. Keep existing visual preview tooling functional while runtime visuals are reconnected.
+1. Pick or repair a test save that survives the first tick after CLI autoload.
+2. Run live forest-spread QA against the new vegetation profiles and active-cell emission.
+3. Wire the terrain column policy to Timberborn terrain occupancy/top-surface inputs.
+4. Add block/building occupancy, exposed face masks, water depth, and soil moisture inputs.
+5. Keep all Timberborn inputs read-only.
+6. Keep existing visual preview tooling functional while runtime visuals are reconnected.
 
 ## Resume Checklist
 
 - [ ] Run `bash scripts/test.sh`.
 - [ ] Run `bash scripts/build.sh --launch` for in-game QA loops.
 - [ ] Use `bash scripts/build.sh --qa` when the next step benefits from automated test + launch + startup readiness waiting.
+- [ ] For direct save QA, launch with `-settlementName "Prometheus Testing" -saveName "<save without .timber>"`, but skip `2026-04-25 18h49m, Day 4-15.autosave` until the sleep-system crash is cleared.
 - [ ] Open `Prometheus` -> `QA`; confirm the current instruction appears and result buttons are visible.
 - [ ] Open `Prometheus` -> `Visuals`; confirm Timberborn object selection still works while the panel is open.
 - [ ] Select a Bakery, platform, tree, and berry bush; confirm the Visuals target summary and JSON target kind are readable.
