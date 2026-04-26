@@ -1,6 +1,6 @@
 # P2S-010 Name Grid Policies Tests
 
-Status: todo
+Status: in-progress
 
 Agent level: Low
 
@@ -34,4 +34,3 @@ Promote grid coefficients into named policies and add deterministic propagation 
 ## Integration Notes
 
 This ticket should land before source attribution and simulation coordination.
-

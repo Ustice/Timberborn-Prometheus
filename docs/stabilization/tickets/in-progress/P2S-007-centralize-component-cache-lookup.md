@@ -1,6 +1,6 @@
 # P2S-007 Centralize Component Cache Lookup
 
-Status: todo
+Status: in-progress
 
 Agent level: Low
 
@@ -35,4 +35,3 @@ Create one home for cached-component traversal and loaded Prometheus entity look
 ## Integration Notes
 
 This is the foundation for reflection probes, reset registry, and farmhouse integration.
-
