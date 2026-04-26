@@ -41,8 +41,9 @@ Phase 2 stabilization is now running from the file board under `docs/stabilizati
 | 2026-04-26 | `git tag pre-phase-3-stabilization` | Pass | Tagged the pre-stabilization baseline before Phase 2 sprint orchestration began. |
 | 2026-04-26 | Stabilization board integration | Pass | Integrated P2S-001 through P2S-008 plus P2S-010, P2S-011, and P2S-012. This added the architecture map, split grid/debug/test surfaces, centralized component-cache and reflection probes, named grid policies, source attribution, and the grid simulation coordinator. |
 | 2026-04-26 | `git diff --check` + `bash scripts/test.sh` | Pass | Latest integrated stabilization check after P2S-008 passed with 53 plain C# tests. |
-| 2026-04-26 | P2S-009 candidate: `git diff --check`, `bash scripts/test.sh`, `bash scripts/build.sh --qa`, startup log scan | Blocked | Candidate branch `codex/P2S-009-add-reset-registry` at `16bcc3d` passed diff check, 45 tests, QA readiness, and clean startup log scan, but the live `Reset Fire State` action has not been clicked and verified after the registry change. |
+| 2026-04-26 | P2S-009 candidate: `git diff --check`, `bash scripts/test.sh`, `bash scripts/build.sh --qa`, startup log scan | Blocked | Candidate branch `codex/P2S-009-add-reset-registry` at `2576cf1` now passes diff check and 56 tests after merging current `main`. It adds reset hook failure isolation, stale Unity-reference pruning, visual reset null-safety, and deferred per-entity reset hook registration until `Awake`, but live QA is still blocked before reset can be exercised. |
 | 2026-04-26 | Stabilization backlog review | Pass | Added [stabilization backlog](stabilization/BACKLOG.md) for ticket-sized follow-ups not yet represented by board files: runtime visual projection migration, grid telemetry bounds evidence, burst attribution injection, terrain/top-surface aftermath eligibility, and Phase 2 exit evidence matrix. |
+| 2026-04-26 | P2S-009 live QA attempts | Blocked | Candidate branch reached persistent `LOADING` after the QA save load started, with logs stopping after `Good group Juice has no goods`. Current `main` reached the main menu after `--qa`, proving the readiness gate is startup-only and does not prove save-load completion. Manual `cliclick` and Computer Use input did not activate the visible `Continue` button in the observed run. |
 
 ## Durable Context
 
@@ -50,7 +51,8 @@ Phase 2 stabilization is now running from the file board under `docs/stabilizati
 - The Prometheus debug UI uses TimberUi and Moddable Tool Groups through `Prometheus` -> `Actions`, `Visuals`, `Selection`, `QA`, and `Log`.
 - The `QA` panel reads live instructions from `~/Library/Application Support/Timberborn/PrometheusQA/instructions.md` and appends `Passed` / `Failed` / `Blocked` results to `~/Library/Application Support/Timberborn/PrometheusQA/results.md`.
 - Timberborn can autoload saves from the command line with `-settlementName "<settlement>" -saveName "<save without .timber>"`; experimental saves are used when the game is in experimental mode. Treat this as unsafe for live QA on the current mod stack because autostart uses `LoadSceneInstantly(...)` rather than the normal menu `LoadScene(...)` path.
-- `bash scripts/build.sh --qa` can drive the normal menu path with `cliclick`: wait `LAUNCH_DELAY_SECONDS` after deployment/log clearing, activate Timberborn, wait, press Return twice, wait, then click `Continue` at `960,323`. Tune launch/menu timing with `LAUNCH_DELAY_SECONDS` and `QA_MENU_*` environment variables, or disable menu automation with `QA_MENU_AUTOMATION=0`.
+- `bash scripts/build.sh --qa` currently proves Timberborn is running and Prometheus startup was detected. Do not treat it as proof that the QA save loaded or that in-game UI actions are reachable.
+- The previous `cliclick` normal-menu path has drifted: on 2026-04-26, current `main` reached the main menu after `--qa`, and manual `cliclick` / Computer Use input did not activate the visible `Continue` button in the observed run. Re-map the menu controls before relying on automated live QA.
 - Current verified Prometheus toolbar coordinates at 1920x1080 can drift by active Timberborn tool groups; prefer screenshot-confirmed clicks before recording live QA evidence.
 - Use this tight click-and-see loop for in-game QA:
   `osascript -e 'tell application id "com.mechanistry.timberborn" to activate' && sleep 0.2 && cliclick c:<x>,<y> && sleep 0.7 && screencapture -x /tmp/timberborn-tight-loop.png`
@@ -67,21 +69,24 @@ Source of truth: current UI labels and telemetry event names should be checked i
 | Sparse 3D grid needs propagation/profile validation | Active | Resource lifecycle now has one live Pine pass; next slice should validate stochastic field ignition from a separate heat source, profile differences, and readable dry-brown feedback on a visible target. |
 | CLI autoload crashes saves after Prometheus startup | Mitigated | Use normal menu loading for live QA. `--qa` now attempts the verified `cliclick` menu path instead of relying on CLI instant load. |
 | Runtime visuals need reconnection to grid state | Active | Keep authoring tool intact, then map grid fire state into visual rules. |
-| P2S-009 reset registry needs live reset evidence | Blocked | On candidate branch `codex/P2S-009-add-reset-registry` at `16bcc3d`, load the QA save, open `Prometheus` -> `Actions`, click `Reset Fire State`, then check logs for `runtime_reset_registry_started`, `runtime_reset_registry_completed`, `runtime_reset_hook_failed`, and any exceptions or crash. |
+| P2S-009 reset registry needs live reset evidence | Blocked | Candidate branch `codex/P2S-009-add-reset-registry` at `2576cf1` has code/test hardening, but live QA is blocked by unreliable menu input and an unproven QA save-load path. First re-map or fix menu automation, prove current `main` can load the QA save, then retry P2S-009 and click `Reset Fire State`. |
+| Timberborn menu automation map is missing | Active | Create a screenshot-backed map of main menu, Escape menu, in-game toolbar groups, Prometheus group entries, and keyboard controls before assigning more UI-heavy QA work to agents. |
 | Explosion request/apply policy needs broader re-validation | Carryover | Use [VALIDATION/explosion-policy.md](VALIDATION/explosion-policy.md) if gaps reappear. |
 | Worker/building exposure needs Phase 2 live validation | Carryover | Validate after the grid model stabilizes. |
 | Unity asset import workflow is still manual | Carryover | Document or script after Unity license/import path is stable. |
 
 ## Next Exact Action
 
-Unblock P2S-009 before continuing Wave D:
+Unblock live QA navigation before continuing P2S-009 or Wave D:
 
-1. Switch to candidate branch `codex/P2S-009-add-reset-registry` at `16bcc3d`.
-2. Build and launch with `bash scripts/build.sh --qa`.
-3. Open `Prometheus` -> `Actions` in the loaded QA save.
-4. Click `Reset Fire State`.
-5. Check `Player.log` and `Fire.log` for reset registry start/completion/failure telemetry and crashes.
-6. If clean, move P2S-009 back through `verify` and `integration`, merge it, rerun checks, and only then proceed to Wave D.
+1. Create or fix a reliable menu/navigation map for Timberborn and Prometheus debug tools.
+2. Prove current `main` can load the QA save through that path; update `scripts/build.sh --qa` readiness if needed so `ready` means save-load completion when live QA depends on it.
+3. Switch to candidate branch `codex/P2S-009-add-reset-registry` at `2576cf1`.
+4. Build and launch with the corrected QA path.
+5. Open `Prometheus` -> `Actions` in the loaded QA save.
+6. Click `Reset Fire State`.
+7. Check `Player.log` and `Fire.log` for reset registry start/completion/failure telemetry and crashes.
+8. If clean, move P2S-009 back through `verify` and `integration`, merge it, rerun checks, and only then proceed to Wave D.
 
 ## Resume Checklist
 
