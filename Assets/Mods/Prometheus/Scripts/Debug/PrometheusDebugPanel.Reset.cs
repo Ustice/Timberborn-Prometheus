@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Reflection;
 using Timberborn.BaseComponentSystem;
 using UnityEngine;
 
@@ -9,7 +7,7 @@ namespace Mods.Prometheus.Scripts {
     private void ExtinguishAllFires() {
       _fireExposureRuntimeState.BlockDebugIgnitionsForSeconds(DebugStopAllFiresIgnitionBlockSeconds);
       var liveExtinguishedCount = 0;
-      foreach (var exposureController in FindLoadedFireExposureControllers()) {
+      foreach (var exposureController in TimberbornComponentCacheLookup.FindLoadedFireExposureControllers()) {
         if (exposureController.DebugForceExtinguish()) {
           liveExtinguishedCount++;
         }
@@ -32,54 +30,11 @@ namespace Mods.Prometheus.Scripts {
       RefreshLogPanel(force: true);
     }
 
-    private static IEnumerable<FireExposureController> FindLoadedFireExposureControllers() {
-      var unityComponents = UnityEngine.Object.FindObjectsByType<Component>(FindObjectsSortMode.None);
-      for (var i = 0; i < unityComponents.Length; i++) {
-        var unityComponent = unityComponents[i];
-        if (unityComponent == null || unityComponent.GetType().Name != "ComponentCache") {
-          continue;
-        }
-
-        if (!TryGetCachedComponents(unityComponent, out var cachedComponents)) {
-          continue;
-        }
-
-        foreach (var component in cachedComponents) {
-          if (component is FireExposureController fireExposureController) {
-            yield return fireExposureController;
-          }
-        }
-      }
-    }
-
-    private static bool TryGetCachedComponents(Component componentCache, out System.Collections.IEnumerable cachedComponents) {
-      var componentCacheType = componentCache.GetType();
-      var componentsField = componentCacheType.GetField(
-        "_components",
-        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-
-      if (componentsField?.GetValue(componentCache) is System.Collections.IEnumerable components) {
-        cachedComponents = components;
-        return true;
-      }
-
-      var allComponentsProperty = componentCacheType.GetProperty(
-        "AllComponents",
-        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-      if (allComponentsProperty?.GetValue(componentCache) is System.Collections.IEnumerable allComponents) {
-        cachedComponents = allComponents;
-        return true;
-      }
-
-      cachedComponents = null;
-      return false;
-    }
-
     private void ResetAllFireState() {
       _fireVisualEffectPreviewRuntimeState.ClearAllPreviews();
       _fireGridRuntimeState.Clear();
       var resetEntityCount = 0;
-      foreach (var gameObject in FindLoadedFireEntityGameObjects()) {
+      foreach (var gameObject in TimberbornComponentCacheLookup.FindLoadedPrometheusFireEntityGameObjects()) {
         ResetLoadedFireEntity(gameObject);
         resetEntityCount++;
       }
@@ -92,41 +47,6 @@ namespace Mods.Prometheus.Scripts {
       _lastObservedEntryCount = FireTelemetry.GetRecentInGameLogEntries().Length;
       RefreshLogPanel(force: true);
       RefreshSelectionPanel();
-    }
-
-    private static IEnumerable<GameObject> FindLoadedFireEntityGameObjects() {
-      var allObjects = Resources.FindObjectsOfTypeAll<GameObject>();
-      for (var i = 0; i < allObjects.Length; i++) {
-        var gameObject = allObjects[i];
-        if (gameObject == null || !gameObject.scene.IsValid() || !gameObject.scene.isLoaded) {
-          continue;
-        }
-
-        if (HasFireResetComponent(gameObject)) {
-          yield return gameObject;
-        }
-      }
-    }
-
-    private static bool HasFireResetComponent(GameObject gameObject) {
-      if (gameObject.GetComponent<FireExposureController>() is not null
-          || gameObject.GetComponent<FireDamageStateController>() is not null
-          || gameObject.GetComponent<FireDamageEffectApplier>() is not null
-          || gameObject.GetComponent<FireWorkplaceEffectApplier>() is not null
-          || gameObject.GetComponent<FireRecoveryController>() is not null
-          || gameObject.GetComponent<FireRecoveryEffectApplier>() is not null) {
-        return true;
-      }
-
-      var componentCache = gameObject.GetComponent<ComponentCache>();
-      return componentCache is not null
-             && (componentCache.TryGetCachedComponent<FireExposureController>(out _)
-                 || componentCache.TryGetCachedComponent<FireDamageStateController>(out _)
-                 || componentCache.TryGetCachedComponent<FireDamageEffectApplier>(out _)
-                 || componentCache.TryGetCachedComponent<FireVisualEffectApplier>(out _)
-                 || componentCache.TryGetCachedComponent<FireWorkplaceEffectApplier>(out _)
-                 || componentCache.TryGetCachedComponent<FireRecoveryController>(out _)
-                 || componentCache.TryGetCachedComponent<FireRecoveryEffectApplier>(out _));
     }
 
     private static void ResetLoadedFireEntity(GameObject gameObject) {

@@ -1,6 +1,5 @@
 using System;
 using TimberUi;
-using Timberborn.BaseComponentSystem;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -255,19 +254,14 @@ namespace Mods.Prometheus.Scripts {
         return false;
       }
 
-      var componentCache = gameObject.GetComponent<ComponentCache>();
-      if (componentCache is not null && componentCache.TryGetCachedComponent<FireExposureController>(out var cachedFireExposureController)) {
-        _entitySelectionService.SelectAndFocusOn(cachedFireExposureController);
-        entityName = gameObject.name;
-        FireTelemetry.Log($"event={FireTelemetryEvents.DebugViewFocus} entity={entityName} id={entityId} method=selection_service_cached");
-        return true;
-      }
-
-      var fireExposureController = gameObject.GetComponent<FireExposureController>();
-      if (fireExposureController is not null) {
+      if (TimberbornComponentCacheLookup.TryGetPrometheusFireComponent<FireExposureController>(
+            gameObject,
+            out var fireExposureController,
+            out var fromComponentCache)) {
         _entitySelectionService.SelectAndFocusOn(fireExposureController);
         entityName = gameObject.name;
-        FireTelemetry.Log($"event={FireTelemetryEvents.DebugViewFocus} entity={entityName} id={entityId} method=selection_service_component");
+        var method = fromComponentCache ? "selection_service_cached" : "selection_service_component";
+        FireTelemetry.Log($"event={FireTelemetryEvents.DebugViewFocus} entity={entityName} id={entityId} method={method}");
         return true;
       }
 
