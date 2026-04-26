@@ -27,6 +27,7 @@
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Grid/FireGridEnvironmentSampler.cs" Link="Source/Fire/Grid/FireGridEnvironmentSampler.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Grid/FireGridFootprintSampler.cs" Link="Source/Fire/Grid/FireGridFootprintSampler.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Grid/FireGridKernel.cs" Link="Source/Fire/Grid/FireGridKernel.cs" />
+    <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Grid/FireGridPropagationPolicy.cs" Link="Source/Fire/Grid/FireGridPropagationPolicy.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Grid/FireGridPropagationRules.cs" Link="Source/Fire/Grid/FireGridPropagationRules.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Grid/FireGridRuntimeState.cs" Link="Source/Fire/Grid/FireGridRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Grid/FireGridValues.cs" Link="Source/Fire/Grid/FireGridValues.cs" />
