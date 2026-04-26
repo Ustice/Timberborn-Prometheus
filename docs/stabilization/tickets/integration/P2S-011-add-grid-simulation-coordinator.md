@@ -1,6 +1,6 @@
 # P2S-011 Add Grid Simulation Coordinator
 
-Status: verify
+Status: integration
 
 Agent level: Medium
 
