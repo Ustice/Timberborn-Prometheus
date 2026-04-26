@@ -10,6 +10,9 @@ namespace Mods.Prometheus.Scripts {
     public const string DebugStopAllFires = "debug_stop_all_fires";
     public const string DebugStopAllFiresResult = "debug_stop_all_fires_result";
     public const string DebugResetFireExposure = "debug_reset_fire_exposure";
+    public const string RuntimeResetRegistryStarted = "runtime_reset_registry_started";
+    public const string RuntimeResetRegistryCompleted = "runtime_reset_registry_completed";
+    public const string RuntimeResetHookFailed = "runtime_reset_hook_failed";
     public const string DebugClearBeaverFireEffectsResult = "debug_clear_beaver_fire_effects_result";
     public const string DebugClearBeaverFireEffects = "debug_clear_beaver_fire_effects";
     public const string DebugViewFocus = "debug_view_focus";
@@ -50,6 +53,9 @@ namespace Mods.Prometheus.Scripts {
       DebugStopAllFires,
       DebugStopAllFiresResult,
       DebugResetFireExposure,
+      RuntimeResetRegistryStarted,
+      RuntimeResetRegistryCompleted,
+      RuntimeResetHookFailed,
       DebugClearBeaverFireEffectsResult,
       DebugClearBeaverFireEffects,
       DebugViewFocus,

@@ -10,6 +10,7 @@ namespace Mods.Prometheus.Scripts {
     private const float UpdateIntervalInSeconds = 1f;
 
     private FireRecoveryRuntimeState _fireRecoveryRuntimeState;
+    private FireResetRegistration _resetRegistration = FireResetRegistration.Empty;
 
     private float _timeSinceLastUpdate;
     private object _growable;
@@ -18,8 +19,15 @@ namespace Mods.Prometheus.Scripts {
     private bool _hasModifiedGrowthTime;
 
     [Inject]
-    public void InjectDependencies(FireRecoveryRuntimeState fireRecoveryRuntimeState) {
+    public void InjectDependencies(
+      FireRecoveryRuntimeState fireRecoveryRuntimeState,
+      FireResetRegistry fireResetRegistry) {
       _fireRecoveryRuntimeState = fireRecoveryRuntimeState;
+      _resetRegistration = fireResetRegistry.RegisterEntity(
+        GameObject.GetInstanceID(),
+        FireResetHookKind.RecoveryEffect,
+        nameof(FireRecoveryEffectApplier),
+        DebugRestoreBaseRecoveryEffects);
     }
 
     public void Awake() {
@@ -67,6 +75,10 @@ namespace Mods.Prometheus.Scripts {
 
     internal void DebugRestoreBaseRecoveryEffects() {
       RestoreBaseGrowthTimeIfNeeded();
+    }
+
+    private void OnDestroy() {
+      _resetRegistration.Dispose();
     }
 
     private void RestoreBaseGrowthTimeIfNeeded() {

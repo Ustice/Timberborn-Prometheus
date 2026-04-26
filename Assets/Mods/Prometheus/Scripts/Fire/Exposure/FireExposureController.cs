@@ -18,6 +18,7 @@ namespace Mods.Prometheus.Scripts {
     private FireGridRuntimeState _fireGridRuntimeState;
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
     private FireProfile _fireProfile;
+    private FireResetRegistration _resetRegistration = FireResetRegistration.Empty;
     private float _remainingFuel = -1f;
     private float _remainingMoisture = -1f;
     private float _timeSinceLastUpdate;
@@ -37,10 +38,16 @@ namespace Mods.Prometheus.Scripts {
     public void InjectDependencies(
       FireExposureRuntimeState fireExposureRuntimeState,
       FireGridRuntimeState fireGridRuntimeState,
-      FireDamageStateRuntimeState fireDamageStateRuntimeState) {
+      FireDamageStateRuntimeState fireDamageStateRuntimeState,
+      FireResetRegistry fireResetRegistry) {
       _fireExposureRuntimeState = fireExposureRuntimeState;
       _fireGridRuntimeState = fireGridRuntimeState;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
+      _resetRegistration = fireResetRegistry.RegisterEntity(
+        GameObject.GetInstanceID(),
+        FireResetHookKind.SourceState,
+        nameof(FireExposureController),
+        DebugResetFireExposureState);
     }
 
     public void Awake() {
@@ -110,6 +117,10 @@ namespace Mods.Prometheus.Scripts {
       _isIgnited = false;
       _isBurnedOut = false;
       _wasBurning = false;
+    }
+
+    private void OnDestroy() {
+      _resetRegistration.Dispose();
     }
 
     private FireExposureSnapshot CreateSnapshotFromGrid(int entityId, FireGridFootprint footprint) {

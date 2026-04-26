@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Core/EntitySnapshotStore.cs" Link="Source/Core/EntitySnapshotStore.cs" />
+    <Compile Include="../../Assets/Mods/Prometheus/Scripts/Core/FireResetRegistry.cs" Link="Source/Core/FireResetRegistry.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Core/TickGate.cs" Link="Source/Core/TickGate.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Damage/FireDamageStateRuntimeState.cs" Link="Source/Fire/Damage/FireDamageStateRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Grid/FireGridChunk.cs" Link="Source/Fire/Grid/FireGridChunk.cs" />
@@ -35,6 +36,7 @@
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Recovery/FireRecoveryRuntimeState.cs" Link="Source/Fire/Recovery/FireRecoveryRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Exposure/FireExposureRuntimeState.cs" Link="Source/Fire/Exposure/FireExposureRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Visuals/FireVisualEffectAuthoring.cs" Link="Source/Fire/Visuals/FireVisualEffectAuthoring.cs" />
+    <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Visuals/FireVisualEffectPreviewRuntimeState.cs" Link="Source/Fire/Visuals/FireVisualEffectPreviewRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Visuals/FireVisualEffectRules.cs" Link="Source/Fire/Visuals/FireVisualEffectRules.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Workplace/FireWorkplaceRules.cs" Link="Source/Fire/Workplace/FireWorkplaceRules.cs" />
   </ItemGroup>

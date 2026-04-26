@@ -36,6 +36,7 @@ namespace Mods.Prometheus.Scripts {
       Bind<FireRecoveryRuntimeState>().AsSingleton();
       Bind<FireVisualEffectRuntimeState>().AsSingleton();
       Bind<FireVisualEffectPreviewRuntimeState>().AsSingleton();
+      Bind<FireResetRegistry>().AsSingleton();
     }
 
     private void BindFireComponents() {
@@ -119,6 +120,7 @@ namespace Mods.Prometheus.Scripts {
     private FireImpactRuntimeState _fireImpactRuntimeState;
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
     private FireRecoveryRuntimeState _fireRecoveryRuntimeState;
+    private FireResetRegistration _resetRegistration = FireResetRegistration.Empty;
 
     [Inject]
     public void InjectDependencies(
@@ -126,12 +128,18 @@ namespace Mods.Prometheus.Scripts {
       FireGridRuntimeState fireGridRuntimeState,
       FireImpactRuntimeState fireImpactRuntimeState,
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
-      FireRecoveryRuntimeState fireRecoveryRuntimeState) {
+      FireRecoveryRuntimeState fireRecoveryRuntimeState,
+      FireResetRegistry fireResetRegistry) {
       _fireExposureRuntimeState = fireExposureRuntimeState;
       _fireGridRuntimeState = fireGridRuntimeState;
       _fireImpactRuntimeState = fireImpactRuntimeState;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
       _fireRecoveryRuntimeState = fireRecoveryRuntimeState;
+      _resetRegistration = fireResetRegistry.RegisterEntity(
+        GameObject.GetInstanceID(),
+        FireResetHookKind.SourceState,
+        nameof(FireEntityLifecycleCleanup),
+        ResetEntityRuntimeStores);
     }
 
     private void OnDestroy() {
@@ -148,8 +156,17 @@ namespace Mods.Prometheus.Scripts {
       _fireImpactRuntimeState.RemoveSnapshot(entityId);
       _fireDamageStateRuntimeState.RemoveSnapshot(entityId);
       _fireRecoveryRuntimeState.RemoveSnapshot(entityId);
+      _resetRegistration.Dispose();
 
       FireTelemetry.Log($"event={FireTelemetryEvents.EntityDestroyCleanup} entity={GameObject.name} id={entityId}");
+    }
+
+    private void ResetEntityRuntimeStores() {
+      var entityId = GameObject.GetInstanceID();
+      _fireExposureRuntimeState.RemoveSnapshot(entityId);
+      _fireImpactRuntimeState.RemoveSnapshot(entityId);
+      _fireDamageStateRuntimeState.RemoveSnapshot(entityId);
+      _fireRecoveryRuntimeState.RemoveSnapshot(entityId);
     }
 
   }

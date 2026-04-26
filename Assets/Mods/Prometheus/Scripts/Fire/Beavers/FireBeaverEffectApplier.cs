@@ -20,6 +20,7 @@ namespace Mods.Prometheus.Scripts {
     private static bool _loggedMissingNeedManagerApi;
     private static bool _loggedNeedManagerApiResolved;
     private static bool _loggedNeedManagerScanSummary;
+    private static FireResetRegistration _resetRegistration = FireResetRegistration.Empty;
     private static readonly List<NeedManagerTarget> _cachedNeedManagers = new();
     private static readonly Dictionary<object, float> _nextEffectTimeByNeedManager = new();
 
@@ -34,9 +35,16 @@ namespace Mods.Prometheus.Scripts {
     [Inject]
     public void InjectDependencies(
       FireImpactRuntimeState fireImpactRuntimeState,
-      QuickNotificationService quickNotificationService) {
+      QuickNotificationService quickNotificationService,
+      FireResetRegistry fireResetRegistry) {
       _fireImpactRuntimeState = fireImpactRuntimeState;
       _quickNotificationService = quickNotificationService;
+      if (_resetRegistration == FireResetRegistration.Empty) {
+        _resetRegistration = fireResetRegistry.RegisterGlobal(
+          FireResetHookKind.BeaverEffect,
+          nameof(FireBeaverEffectApplier),
+          () => DebugClearFireNeedEffects());
+      }
     }
 
     public void Update() {

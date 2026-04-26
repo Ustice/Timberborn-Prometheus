@@ -10,6 +10,7 @@ namespace Mods.Prometheus.Scripts {
     private const float UpdateIntervalInSeconds = 1f;
 
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
+    private FireResetRegistration _resetRegistration = FireResetRegistration.Empty;
 
     private float _timeSinceLastUpdate;
     private FireDamageState _lastAppliedState;
@@ -29,8 +30,15 @@ namespace Mods.Prometheus.Scripts {
     private PropertyInfo _isDeadProperty;
 
     [Inject]
-    public void InjectDependencies(FireDamageStateRuntimeState fireDamageStateRuntimeState) {
+    public void InjectDependencies(
+      FireDamageStateRuntimeState fireDamageStateRuntimeState,
+      FireResetRegistry fireResetRegistry) {
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
+      _resetRegistration = fireResetRegistry.RegisterEntity(
+        GameObject.GetInstanceID(),
+        FireResetHookKind.DamageEffect,
+        nameof(FireDamageEffectApplier),
+        DebugRestoreHealthyState);
     }
 
     public void Awake() {
@@ -69,6 +77,10 @@ namespace Mods.Prometheus.Scripts {
 
       ApplyState(FireDamageState.Healthy);
       _lastAppliedState = FireDamageState.Healthy;
+    }
+
+    private void OnDestroy() {
+      _resetRegistration.Dispose();
     }
 
     private void ApplyState(FireDamageState state) {
