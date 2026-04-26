@@ -40,6 +40,8 @@ This is the authoritative runbook for active Prometheus validation.
 - [ ] Confirm `~/Library/Application Support/Timberborn/PrometheusQA/results.md` receives a timestamped entry with the note and instruction text.
 - [ ] Confirm `Fire.log` records the QA result event.
 
+Last verified at 1920x1080 on 2026-04-25: `Prometheus` root around `632,1043`, `QA` child around `1024,970`, and `Passed` recorded `event=qa_result_recorded result=passed`.
+
 Source of truth: exact UI labels and control construction live in the debug UI source; this checklist defines behavior to verify, not an inventory to keep synchronized.
 
 ## Temporary Removal-Pass Regression

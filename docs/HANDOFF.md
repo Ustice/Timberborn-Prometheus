@@ -31,6 +31,7 @@ Prometheus is moving into the 3D grid fire rewrite. The old entity-neighbor spre
 | 2026-04-25 | `bash scripts/test.sh` + `bash scripts/build.sh --test` | Pass | Added active-cell heat/smoke/ember emission, exposed-face transfer limits, forest-line spread coverage, and vegetation profiles for common trees and bushes; plain C# suite is now 32 passing tests. |
 | 2026-04-25 | CLI autoload + log scan | Blocked | `-settlementName "<settlement>" -saveName "<save>"` reaches Prometheus startup but crashes Timberborn behavior/navigation ticks, including the clean `Prometheus QA` / `beginning` save. Normal UI loading can still work; CLI autostart uses `LoadSceneInstantly(...)` while menu loading uses `LoadScene(...)`. |
 | 2026-04-25 | `cliclick` menu automation | Pass | Verified `osascript` activation plus `cliclick` Return/Return/click events can drive Timberborn's normal menu path; `bash scripts/build.sh --qa` now uses that path when `cliclick` is installed. |
+| 2026-04-25 | `bash scripts/build.sh --qa` + `cliclick` Prometheus QA panel | Pass | Loaded `Prometheus QA`, opened `Prometheus` -> `QA`, confirmed the instruction/result buttons rendered, clicked `Passed`, and saw `event=qa_result_recorded result=passed` in `Fire.log`. |
 
 ## Durable Context
 
@@ -39,6 +40,7 @@ Prometheus is moving into the 3D grid fire rewrite. The old entity-neighbor spre
 - The `QA` panel reads live instructions from `~/Library/Application Support/Timberborn/PrometheusQA/instructions.md` and appends `Passed` / `Failed` / `Blocked` results to `~/Library/Application Support/Timberborn/PrometheusQA/results.md`.
 - Timberborn can autoload saves from the command line with `-settlementName "<settlement>" -saveName "<save without .timber>"`; experimental saves are used when the game is in experimental mode. Treat this as unsafe for live QA on the current mod stack because autostart uses `LoadSceneInstantly(...)` rather than the normal menu `LoadScene(...)` path.
 - `bash scripts/build.sh --qa` can drive the normal menu path with `cliclick`: activate Timberborn, wait, press Return twice, wait, then click `Continue` at `960,323`. Tune with `QA_MENU_*` environment variables or disable with `QA_MENU_AUTOMATION=0`.
+- Current verified Prometheus toolbar coordinates at 1920x1080: root `Prometheus` button around `632,1043`; `QA` child around `1024,970`.
 - The visual authoring tool remains available for `Smoke`, `Ash`, `Steam`, `Fire`, `Sparks`, and `Char`, including selected-entity temporary preview and JSON/log export.
 - `Reset Fire Sim` must clear fire, damage, recovery, preview, and pending debug-ignition state without changing saved design data.
 - Old bucket-kit, firefighting-foam, fire-control-gear, fireworks-crate, and festival-risk scaffolding has been pruned from active content; Fertile Ash remains the core post-fire resource direction.
@@ -49,7 +51,7 @@ Source of truth: current UI labels and telemetry event names should be checked i
 
 | Blocker | Status | Next Check |
 | --- | --- | --- |
-| Sparse 3D grid needs environment sampling | Active | Foundation exists; next slice should sample footprints/terrain/block/water/moisture inputs. |
+| Sparse 3D grid needs environment sampling | Active | QA panel is reachable in-game; next slice should use it to validate live forest spread. |
 | CLI autoload crashes saves after Prometheus startup | Mitigated | Use normal menu loading for live QA. `--qa` now attempts the verified `cliclick` menu path instead of relying on CLI instant load. |
 | Runtime visuals need reconnection to grid state | Active | Keep authoring tool intact, then map grid fire state into visual rules. |
 | Explosion request/apply policy needs broader re-validation | Carryover | Use [VALIDATION/explosion-policy.md](VALIDATION/explosion-policy.md) if gaps reappear. |
@@ -60,8 +62,8 @@ Source of truth: current UI labels and telemetry event names should be checked i
 
 Continue the sparse chunked 3D fire grid rewrite:
 
-1. Run `bash scripts/build.sh --qa` with `cliclick` installed to build, launch, and drive the normal menu continue flow.
-2. Run live forest-spread QA against the new vegetation profiles and active-cell emission.
+1. Run live forest-spread QA against the new vegetation profiles and active-cell emission.
+2. Use `Prometheus` -> `QA` to record the result in-game.
 3. Wire the terrain column policy to Timberborn terrain occupancy/top-surface inputs.
 4. Add block/building occupancy, exposed face masks, water depth, and soil moisture inputs.
 5. Keep all Timberborn inputs read-only.
