@@ -5,8 +5,6 @@ namespace Mods.Prometheus.Scripts {
   internal sealed class FireGridRuntimeState {
 
     private readonly Dictionary<FireGridChunkCoordinate, FireGridChunk> _chunks = new();
-    private int _lastSteppedFrame = -1;
-
     public int TotalChunkCount => _chunks.Count;
 
     public int ActiveChunkCount => _chunks.Values.Count(chunk => chunk.ActiveCellCount > 0);
@@ -151,15 +149,6 @@ namespace Mods.Prometheus.Scripts {
       }
 
       PruneInactiveChunks();
-    }
-
-    public void StepOncePerFrame(int frame, FireGridKernel kernel) {
-      if (_lastSteppedFrame == frame) {
-        return;
-      }
-
-      _lastSteppedFrame = frame;
-      Step(kernel);
     }
 
     public void PruneInactiveChunks() {

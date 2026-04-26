@@ -87,7 +87,6 @@ namespace Mods.Prometheus.Scripts {
         _fireGridRuntimeState.Inject(new FireGridSourceInjection(coordinate, CreateBurningSourceCell(), _ignitionSourceAttribution));
       }
 
-      _fireGridRuntimeState.StepOncePerFrame(Time.frameCount, FireGridKernel.Full27);
       PublishSnapshot(entityId, CreateSnapshotFromGrid(entityId, footprint));
     }
 
