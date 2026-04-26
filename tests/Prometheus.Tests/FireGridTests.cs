@@ -228,6 +228,70 @@ namespace Prometheus.Tests
         }
 
         [Fact]
+        public void FireSourceAttribution_RepresentsKnownSourceKinds_Test()
+        {
+            TestSupport.Equal(FireSourceKind.DebugIgnition, FireSourceAttribution.DebugIgnition("entity-7").Kind);
+            TestSupport.Equal(FireSourceKind.ConfiguredSource, FireSourceAttribution.ConfiguredSource("profile-smelter").Kind);
+            TestSupport.Equal(FireSourceKind.BurstSource, FireSourceAttribution.BurstSource("blast-3").Kind);
+            TestSupport.Equal(FireSourceKind.ControlledBurnSource, FireSourceAttribution.ControlledBurnSource("zone-a").Kind);
+            TestSupport.Equal("DebugIgnition:entity-7", FireSourceAttribution.DebugIgnition("entity-7").ToTelemetryToken());
+        }
+
+        [Fact]
+        public void FireGridSourceInjection_CarriesSourceIdentityIntoSample_Test()
+        {
+            var grid = new FireGridRuntimeState();
+            var coordinate = new FireGridCoordinate(0, 0, 0);
+
+            grid.SetEnvironment(coordinate, TestSupport.BurnableEnvironment());
+            grid.Inject(FireGridSourceInjection.ConfiguredSource(coordinate, TestSupport.HotCell(), "kiln-42"));
+
+            var sample = grid.Sample(new[] { coordinate });
+
+            TestSupport.True(sample.HasActivity);
+            TestSupport.Equal(FireSourceKind.ConfiguredSource, sample.SourceAttribution.Kind);
+            TestSupport.Equal("kiln-42", sample.SourceAttribution.Identity);
+            TestSupport.Equal("ConfiguredSource:kiln-42", sample.SourceAttribution.ToTelemetryToken());
+        }
+
+        [Fact]
+        public void FireGridRuntimeState_PreservesSourceIdentityThroughPropagation_Test()
+        {
+            var grid = TestSupport.CreateGridWithFuelAroundOrigin();
+            var source = new FireGridCoordinate(0, 0, 0);
+            var target = new FireGridCoordinate(1, 0, 0);
+
+            grid.Inject(FireGridSourceInjection.BurstSource(source, TestSupport.HotCell(), "blast-1"));
+            grid.Step(FireGridKernel.Full27);
+
+            TestSupport.True(grid.TryGetState(target, out var targetState));
+            TestSupport.Equal(FireSourceKind.BurstSource, targetState.SourceAttribution.Kind);
+            TestSupport.Equal("blast-1", targetState.SourceAttribution.Identity);
+        }
+
+        [Fact]
+        public void FireGridRuntimeState_DominantSourceUsesStrongestInjectedPressure_Test()
+        {
+            var grid = new FireGridRuntimeState();
+            var coordinate = new FireGridCoordinate(0, 0, 0);
+            grid.SetEnvironment(coordinate, TestSupport.BurnableEnvironment());
+
+            grid.Inject(FireGridSourceInjection.ControlledBurnSource(
+              coordinate,
+              new FireCellState(0.2f, 0.1f, 0.1f, 0.1f, 0f, FireGridBurnState.Heating),
+              "prescribed-zone"));
+            grid.Inject(FireGridSourceInjection.DebugIgnition(
+              coordinate,
+              new FireCellState(0.9f, 0.3f, 0.1f, 0.4f, 0f, FireGridBurnState.Burning),
+              "debug-click"));
+
+            var sample = grid.Sample(new[] { coordinate });
+
+            TestSupport.Equal(FireSourceKind.DebugIgnition, sample.SourceAttribution.Kind);
+            TestSupport.Equal("debug-click", sample.SourceAttribution.Identity);
+        }
+
+        [Fact]
         public void FireGridFootprintSampler_ConvertsBoundsToOccupiedCells_Test()
         {
             var footprint = FireGridFootprintSampler.FromBounds(new UnityEngine.Bounds(

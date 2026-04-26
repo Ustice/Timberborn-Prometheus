@@ -118,6 +118,104 @@ namespace Mods.Prometheus.Scripts {
     BurnedOut,
   }
 
+  internal enum FireSourceKind {
+    Unknown,
+    DebugIgnition,
+    ConfiguredSource,
+    BurstSource,
+    ControlledBurnSource,
+  }
+
+  internal readonly struct FireSourceAttribution : IEquatable<FireSourceAttribution> {
+
+    public static FireSourceAttribution Unknown { get; } = new(FireSourceKind.Unknown, string.Empty);
+
+    public FireSourceKind Kind { get; }
+    public string Identity { get; }
+    public bool HasSource => Kind != FireSourceKind.Unknown;
+
+    public FireSourceAttribution(FireSourceKind kind, string identity) {
+      Kind = kind;
+      Identity = identity ?? string.Empty;
+    }
+
+    public static FireSourceAttribution DebugIgnition(string identity) =>
+      new(FireSourceKind.DebugIgnition, identity);
+
+    public static FireSourceAttribution ConfiguredSource(string identity) =>
+      new(FireSourceKind.ConfiguredSource, identity);
+
+    public static FireSourceAttribution BurstSource(string identity) =>
+      new(FireSourceKind.BurstSource, identity);
+
+    public static FireSourceAttribution ControlledBurnSource(string identity) =>
+      new(FireSourceKind.ControlledBurnSource, identity);
+
+    public string ToTelemetryToken() {
+      if (Kind == FireSourceKind.Unknown) {
+        return "Grid";
+      }
+
+      var kindToken = Kind.ToString();
+      return string.IsNullOrWhiteSpace(Identity) ? kindToken : $"{kindToken}:{Identity}";
+    }
+
+    public bool Equals(FireSourceAttribution other) =>
+      Kind == other.Kind && string.Equals(Identity, other.Identity, StringComparison.Ordinal);
+
+    public override bool Equals(object obj) => obj is FireSourceAttribution other && Equals(other);
+
+    public override int GetHashCode() {
+      unchecked {
+        return ((int)Kind * 397) ^ StringComparer.Ordinal.GetHashCode(Identity ?? string.Empty);
+      }
+    }
+
+    public override string ToString() => ToTelemetryToken();
+
+  }
+
+  internal readonly struct FireGridSourceInjection {
+
+    public FireGridCoordinate Coordinate { get; }
+    public FireCellState State { get; }
+    public FireSourceAttribution SourceAttribution { get; }
+
+    public FireGridSourceInjection(
+      FireGridCoordinate coordinate,
+      FireCellState state,
+      FireSourceAttribution sourceAttribution) {
+      Coordinate = coordinate;
+      SourceAttribution = sourceAttribution;
+      State = state.WithSource(sourceAttribution);
+    }
+
+    public static FireGridSourceInjection DebugIgnition(
+      FireGridCoordinate coordinate,
+      FireCellState state,
+      string identity) =>
+      new(coordinate, state, FireSourceAttribution.DebugIgnition(identity));
+
+    public static FireGridSourceInjection ConfiguredSource(
+      FireGridCoordinate coordinate,
+      FireCellState state,
+      string identity) =>
+      new(coordinate, state, FireSourceAttribution.ConfiguredSource(identity));
+
+    public static FireGridSourceInjection BurstSource(
+      FireGridCoordinate coordinate,
+      FireCellState state,
+      string identity) =>
+      new(coordinate, state, FireSourceAttribution.BurstSource(identity));
+
+    public static FireGridSourceInjection ControlledBurnSource(
+      FireGridCoordinate coordinate,
+      FireCellState state,
+      string identity) =>
+      new(coordinate, state, FireSourceAttribution.ControlledBurnSource(identity));
+
+  }
+
   internal readonly struct FireCellEnvironment {
 
     public static FireCellEnvironment OpenAir { get; } = new(
@@ -166,7 +264,7 @@ namespace Mods.Prometheus.Scripts {
 
   internal readonly struct FireCellState {
 
-    public static FireCellState Cold { get; } = new(0f, 0f, 0f, 0f, 0f, FireGridBurnState.Cold);
+    public static FireCellState Cold { get; } = new(0f, 0f, 0f, 0f, 0f, FireGridBurnState.Cold, FireSourceAttribution.Unknown);
 
     public float Heat { get; }
     public float EmberPressure { get; }
@@ -174,6 +272,7 @@ namespace Mods.Prometheus.Scripts {
     public float IgnitionProgress { get; }
     public float FuelConsumed { get; }
     public FireGridBurnState BurnState { get; }
+    public FireSourceAttribution SourceAttribution { get; }
     public bool IsActive =>
       Heat > FireGridPropagationPolicy.ActiveCellThreshold
       || EmberPressure > FireGridPropagationPolicy.ActiveCellThreshold
@@ -186,13 +285,15 @@ namespace Mods.Prometheus.Scripts {
       float smoke,
       float ignitionProgress,
       float fuelConsumed,
-      FireGridBurnState burnState) {
+      FireGridBurnState burnState,
+      FireSourceAttribution sourceAttribution = default) {
       Heat = Mathf.Clamp01(heat);
       EmberPressure = Mathf.Clamp01(emberPressure);
       Smoke = Mathf.Clamp01(smoke);
       IgnitionProgress = Mathf.Clamp01(ignitionProgress);
       FuelConsumed = Mathf.Clamp01(fuelConsumed);
       BurnState = burnState;
+      SourceAttribution = sourceAttribution;
     }
 
     public FireCellState Add(FireCellState other) =>
@@ -201,7 +302,9 @@ namespace Mods.Prometheus.Scripts {
         EmberPressure + other.EmberPressure,
         Smoke + other.Smoke,
         IgnitionProgress + other.IgnitionProgress,
-        FuelConsumed + other.FuelConsumed);
+        FuelConsumed + other.FuelConsumed,
+        null,
+        DominantSource(this, other));
 
     public FireCellState With(
       float? heat = null,
@@ -209,7 +312,8 @@ namespace Mods.Prometheus.Scripts {
       float? smoke = null,
       float? ignitionProgress = null,
       float? fuelConsumed = null,
-      FireGridBurnState? burnState = null) =>
+      FireGridBurnState? burnState = null,
+      FireSourceAttribution? sourceAttribution = null) =>
       new(
         heat ?? Heat,
         emberPressure ?? EmberPressure,
@@ -219,7 +323,28 @@ namespace Mods.Prometheus.Scripts {
         burnState ?? FireGridPropagationPolicy.BurnStateFromValues(
           heat ?? Heat,
           emberPressure ?? EmberPressure,
-          ignitionProgress ?? IgnitionProgress));
+          ignitionProgress ?? IgnitionProgress),
+        sourceAttribution ?? SourceAttribution);
+
+    public FireCellState WithSource(FireSourceAttribution sourceAttribution) =>
+      With(sourceAttribution: sourceAttribution);
+
+    private static FireSourceAttribution DominantSource(FireCellState first, FireCellState second) {
+      if (!first.SourceAttribution.HasSource) {
+        return second.SourceAttribution;
+      }
+
+      if (!second.SourceAttribution.HasSource) {
+        return first.SourceAttribution;
+      }
+
+      return SourceStrength(second) > SourceStrength(first)
+        ? second.SourceAttribution
+        : first.SourceAttribution;
+    }
+
+    private static float SourceStrength(FireCellState state) =>
+      Mathf.Max(state.Heat, state.EmberPressure, state.Smoke, state.IgnitionProgress);
 
   }
 
@@ -234,7 +359,8 @@ namespace Mods.Prometheus.Scripts {
       0f,
       0f,
       1f,
-      FireGridBurnState.Cold);
+      FireGridBurnState.Cold,
+      FireSourceAttribution.Unknown);
 
     public bool HasActivity { get; }
     public float Heat { get; }
@@ -245,6 +371,7 @@ namespace Mods.Prometheus.Scripts {
     public float MoistureDampening { get; }
     public float OxygenAvailability { get; }
     public FireGridBurnState DominantBurnState { get; }
+    public FireSourceAttribution SourceAttribution { get; }
     public bool Burning => DominantBurnState == FireGridBurnState.Burning || DominantBurnState == FireGridBurnState.Smoldering;
 
     public FireGridSample(
@@ -256,7 +383,8 @@ namespace Mods.Prometheus.Scripts {
       float fuelConsumed,
       float moistureDampening,
       float oxygenAvailability,
-      FireGridBurnState dominantBurnState) {
+      FireGridBurnState dominantBurnState,
+      FireSourceAttribution sourceAttribution = default) {
       HasActivity = hasActivity;
       Heat = Mathf.Clamp01(heat);
       EmberPressure = Mathf.Clamp01(emberPressure);
@@ -266,6 +394,7 @@ namespace Mods.Prometheus.Scripts {
       MoistureDampening = Mathf.Clamp01(moistureDampening);
       OxygenAvailability = Mathf.Clamp01(oxygenAvailability);
       DominantBurnState = dominantBurnState;
+      SourceAttribution = sourceAttribution;
     }
 
   }

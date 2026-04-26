@@ -35,7 +35,8 @@ namespace Mods.Prometheus.Scripts {
         smoke,
         ignition,
         source.FuelConsumed,
-        entry.IsSelf ? source.BurnState : FireGridBurnState.Heating);
+        entry.IsSelf ? source.BurnState : FireGridBurnState.Heating,
+        source.SourceAttribution);
     }
 
     public static FireCellState FinalizeCell(FireCellState state, FireCellEnvironment environment) {
@@ -51,7 +52,7 @@ namespace Mods.Prometheus.Scripts {
       var burnState = state.BurnState == FireGridBurnState.Burning
         ? FireGridBurnState.Burning
         : FireGridPropagationPolicy.BurnStateFromValues(heat, emberPressure, ignitionProgress);
-      return new FireCellState(heat, emberPressure, smoke, ignitionProgress, state.FuelConsumed, burnState);
+      return new FireCellState(heat, emberPressure, smoke, ignitionProgress, state.FuelConsumed, burnState, state.SourceAttribution);
     }
 
     private static bool FacesAllowTransfer(
