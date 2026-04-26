@@ -22,6 +22,7 @@ namespace Mods.Prometheus.Scripts {
       Bind<PrometheusDebugLogTool>().AsSingleton();
       this.MultiBindCustomTool<PrometheusDebugToolGroupElement>();
       MultiBind<ILoadableSingleton>().ToProvider<PrometheusDebugPanelLoadableProvider>().AsSingleton();
+      MultiBind<IUpdatableSingleton>().ToProvider<FireGridSimulationSingletonProvider>().AsSingleton();
 
       RegisterEntityPanelModule();
       RegisterTemplateModule();
@@ -30,6 +31,8 @@ namespace Mods.Prometheus.Scripts {
     private void BindRuntimeStates() {
       Bind<FireTuningRuntimeState>().AsSingleton();
       Bind<FireGridRuntimeState>().AsSingleton();
+      Bind<FireGridSimulationCoordinator>().AsSingleton();
+      Bind<FireGridSimulationSingleton>().AsSingleton();
       Bind<FireExposureRuntimeState>().AsSingleton();
       Bind<FireImpactRuntimeState>().AsSingleton();
       Bind<FireDamageStateRuntimeState>().AsSingleton();
@@ -106,6 +109,20 @@ namespace Mods.Prometheus.Scripts {
 
       public ILoadableSingleton Get() {
         return _prometheusDebugPanel;
+      }
+
+    }
+
+    private class FireGridSimulationSingletonProvider : IProvider<IUpdatableSingleton> {
+
+      private readonly FireGridSimulationSingleton _fireGridSimulationSingleton;
+
+      public FireGridSimulationSingletonProvider(FireGridSimulationSingleton fireGridSimulationSingleton) {
+        _fireGridSimulationSingleton = fireGridSimulationSingleton;
+      }
+
+      public IUpdatableSingleton Get() {
+        return _fireGridSimulationSingleton;
       }
 
     }

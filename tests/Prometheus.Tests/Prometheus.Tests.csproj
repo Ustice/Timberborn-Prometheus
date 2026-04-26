@@ -30,6 +30,7 @@
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Grid/FireGridPropagationPolicy.cs" Link="Source/Fire/Grid/FireGridPropagationPolicy.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Grid/FireGridPropagationRules.cs" Link="Source/Fire/Grid/FireGridPropagationRules.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Grid/FireGridRuntimeState.cs" Link="Source/Fire/Grid/FireGridRuntimeState.cs" />
+    <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Grid/FireGridSimulationCoordinator.cs" Link="Source/Fire/Grid/FireGridSimulationCoordinator.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Grid/FireGridValues.cs" Link="Source/Fire/Grid/FireGridValues.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Impact/FireImpactRuntimeState.cs" Link="Source/Fire/Impact/FireImpactRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Recovery/FireRecoveryRuntimeState.cs" Link="Source/Fire/Recovery/FireRecoveryRuntimeState.cs" />

@@ -369,6 +369,27 @@ namespace Prometheus.Tests
         }
 
         [Fact]
+        public void FireGridSimulationCoordinator_StepsGridOnlyOncePerFrame_Test()
+        {
+            var grid = TestSupport.CreateGridWithFuelAroundOrigin();
+            var coordinator = new FireGridSimulationCoordinator(grid);
+            var source = new FireGridCoordinate(0, 0, 0);
+            var target = new FireGridCoordinate(1, 0, 0);
+
+            grid.Inject(source, TestSupport.HotCell());
+
+            TestSupport.True(coordinator.StepFrame(12));
+            TestSupport.True(grid.TryGetState(target, out var firstStepTarget));
+            TestSupport.True(firstStepTarget.Heat > 0f);
+
+            TestSupport.False(coordinator.StepFrame(12));
+            TestSupport.True(grid.TryGetState(target, out var sameFrameTarget));
+            TestSupport.NearlyEqual(firstStepTarget.Heat, sameFrameTarget.Heat);
+
+            TestSupport.True(coordinator.StepFrame(13));
+        }
+
+        [Fact]
         public void FireGridEnvironmentSampler_ProfileParsesFuelAndResistances_Test()
         {
             var sample = FireGridEnvironmentSampler.FromProfile("berry-bush", 1.15f, 0.25f, 0.4f);
