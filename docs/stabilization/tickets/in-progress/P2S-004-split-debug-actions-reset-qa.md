@@ -1,6 +1,6 @@
 # P2S-004 Split Debug Actions Reset QA
 
-Status: todo
+Status: in-progress
 
 Agent level: Low
 
@@ -34,4 +34,3 @@ Extract debug actions, reset commands, and QA tab logic from the debug panel.
 ## Integration Notes
 
 This ticket prepares reset logic for registry extraction but should stay behavior-preserving.
-
