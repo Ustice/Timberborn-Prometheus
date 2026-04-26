@@ -1,6 +1,6 @@
 # P2S-001 Architecture Map
 
-Status: todo
+Status: done
 
 Agent level: Low
 
@@ -37,4 +37,3 @@ Create the durable architecture map for the stabilization sprint.
 ## Integration Notes
 
 This ticket should be integrated before implementation tickets so fresh agents have the map.
-

@@ -25,6 +25,7 @@ todo -> ready -> in-progress -> verify -> integration -> done
 
 - A Medium agent owns wave orchestration.
 - Assign disjoint write scopes before agents start.
+- Give workers [WORKER_INSTRUCTIONS.md](WORKER_INSTRUCTIONS.md) plus the assigned ticket instead of repeating the full standard handoff in every prompt.
 - Low is the default agent level; tickets marked Medium or High should be assigned accordingly.
 - Raise blockers early, especially when the blocker is likely something Jason can solve: missing live-game evidence, unclear product intent, Timberborn API uncertainty, local environment issues, screenshots/logs needed, or a choice between gameplay tradeoffs.
 - Move blocked tickets to `blocked/` with a short note in the ticket describing what is blocked, what was tried, what evidence is needed, and the smallest concrete question or action for Jason.
