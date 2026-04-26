@@ -1,6 +1,6 @@
 # P2S-010 Name Grid Policies Tests
 
-Status: in-progress
+Status: verify
 
 Agent level: Low
 
