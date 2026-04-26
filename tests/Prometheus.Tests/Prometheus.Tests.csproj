@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Core/EntitySnapshotStore.cs" Link="Source/Core/EntitySnapshotStore.cs" />
+    <Compile Include="../../Assets/Mods/Prometheus/Scripts/Core/TimberbornCompatibility.cs" Link="Source/Core/TimberbornCompatibility.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Core/TickGate.cs" Link="Source/Core/TickGate.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Damage/FireDamageStateRuntimeState.cs" Link="Source/Fire/Damage/FireDamageStateRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Grid/FireGridChunk.cs" Link="Source/Fire/Grid/FireGridChunk.cs" />
