@@ -1,6 +1,6 @@
 # P2S-012 Add Source Attribution Model
 
-Status: in-progress
+Status: verify
 
 Agent level: Low
 
