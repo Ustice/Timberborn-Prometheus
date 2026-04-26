@@ -4,6 +4,8 @@ This directory is the file-based board for the Phase 2 stabilization sprint.
 
 Move ticket files with `git mv` to update status.
 
+Unscheduled follow-ups live in [BACKLOG.md](BACKLOG.md) until the orchestrator promotes them into ticket files.
+
 ## Status Flow
 
 ```text
