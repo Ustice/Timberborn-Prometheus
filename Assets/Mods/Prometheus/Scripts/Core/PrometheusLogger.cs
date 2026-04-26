@@ -124,6 +124,7 @@ namespace Mods.Prometheus.Scripts {
 
     public void StartMod(IModEnvironment modEnvironment) {
       EnsureFireLogMirroringEnabled();
+      TimberbornCompatibility.LogStartupSummary();
       Debug.Log("Prometheus loaded: fire system foundation initialized.");
     }
 

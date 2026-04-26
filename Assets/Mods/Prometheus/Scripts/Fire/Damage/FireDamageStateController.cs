@@ -1,4 +1,5 @@
 using Bindito.Core;
+using System.Collections.Generic;
 using Timberborn.BaseComponentSystem;
 using Timberborn.WorkSystem;
 using UnityEngine;
@@ -132,49 +133,46 @@ namespace Mods.Prometheus.Scripts {
           return FireDamageCategory.Building;
         }
 
-        if (HasCachedComponentNamed(componentCache, "TreeComponent")) {
-          return FireDamageCategory.Tree;
-        }
-
-        if (HasCachedComponentNamed(componentCache, "Growable")) {
-          return FireDamageCategory.Crop;
-        }
-
-        if (HasCachedComponentNamed(componentCache, "Deteriorable")
-            || HasCachedComponentNamed(componentCache, "WorkplaceBonuses")
-            || HasCachedComponentNamed(componentCache, "Manufactory")
-            || HasCachedComponentNamed(componentCache, "Workshop")) {
-          return FireDamageCategory.Building;
+        var cachedCategory = TimberbornCompatibility.ClassifyDamageCategory(GetCachedComponentTypeNames(componentCache), false);
+        if (cachedCategory != FireDamageCategory.Unknown) {
+          return cachedCategory;
         }
       }
 
-      if (GameObject.GetComponent("TreeComponent") is not null) {
-        return FireDamageCategory.Tree;
-      }
-
-      if (GameObject.GetComponent("Growable") is not null) {
-        return FireDamageCategory.Crop;
-      }
-
-      if (GameObject.GetComponent("WorkplaceBonuses") is not null || GameObject.GetComponent("Deteriorable") is not null) {
-        return FireDamageCategory.Building;
-      }
-
-      return FireDamageCategory.Unknown;
+      var category = TimberbornCompatibility.ClassifyDamageCategory(GetFallbackComponentTypeNames(), false);
+      TimberbornCompatibility.RecordProbe(
+        TimberbornCompatibilityArea.Damage,
+        category != FireDamageCategory.Unknown,
+        category == FireDamageCategory.Unknown ? "damage category classifier found no Timberborn type" : $"damage category {category}");
+      return category;
     }
 
-    private static bool HasCachedComponentNamed(ComponentCache componentCache, string componentTypeName) {
+    private static IEnumerable<string> GetCachedComponentTypeNames(ComponentCache componentCache) {
       foreach (var component in componentCache.AllComponents) {
         if (component is null) {
           continue;
         }
 
-        if (component.GetType().Name == componentTypeName) {
-          return true;
-        }
+        yield return component.GetType().Name;
+      }
+    }
+
+    private IEnumerable<string> GetFallbackComponentTypeNames() {
+      if (GameObject.GetComponent("TreeComponent") is not null) {
+        yield return "TreeComponent";
       }
 
-      return false;
+      if (GameObject.GetComponent("Growable") is not null) {
+        yield return "Growable";
+      }
+
+      if (GameObject.GetComponent("WorkplaceBonuses") is not null) {
+        yield return "WorkplaceBonuses";
+      }
+
+      if (GameObject.GetComponent("Deteriorable") is not null) {
+        yield return "Deteriorable";
+      }
     }
 
   }

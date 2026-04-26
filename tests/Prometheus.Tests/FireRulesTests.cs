@@ -34,28 +34,28 @@ namespace Prometheus.Tests
         [Fact]
         public void WorkplaceSupportComponentClassification_PreservesWorkplaceBoundary_Test()
         {
-            TestSupport.True(FireWorkplaceRules.IsWorkplaceSupportComponentName("Workplace"));
-            TestSupport.True(FireWorkplaceRules.IsWorkplaceSupportComponentName("BakeryWorkplace"));
-            TestSupport.True(FireWorkplaceRules.IsWorkplaceSupportComponentName("WorkplaceWorkerTracker"));
-            TestSupport.False(FireWorkplaceRules.IsWorkplaceSupportComponentName("WorkplaceBonuses"));
-            TestSupport.False(FireWorkplaceRules.IsWorkplaceSupportComponentName("Manufactory"));
-            TestSupport.False(FireWorkplaceRules.IsWorkplaceSupportComponentName(""));
-            TestSupport.False(FireWorkplaceRules.IsWorkplaceSupportComponentName(null));
+            TestSupport.True(TimberbornCompatibility.IsWorkplaceSupportComponentName("Workplace"));
+            TestSupport.True(TimberbornCompatibility.IsWorkplaceSupportComponentName("BakeryWorkplace"));
+            TestSupport.True(TimberbornCompatibility.IsWorkplaceSupportComponentName("WorkplaceWorkerTracker"));
+            TestSupport.False(TimberbornCompatibility.IsWorkplaceSupportComponentName("WorkplaceBonuses"));
+            TestSupport.False(TimberbornCompatibility.IsWorkplaceSupportComponentName("Manufactory"));
+            TestSupport.False(TimberbornCompatibility.IsWorkplaceSupportComponentName(""));
+            TestSupport.False(TimberbornCompatibility.IsWorkplaceSupportComponentName(null));
         }
 
         [Fact]
         public void OperationalComponentClassification_AvoidsFireAndWorkplaceInternals_Test()
         {
-            TestSupport.True(FireWorkplaceRules.IsOperationalComponentName("Manufactory"));
-            TestSupport.True(FireWorkplaceRules.IsOperationalComponentName("SimpleManufactoryBehaviors"));
-            TestSupport.True(FireWorkplaceRules.IsOperationalComponentName("Workshop"));
-            TestSupport.True(FireWorkplaceRules.IsOperationalComponentName("RecipeSelector"));
-            TestSupport.False(FireWorkplaceRules.IsOperationalComponentName("FireExposureController"));
-            TestSupport.False(FireWorkplaceRules.IsOperationalComponentName("Workplace"));
-            TestSupport.False(FireWorkplaceRules.IsOperationalComponentName("WorkplaceBonuses"));
-            TestSupport.False(FireWorkplaceRules.IsOperationalComponentName("Deteriorable"));
-            TestSupport.False(FireWorkplaceRules.IsOperationalComponentName(""));
-            TestSupport.False(FireWorkplaceRules.IsOperationalComponentName(null));
+            TestSupport.True(TimberbornCompatibility.IsOperationalComponentName("Manufactory"));
+            TestSupport.True(TimberbornCompatibility.IsOperationalComponentName("SimpleManufactoryBehaviors"));
+            TestSupport.True(TimberbornCompatibility.IsOperationalComponentName("Workshop"));
+            TestSupport.True(TimberbornCompatibility.IsOperationalComponentName("RecipeSelector"));
+            TestSupport.False(TimberbornCompatibility.IsOperationalComponentName("FireExposureController"));
+            TestSupport.False(TimberbornCompatibility.IsOperationalComponentName("Workplace"));
+            TestSupport.False(TimberbornCompatibility.IsOperationalComponentName("WorkplaceBonuses"));
+            TestSupport.False(TimberbornCompatibility.IsOperationalComponentName("Deteriorable"));
+            TestSupport.False(TimberbornCompatibility.IsOperationalComponentName(""));
+            TestSupport.False(TimberbornCompatibility.IsOperationalComponentName(null));
         }
 
         [Fact]

@@ -259,6 +259,7 @@ namespace Mods.Prometheus.Scripts {
             out var fireExposureController,
             out var fromComponentCache)) {
         _entitySelectionService.SelectAndFocusOn(fireExposureController);
+        TimberbornCompatibility.RecordProbe(TimberbornCompatibilityArea.Focus, true, "EntitySelectionService.SelectAndFocusOn");
         entityName = gameObject.name;
         var method = fromComponentCache ? "selection_service_cached" : "selection_service_component";
         FireTelemetry.Log($"event={FireTelemetryEvents.DebugViewFocus} entity={entityName} id={entityId} method={method}");
