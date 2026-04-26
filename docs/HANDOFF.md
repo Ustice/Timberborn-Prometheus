@@ -6,6 +6,8 @@ Last updated: 2026-04-26
 
 Prometheus is moving into the 3D grid fire rewrite. The old entity-neighbor spread and responder-first runtime model has been removed from active source so the new sparse chunked cellular system can land without legacy behavior mixed in.
 
+Phase 2 stabilization is now running from the file board under `docs/stabilization/tickets/`. Wave A, Wave B, and the unblocked Wave C tickets through P2S-012 are integrated; P2S-009 is intentionally blocked until the reset action is exercised in live QA.
+
 ## Verified Since Last Checkpoint
 
 | Date | Command / Evidence | Result | Notes |
@@ -36,6 +38,11 @@ Prometheus is moving into the 3D grid fire rewrite. The old entity-neighbor spre
 | 2026-04-25 | `bash scripts/test.sh` + `bash scripts/build.sh --qa` | Pass | QA launcher rebuilt/deployed and reached Prometheus readiness; the live QA instruction file now targets forest-spread/grid validation. The pre-launch pause is now configurable with `LAUNCH_DELAY_SECONDS` and defaults to 15 seconds to give Steam/Timberborn more room after deployment. |
 | 2026-04-26 | `bash scripts/test.sh` + `bash scripts/build.sh --qa` + startup log scan | Pass | Reworked spread into a field-first resource model: grid transfer carries heat/ember/smoke only, entities own stochastic ignition, moisture evaporation, fuel depletion, tree death at 25% fuel loss, and burned-out char at zero fuel. Plain C# suite is now 36 passing tests and startup logs showed Prometheus loaded with no scanned exceptions. |
 | 2026-04-26 | `bash scripts/build.sh --qa` + `cliclick` ignite pass + log scan | Pass | Live Pine ignition consumed moisture, crossed the 25% tree-death threshold, reached zero fuel, extinguished as burned out, and left a charred remnant. A follow-up build reduced high-speed `burning_tick` telemetry to 16 rows for the burn with no scanned Player.log errors. |
+| 2026-04-26 | `git tag pre-phase-3-stabilization` | Pass | Tagged the pre-stabilization baseline before Phase 2 sprint orchestration began. |
+| 2026-04-26 | Stabilization board integration | Pass | Integrated P2S-001 through P2S-008 plus P2S-010, P2S-011, and P2S-012. This added the architecture map, split grid/debug/test surfaces, centralized component-cache and reflection probes, named grid policies, source attribution, and the grid simulation coordinator. |
+| 2026-04-26 | `git diff --check` + `bash scripts/test.sh` | Pass | Latest integrated stabilization check after P2S-008 passed with 53 plain C# tests. |
+| 2026-04-26 | P2S-009 candidate: `git diff --check`, `bash scripts/test.sh`, `bash scripts/build.sh --qa`, startup log scan | Blocked | Candidate branch `codex/P2S-009-add-reset-registry` at `16bcc3d` passed diff check, 45 tests, QA readiness, and clean startup log scan, but the live `Reset Fire State` action has not been clicked and verified after the registry change. |
+| 2026-04-26 | Stabilization backlog review | Pass | Added [stabilization backlog](stabilization/BACKLOG.md) for ticket-sized follow-ups not yet represented by board files: runtime visual projection migration, grid telemetry bounds evidence, burst attribution injection, terrain/top-surface aftermath eligibility, and Phase 2 exit evidence matrix. |
 
 ## Durable Context
 
@@ -60,20 +67,21 @@ Source of truth: current UI labels and telemetry event names should be checked i
 | Sparse 3D grid needs propagation/profile validation | Active | Resource lifecycle now has one live Pine pass; next slice should validate stochastic field ignition from a separate heat source, profile differences, and readable dry-brown feedback on a visible target. |
 | CLI autoload crashes saves after Prometheus startup | Mitigated | Use normal menu loading for live QA. `--qa` now attempts the verified `cliclick` menu path instead of relying on CLI instant load. |
 | Runtime visuals need reconnection to grid state | Active | Keep authoring tool intact, then map grid fire state into visual rules. |
+| P2S-009 reset registry needs live reset evidence | Blocked | On candidate branch `codex/P2S-009-add-reset-registry` at `16bcc3d`, load the QA save, open `Prometheus` -> `Actions`, click `Reset Fire State`, then check logs for `runtime_reset_registry_started`, `runtime_reset_registry_completed`, `runtime_reset_hook_failed`, and any exceptions or crash. |
 | Explosion request/apply policy needs broader re-validation | Carryover | Use [VALIDATION/explosion-policy.md](VALIDATION/explosion-policy.md) if gaps reappear. |
 | Worker/building exposure needs Phase 2 live validation | Carryover | Validate after the grid model stabilizes. |
 | Unity asset import workflow is still manual | Carryover | Document or script after Unity license/import path is stable. |
 
 ## Next Exact Action
 
-Continue the sparse chunked 3D fire grid rewrite:
+Unblock P2S-009 before continuing Wave D:
 
-1. Run live forest-spread QA against stochastic field ignition from a separate heat source and compare Low/Standard/High profile behavior.
-2. Use `Prometheus` -> `QA` to record the result in-game.
-3. Wire the terrain column policy to Timberborn terrain occupancy/top-surface inputs.
-4. Add block/building occupancy, exposed face masks, water depth, and soil moisture inputs.
-5. Keep all Timberborn inputs read-only.
-6. Keep existing visual preview tooling functional while runtime visuals are reconnected.
+1. Switch to candidate branch `codex/P2S-009-add-reset-registry` at `16bcc3d`.
+2. Build and launch with `bash scripts/build.sh --qa`.
+3. Open `Prometheus` -> `Actions` in the loaded QA save.
+4. Click `Reset Fire State`.
+5. Check `Player.log` and `Fire.log` for reset registry start/completion/failure telemetry and crashes.
+6. If clean, move P2S-009 back through `verify` and `integration`, merge it, rerun checks, and only then proceed to Wave D.
 
 ## Resume Checklist
 
