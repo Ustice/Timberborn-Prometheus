@@ -2,7 +2,7 @@
   "ToolGroupSpec": {
     "Id": "PrometheusDebug",
     "DisplayNameLocKey": "ToolGroups.PrometheusDebug",
-    "Icon": "Sprites/BottomBar/Options"
+    "Icon": "Sprites/BottomBar/PrometheusRootIcon"
   },
   "CustomBottomBarElementSpec": {
     "Id": "PrometheusDebug",

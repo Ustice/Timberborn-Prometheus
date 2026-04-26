@@ -2,7 +2,7 @@
 
 ## Current Focus
 
-Last updated: 2026-04-25
+Last updated: 2026-04-26
 
 Prometheus is moving into the 3D grid fire rewrite. The old entity-neighbor spread and responder-first runtime model has been removed from active source so the new sparse chunked cellular system can land without legacy behavior mixed in.
 
@@ -33,6 +33,9 @@ Prometheus is moving into the 3D grid fire rewrite. The old entity-neighbor spre
 | 2026-04-25 | `cliclick` menu automation | Pass | Verified `osascript` activation plus `cliclick` Return/Return/click events can drive Timberborn's normal menu path; `bash scripts/build.sh --qa` now uses that path when `cliclick` is installed. |
 | 2026-04-25 | `bash scripts/build.sh --qa` + `cliclick` Prometheus QA panel | Pass | Loaded `Prometheus QA`, opened `Prometheus` -> `QA`, confirmed the instruction/result buttons rendered, clicked `Passed`, and saw `event=qa_result_recorded result=passed` in `Fire.log`. |
 | 2026-04-25 | `cliclick` + `screencapture` tight QA loop | Pass | Verified a single shell command can activate Timberborn, click a coordinate, wait briefly, and capture the result image for immediate inspection. |
+| 2026-04-25 | `bash scripts/test.sh` + `bash scripts/build.sh --qa` | Pass | QA launcher rebuilt/deployed and reached Prometheus readiness; the live QA instruction file now targets forest-spread/grid validation. The pre-launch pause is now configurable with `LAUNCH_DELAY_SECONDS` and defaults to 15 seconds to give Steam/Timberborn more room after deployment. |
+| 2026-04-26 | `bash scripts/test.sh` + `bash scripts/build.sh --qa` + startup log scan | Pass | Reworked spread into a field-first resource model: grid transfer carries heat/ember/smoke only, entities own stochastic ignition, moisture evaporation, fuel depletion, tree death at 25% fuel loss, and burned-out char at zero fuel. Plain C# suite is now 36 passing tests and startup logs showed Prometheus loaded with no scanned exceptions. |
+| 2026-04-26 | `bash scripts/build.sh --qa` + `cliclick` ignite pass + log scan | Pass | Live Pine ignition consumed moisture, crossed the 25% tree-death threshold, reached zero fuel, extinguished as burned out, and left a charred remnant. A follow-up build reduced high-speed `burning_tick` telemetry to 16 rows for the burn with no scanned Player.log errors. |
 
 ## Durable Context
 
@@ -40,8 +43,8 @@ Prometheus is moving into the 3D grid fire rewrite. The old entity-neighbor spre
 - The Prometheus debug UI uses TimberUi and Moddable Tool Groups through `Prometheus` -> `Actions`, `Visuals`, `Selection`, `QA`, and `Log`.
 - The `QA` panel reads live instructions from `~/Library/Application Support/Timberborn/PrometheusQA/instructions.md` and appends `Passed` / `Failed` / `Blocked` results to `~/Library/Application Support/Timberborn/PrometheusQA/results.md`.
 - Timberborn can autoload saves from the command line with `-settlementName "<settlement>" -saveName "<save without .timber>"`; experimental saves are used when the game is in experimental mode. Treat this as unsafe for live QA on the current mod stack because autostart uses `LoadSceneInstantly(...)` rather than the normal menu `LoadScene(...)` path.
-- `bash scripts/build.sh --qa` can drive the normal menu path with `cliclick`: activate Timberborn, wait, press Return twice, wait, then click `Continue` at `960,323`. Tune with `QA_MENU_*` environment variables or disable with `QA_MENU_AUTOMATION=0`.
-- Current verified Prometheus toolbar coordinates at 1920x1080: root `Prometheus` button around `632,1043`; `QA` child around `1024,970`.
+- `bash scripts/build.sh --qa` can drive the normal menu path with `cliclick`: wait `LAUNCH_DELAY_SECONDS` after deployment/log clearing, activate Timberborn, wait, press Return twice, wait, then click `Continue` at `960,323`. Tune launch/menu timing with `LAUNCH_DELAY_SECONDS` and `QA_MENU_*` environment variables, or disable menu automation with `QA_MENU_AUTOMATION=0`.
+- Current verified Prometheus toolbar coordinates at 1920x1080 can drift by active Timberborn tool groups; prefer screenshot-confirmed clicks before recording live QA evidence.
 - Use this tight click-and-see loop for in-game QA:
   `osascript -e 'tell application id "com.mechanistry.timberborn" to activate' && sleep 0.2 && cliclick c:<x>,<y> && sleep 0.7 && screencapture -x /tmp/timberborn-tight-loop.png`
 - The visual authoring tool remains available for `Smoke`, `Ash`, `Steam`, `Fire`, `Sparks`, and `Char`, including selected-entity temporary preview and JSON/log export.
@@ -54,7 +57,7 @@ Source of truth: current UI labels and telemetry event names should be checked i
 
 | Blocker | Status | Next Check |
 | --- | --- | --- |
-| Sparse 3D grid needs environment sampling | Active | QA panel is reachable in-game; next slice should use it to validate live forest spread. |
+| Sparse 3D grid needs propagation/profile validation | Active | Resource lifecycle now has one live Pine pass; next slice should validate stochastic field ignition from a separate heat source, profile differences, and readable dry-brown feedback on a visible target. |
 | CLI autoload crashes saves after Prometheus startup | Mitigated | Use normal menu loading for live QA. `--qa` now attempts the verified `cliclick` menu path instead of relying on CLI instant load. |
 | Runtime visuals need reconnection to grid state | Active | Keep authoring tool intact, then map grid fire state into visual rules. |
 | Explosion request/apply policy needs broader re-validation | Carryover | Use [VALIDATION/explosion-policy.md](VALIDATION/explosion-policy.md) if gaps reappear. |
@@ -65,7 +68,7 @@ Source of truth: current UI labels and telemetry event names should be checked i
 
 Continue the sparse chunked 3D fire grid rewrite:
 
-1. Run live forest-spread QA against the new vegetation profiles and active-cell emission.
+1. Run live forest-spread QA against stochastic field ignition from a separate heat source and compare Low/Standard/High profile behavior.
 2. Use `Prometheus` -> `QA` to record the result in-game.
 3. Wire the terrain column policy to Timberborn terrain occupancy/top-surface inputs.
 4. Add block/building occupancy, exposed face masks, water depth, and soil moisture inputs.

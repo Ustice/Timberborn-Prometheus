@@ -13,6 +13,7 @@ WAIT_FOR_BUILD_POLL_SECONDS=2
 WAIT_FOR_BUILD_STABLE_POLLS=2
 QA_READY_TIMEOUT_SECONDS="${QA_READY_TIMEOUT_SECONDS:-180}"
 QA_READY_POLL_SECONDS="${QA_READY_POLL_SECONDS:-5}"
+LAUNCH_DELAY_SECONDS="${LAUNCH_DELAY_SECONDS:-15}"
 QA_MENU_AUTOMATION="${QA_MENU_AUTOMATION:-1}"
 QA_MENU_INITIAL_SLEEP_SECONDS="${QA_MENU_INITIAL_SLEEP_SECONDS:-6}"
 QA_MENU_FIRST_WAIT_MS="${QA_MENU_FIRST_WAIT_MS:-1000}"
@@ -77,6 +78,8 @@ QA model:
   - QA mode waits up to QA_READY_TIMEOUT_SECONDS (default: 180) for Player.log
     to show Prometheus startup with no scanned Prometheus errors.
   - Set QA_READY_POLL_SECONDS to tune the readiness polling interval.
+  - Launch workflows wait LAUNCH_DELAY_SECONDS (default: 15) after clearing
+    logs before asking Steam to start Timberborn.
   - When cliclick is installed, QA mode also tries the normal menu load path:
     activate Timberborn, press Return twice, wait, then click Continue.
     Override with QA_MENU_AUTOMATION=0 or QA_MENU_* timing/coordinate vars.
@@ -757,8 +760,8 @@ ls -l "$DST_SCRIPTS_DIR" | grep -E 'Timberborn\.ModExamples\.Prometheus\.(dll|pd
 if [[ "$LAUNCH_AFTER_BUILD" == "true" ]]; then
   clear_player_log_for_launch
   clear_fire_log_for_launch
-  echo "[build] Waiting 5s before launch..."
-  sleep 5
+  echo "[build] Waiting ${LAUNCH_DELAY_SECONDS}s before launch..."
+  sleep "$LAUNCH_DELAY_SECONDS"
   launch_timberborn
   run_qa_menu_automation
   wait_for_qa_readiness

@@ -86,9 +86,12 @@ namespace Mods.Prometheus.Scripts {
           break;
         case FireDamageState.Dead:
           InvokeIfAvailable(_setDeteriorationToMaximumMethod, _deteriorableComponent);
-          if (!InvokeIfAvailable(_removeMethod, _growableComponent)) {
+          if (_livingNaturalResourceComponent is not null) {
+            InvokeIfAvailable(_pauseGrowingMethod, _growableComponent);
+          } else if (!InvokeIfAvailable(_removeMethod, _growableComponent)) {
             InvokeIfAvailable(_pauseGrowingMethod, _growableComponent);
           }
+
           SetBoolIfAvailable(_isDyingProperty, _livingNaturalResourceComponent, true);
           SetBoolIfAvailable(_isDeadProperty, _livingNaturalResourceComponent, true);
           break;

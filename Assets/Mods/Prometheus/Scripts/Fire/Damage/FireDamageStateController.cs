@@ -11,6 +11,7 @@ namespace Mods.Prometheus.Scripts {
     private const float UpdateIntervalInSeconds = 1f;
 
     private FireImpactRuntimeState _fireImpactRuntimeState;
+    private FireExposureRuntimeState _fireExposureRuntimeState;
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
     private FireTuningRuntimeState _fireTuningRuntimeState;
 
@@ -23,9 +24,11 @@ namespace Mods.Prometheus.Scripts {
     [Inject]
     public void InjectDependencies(
       FireImpactRuntimeState fireImpactRuntimeState,
+      FireExposureRuntimeState fireExposureRuntimeState,
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
       FireTuningRuntimeState fireTuningRuntimeState) {
       _fireImpactRuntimeState = fireImpactRuntimeState;
+      _fireExposureRuntimeState = fireExposureRuntimeState;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
       _fireTuningRuntimeState = fireTuningRuntimeState;
     }
@@ -40,6 +43,17 @@ namespace Mods.Prometheus.Scripts {
       }
 
       var entityId = GameObject.GetInstanceID();
+      if (_category == FireDamageCategory.Tree
+          && _fireExposureRuntimeState.TryGetSnapshot(entityId, out var currentExposureSnapshot)
+          && currentExposureSnapshot.FuelConsumed >= 0.25f) {
+        _severity = 1f;
+        _tickProgress = 1f;
+        _fireDamageStateRuntimeState.SetSnapshot(
+          entityId,
+          new FireDamageStateSnapshot(_category, FireDamageState.Dead, _severity, _tickProgress, _damageTicksApplied));
+        return;
+      }
+
       if (!_fireImpactRuntimeState.TryGetSnapshot(entityId, out var impactSnapshot)) {
         return;
       }

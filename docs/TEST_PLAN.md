@@ -17,6 +17,7 @@ This is the authoritative runbook for active Prometheus validation.
 - [ ] Run `bash scripts/test.sh`.
 - [ ] Run `bash scripts/build.sh --launch` for in-game QA.
 - [ ] Prefer `bash scripts/build.sh --qa` when you want tests, launch, cleared logs, normal-menu continue automation, and Prometheus startup readiness in one command.
+- [ ] If Steam or Timberborn is slow after deployment, tune `LAUNCH_DELAY_SECONDS`; the default is 15 seconds.
 - [ ] Use normal menu loading for live QA; CLI `-settlementName "<settlement>" -saveName "<save without .timber>"` uses Timberborn's instant scene-load path and currently crashes after Prometheus startup.
 - [ ] Confirm Timberborn launches with Prometheus enabled.
 - [ ] Confirm fresh logs are available for the measurement window.
@@ -92,13 +93,15 @@ Current QA caveat: CLI autoload reaches Prometheus startup but crashes Timberbor
 | Profile | Dry fuel propagation | Moisture/steam dampening | Firebreak/barrier | High-risk source | Low-risk non-source | Outcome |
 | --- | --- | --- | --- | --- | --- | --- |
 | Low | Not Run | Not Run | Not Run | Not Run | Not Run | Not Run |
-| Standard | Not Run | Not Run | Not Run | Not Run | Not Run | Not Run |
+| Standard | Partial Pass | Not Run | Not Run | Not Run | Not Run | One forced Pine ignition verified moisture/fuel lifecycle and no neighbor cascade. |
 | High | Not Run | Not Run | Not Run | Not Run | Not Run | Not Run |
 
 Pass criteria:
 
 - [ ] Propagation is visible and attributable.
-- [ ] Moisture produces readable dampening feedback.
+- [ ] Moisture evaporates before full burning and produces readable brown/desiccated feedback.
+- [ ] Fuel depletion behaves like fire health: trees die after 25% fuel loss, burn out at zero fuel, stop contributing fuel, and remain as charred stumps/remnants.
+- [ ] Ignition is stochastic from sampled local field strength, fuel, oxygen, moisture, and profile threshold rather than a deterministic all-neighbor cascade.
 - [ ] Fuel, barriers, and thresholds behave consistently.
 - [ ] Low/Standard/High profiles differ without runaway spread or visual spam.
 
@@ -117,6 +120,7 @@ Use [VALIDATION/explosion-policy.md](VALIDATION/explosion-policy.md) when explos
 
 | Date | Scenario | Command / Profile | Result | Evidence Path | Notes |
 | --- | --- | --- | --- | --- | --- |
+| 2026-04-26 | Forced Pine ignition resource lifecycle | Standard | Partial Pass | `/tmp/prometheus-throttled-ignite-24s.png` + `Fire.log` | Moisture reached zero, fuel crossed 0.25 death threshold, fuel reached burnout, and throttled telemetry emitted 16 burn rows with no scanned Player.log errors. |
 | YYYY-MM-DD |  |  | Pass/Fail |  |  |
 
 ## Session Closeout

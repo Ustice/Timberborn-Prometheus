@@ -6,11 +6,11 @@ namespace Mods.Prometheus.Scripts {
   internal class PrometheusDebugToolGroupElement : CustomRootToolGroupElement {
 
     public const string ToolGroupId = "PrometheusDebug";
-    private const string ActionsIcon = "Options";
-    private const string VisualsIcon = "WaterHeightBrushTool";
-    private const string SelectionIcon = "Cursor";
-    private const string QaIcon = "Options";
-    private const string LogIcon = "Options";
+    private const string ActionsIcon = "PrometheusActionsIcon";
+    private const string VisualsIcon = "PrometheusVisualsIcon";
+    private const string SelectionIcon = "PrometheusSelectionIcon";
+    private const string QaIcon = "PrometheusQaIcon";
+    private const string LogIcon = "PrometheusLogIcon";
 
     private readonly PrometheusDebugActionsTool _actionsTool;
     private readonly PrometheusDebugVisualsTool _visualsTool;

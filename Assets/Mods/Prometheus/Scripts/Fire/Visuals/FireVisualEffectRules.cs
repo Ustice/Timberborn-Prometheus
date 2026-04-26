@@ -76,19 +76,22 @@ namespace Mods.Prometheus.Scripts {
     public float Fire { get; }
     public float Steam { get; }
     public float Char { get; }
-    public bool HasAnyVisibleEffect => Embers > 0f || Smoke > 0f || Fire > 0f || Steam > 0f || Char > 0f;
+    public float Desiccation { get; }
+    public bool HasAnyVisibleEffect => Embers > 0f || Smoke > 0f || Fire > 0f || Steam > 0f || Char > 0f || Desiccation > 0f;
 
     public FireVisualEffectIntensity(
       float embers,
       float smoke,
       float fire,
       float steam,
-      float charAmount) {
+      float charAmount,
+      float desiccation) {
       Embers = Mathf.Clamp01(embers);
       Smoke = Mathf.Clamp01(smoke);
       Fire = Mathf.Clamp01(fire);
       Steam = Mathf.Clamp01(steam);
       Char = Mathf.Clamp01(charAmount);
+      Desiccation = Mathf.Clamp01(desiccation);
     }
 
   }
@@ -105,6 +108,8 @@ namespace Mods.Prometheus.Scripts {
         exposure.HeatExposure));
       var moistureDampening = Mathf.Clamp01(exposure.MoistureDampening);
       var severity = Mathf.Clamp01(damageState.Severity);
+      var fuelConsumed = Mathf.Clamp01(exposure.FuelConsumed);
+      var desiccation = 1f - Mathf.Clamp01(exposure.MoistureDampening);
 
       // Local object fire progression is smoke/fire/smoke+ash. Sparks belong to the separate ember-field spread visual.
       var embers = 0f;
@@ -112,6 +117,7 @@ namespace Mods.Prometheus.Scripts {
         FireDamageState.Scorched => Mathf.Max(0.25f, severity),
         FireDamageState.Burning => Mathf.Max(0.45f, Mathf.Max(exposure.Intensity, exposure.Smoke)),
         FireDamageState.Dead => 0.15f,
+        _ when fuelConsumed >= 0.95f => 0.12f,
         _ => 0f,
       };
       var smoke = Mathf.Clamp01(smokeBase * (1f - (moistureDampening * 0.25f)) * tuning.SmokeScale);
@@ -123,10 +129,10 @@ namespace Mods.Prometheus.Scripts {
         FireDamageState.Scorched => Mathf.Clamp01(severity * 0.35f * tuning.CharScale),
         FireDamageState.Burning => Mathf.Clamp01((0.2f + (severity * 0.45f)) * tuning.CharScale),
         FireDamageState.Dead => Mathf.Clamp01(Mathf.Max(0.75f, severity) * tuning.CharScale),
-        _ => 0f,
+        _ => Mathf.Clamp01(fuelConsumed * tuning.CharScale),
       };
 
-      return new FireVisualEffectIntensity(embers, smoke, fire, steam, charAmount);
+      return new FireVisualEffectIntensity(embers, smoke, fire, steam, charAmount, desiccation);
     }
 
   }

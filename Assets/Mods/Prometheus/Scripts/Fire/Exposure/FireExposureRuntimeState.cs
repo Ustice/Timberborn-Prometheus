@@ -193,10 +193,56 @@ namespace Mods.Prometheus.Scripts {
   internal static class FireExposureRules {
 
     internal static FireExposureSnapshot CreateColdSnapshot(string source = "None") =>
-      new(false, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 1f, source);
+      new(false, 0f, 0f, 0f, 0f, 0f, 0f, 1f, 1f, source);
+
+    internal static FireExposureSnapshot CreateBurnedOutSnapshot() =>
+      new(false, 0f, 0f, 0f, 0.08f, 0f, 1f, 0f, 1f, "BurnedOut");
 
     internal static FireExposureSnapshot CreateTerminalDeadBuildingSnapshot() =>
       new(false, 0f, 0f, 0f, 0.15f, 0f, 1f, 0f, 1f, "DeadBuilding");
+
+  }
+
+  internal static class FireIgnitionRules {
+
+    internal static float ComputeIgnitionProbability(
+      float heat,
+      float emberPressure,
+      float oxygenAvailability,
+      float fuelRemaining,
+      float moistureRemaining,
+      float ignitionThreshold,
+      float tickSeconds) {
+      if (fuelRemaining <= 0f || oxygenAvailability <= 0f || tickSeconds <= 0f) {
+        return 0f;
+      }
+
+      var drynessFactor = 1f - UnityEngine.Mathf.Clamp01(moistureRemaining);
+      var fieldStrength = UnityEngine.Mathf.Clamp01(((heat * 0.62f) + (emberPressure * 0.9f)) * UnityEngine.Mathf.Lerp(0.35f, 1f, drynessFactor));
+      var threshold = UnityEngine.Mathf.Clamp(ignitionThreshold, 0.05f, 0.95f);
+      if (fieldStrength <= threshold) {
+        return 0f;
+      }
+
+      var excess = (fieldStrength - threshold) / (1f - threshold);
+      var oxygenFactor = UnityEngine.Mathf.Clamp01(oxygenAvailability);
+      var fuelFactor = UnityEngine.Mathf.Clamp01(fuelRemaining);
+      var perSecondProbability = UnityEngine.Mathf.Clamp01(excess * excess * oxygenFactor * fuelFactor);
+      return UnityEngine.Mathf.Clamp01(1f - UnityEngine.Mathf.Pow(1f - perSecondProbability, tickSeconds));
+    }
+
+    internal static float Roll(int entityId, int tick) {
+      unchecked {
+        var value = (uint)entityId;
+        value ^= (uint)tick * 0x9E3779B9u;
+        value ^= value >> 16;
+        value *= 0x7FEB352Du;
+        value ^= value >> 15;
+        value *= 0x846CA68Bu;
+        value ^= value >> 16;
+        return (value & 0x00FFFFFFu) / 16777216f;
+      }
+    }
 
   }
 }

@@ -52,6 +52,15 @@ namespace Prometheus.Tests {
     public void FireVisualEffectRules_DeadDamageStateKeepsCharWithoutFire_Test() => FireVisualEffectRulesDeadDamageStateKeepsCharWithoutFire();
 
     [Fact]
+    public void FireVisualEffectRules_EvaporatedMoistureBrownsVegetation_Test() => FireVisualEffectRulesEvaporatedMoistureBrownsVegetation();
+
+    [Fact]
+    public void FireVisualEffectRules_BurnedOutFuelKeepsCharredRemnant_Test() => FireVisualEffectRulesBurnedOutFuelKeepsCharredRemnant();
+
+    [Fact]
+    public void FireIgnitionRules_DryFuelIgnitesMoreReadily_Test() => FireIgnitionRulesDryFuelIgnitesMoreReadily();
+
+    [Fact]
     public void FireVisualPreset_DefaultsUsePromotedAuthoringValues_Test() => FireVisualPresetDefaultsUsePromotedAuthoringValues();
 
     [Fact]
@@ -86,6 +95,9 @@ namespace Prometheus.Tests {
 
     [Fact]
     public void FireGridRuntimeState_BurningVegetationEmitsAcrossForestLine_Test() => FireGridRuntimeStateBurningVegetationEmitsAcrossForestLine();
+
+    [Fact]
+    public void FireGridRuntimeState_FieldTransferDoesNotConsumeFuel_Test() => FireGridRuntimeStateFieldTransferDoesNotConsumeFuel();
 
     [Fact]
     public void FireGridRuntimeState_ExposedFacesLimitTransfer_Test() => FireGridRuntimeStateExposedFacesLimitTransfer();
@@ -281,6 +293,36 @@ namespace Prometheus.Tests {
       NearlyEqual(0f, intensity.Fire);
       True(intensity.Char > 0.95f);
       True(intensity.Smoke > 0f);
+    }
+
+    private static void FireVisualEffectRulesEvaporatedMoistureBrownsVegetation() {
+      var intensity = FireVisualEffectRules.ComputeIntensity(
+        CreateExposureSnapshot(burning: false, intensity: 0f, moistureDampening: 0f),
+        new FireDamageStateSnapshot(FireDamageCategory.Tree, FireDamageState.Healthy, 0f, 0f, 0),
+        FireVisualEffectTuning.Default);
+
+      True(intensity.Desiccation > 0.95f);
+      NearlyEqual(0f, intensity.Fire);
+      NearlyEqual(0f, intensity.Char);
+    }
+
+    private static void FireVisualEffectRulesBurnedOutFuelKeepsCharredRemnant() {
+      var intensity = FireVisualEffectRules.ComputeIntensity(
+        new FireExposureSnapshot(false, 0f, 0f, 0f, 0.08f, 0f, 1f, 0f, 1f, "BurnedOut"),
+        new FireDamageStateSnapshot(FireDamageCategory.Tree, FireDamageState.Dead, 1f, 1f, 4),
+        FireVisualEffectTuning.Default);
+
+      True(intensity.Char > 0.95f);
+      True(intensity.Desiccation > 0.95f);
+      NearlyEqual(0f, intensity.Fire);
+    }
+
+    private static void FireIgnitionRulesDryFuelIgnitesMoreReadily() {
+      var wetProbability = FireIgnitionRules.ComputeIgnitionProbability(0.8f, 0.5f, 1f, 1f, 0.9f, 0.45f, 0.5f);
+      var dryProbability = FireIgnitionRules.ComputeIgnitionProbability(0.8f, 0.5f, 1f, 1f, 0f, 0.45f, 0.5f);
+
+      NearlyEqual(0f, wetProbability);
+      True(dryProbability > wetProbability);
     }
 
     private static void FireVisualPresetDefaultsUsePromotedAuthoringValues() {
@@ -489,6 +531,20 @@ namespace Prometheus.Tests {
       True(grid.TryGetState(new FireGridCoordinate(3, 0, 0), out var distantTreeState));
       True(distantTreeState.BurnState == FireGridBurnState.Burning || distantTreeState.BurnState == FireGridBurnState.Smoldering);
       True(distantTreeState.IgnitionProgress > 0.35f);
+    }
+
+    private static void FireGridRuntimeStateFieldTransferDoesNotConsumeFuel() {
+      var grid = new FireGridRuntimeState();
+      var source = new FireGridCoordinate(0, 0, 0);
+      var neighbor = new FireGridCoordinate(1, 0, 0);
+      grid.SetEnvironment(source, BurnableEnvironment());
+      grid.SetEnvironment(neighbor, BurnableEnvironment());
+      grid.Inject(source, new FireCellState(1f, 1f, 0.5f, 1f, 0.25f, FireGridBurnState.Burning));
+
+      grid.Step(FireGridKernel.Full27);
+
+      True(grid.TryGetState(source, out var sourceState));
+      NearlyEqual(0.25f, sourceState.FuelConsumed);
     }
 
     private static void FireGridRuntimeStateExposedFacesLimitTransfer() {

@@ -14,6 +14,7 @@ namespace Mods.Prometheus.Scripts {
 
     private static readonly int ColorPropertyId = Shader.PropertyToID("_Color");
     private static readonly int BaseColorPropertyId = Shader.PropertyToID("_BaseColor");
+    private static readonly Color DesiccatedTintColor = new(0.45f, 0.30f, 0.14f, 1f);
     private static readonly Color CharTintColor = new(0.10f, 0.09f, 0.08f, 1f);
 
     private FireExposureRuntimeState _fireExposureRuntimeState;
@@ -69,7 +70,7 @@ namespace Mods.Prometheus.Scripts {
       _smokeEffect.ApplyIntensity(intensity.Smoke, 1.2f, 2.6f, tuning.EffectSize);
       _fireEffect.ApplyIntensity(intensity.Fire, 0.45f, 1.0f, tuning.EffectSize);
       _steamEffect.ApplyIntensity(intensity.Steam, 0.9f, 2.0f, tuning.EffectSize);
-      ApplyCharTint(intensity.Char);
+      ApplySurfaceTint(intensity.Desiccation, intensity.Char);
     }
 
     internal void DebugResetVisualEffects() {
@@ -78,7 +79,7 @@ namespace Mods.Prometheus.Scripts {
       _smokeEffect.ApplyIntensity(0f, 1.2f, 2.6f, tuning.EffectSize);
       _fireEffect.ApplyIntensity(0f, 0.45f, 1.0f, tuning.EffectSize);
       _steamEffect.ApplyIntensity(0f, 0.9f, 2.0f, tuning.EffectSize);
-      ApplyCharTint(0f);
+      ApplySurfaceTint(0f, 0f);
     }
 
     private void CaptureRenderers() {
@@ -204,7 +205,8 @@ namespace Mods.Prometheus.Scripts {
       }
     }
 
-    private void ApplyCharTint(float charIntensity) {
+    private void ApplySurfaceTint(float desiccationIntensity, float charIntensity) {
+      var clampedDesiccation = Mathf.Clamp01(desiccationIntensity);
       var clampedIntensity = Mathf.Clamp01(charIntensity);
       for (var i = 0; i < _rendererStates.Count; i++) {
         var rendererState = _rendererStates[i];
@@ -212,14 +214,15 @@ namespace Mods.Prometheus.Scripts {
           continue;
         }
 
-        if (clampedIntensity <= 0.01f) {
+        if (clampedDesiccation <= 0.01f && clampedIntensity <= 0.01f) {
           rendererState.Renderer.SetPropertyBlock(rendererState.OriginalPropertyBlock);
           continue;
         }
 
         rendererState.Renderer.GetPropertyBlock(_propertyBlock);
         var baseColor = rendererState.BaseColor;
-        var tintedColor = Color.Lerp(baseColor, CharTintColor, clampedIntensity * 0.85f);
+        var dryColor = Color.Lerp(baseColor, DesiccatedTintColor, clampedDesiccation * 0.7f);
+        var tintedColor = Color.Lerp(dryColor, CharTintColor, clampedIntensity * 0.9f);
         _propertyBlock.SetColor(ColorPropertyId, tintedColor);
         _propertyBlock.SetColor(BaseColorPropertyId, tintedColor);
         rendererState.Renderer.SetPropertyBlock(_propertyBlock);
