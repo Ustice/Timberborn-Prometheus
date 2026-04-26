@@ -1,6 +1,6 @@
 # P2S-002 Split Grid Runtime
 
-Status: in-progress
+Status: integration
 
 Agent level: Low
 
