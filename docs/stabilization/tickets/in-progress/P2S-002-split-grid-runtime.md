@@ -1,6 +1,6 @@
 # P2S-002 Split Grid Runtime
 
-Status: todo
+Status: in-progress
 
 Agent level: Low
 
@@ -34,4 +34,3 @@ Split the overlarge grid runtime file without changing behavior.
 ## Integration Notes
 
 Integrate before tickets that add grid policies, source attribution, or simulation coordination.
-

@@ -1,6 +1,6 @@
 # P2S-006 Split Tests By Subsystem
 
-Status: todo
+Status: in-progress
 
 Agent level: Low
 
@@ -33,4 +33,3 @@ Split the monolithic test runner into subsystem files.
 ## Integration Notes
 
 Integrate before adding new tests from later tickets.
-

@@ -1,6 +1,6 @@
 # P2S-003 Split Debug Shell Selection Logs
 
-Status: todo
+Status: in-progress
 
 Agent level: Low
 
@@ -34,4 +34,3 @@ Split debug panel shell, selection state, and logs from the large debug fragment
 ## Integration Notes
 
 Coordinate with P2S-004 and P2S-005. They should not start until this split is integrated.
-
