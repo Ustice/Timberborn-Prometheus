@@ -1,6 +1,6 @@
 # P2S-003 Split Debug Shell Selection Logs
 
-Status: integration
+Status: done
 
 Agent level: Low
 
