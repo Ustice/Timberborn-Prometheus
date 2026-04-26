@@ -26,6 +26,8 @@ todo -> ready -> in-progress -> verify -> integration -> done
 - A Medium agent owns wave orchestration.
 - Assign disjoint write scopes before agents start.
 - Low is the default agent level; tickets marked Medium or High should be assigned accordingly.
+- Raise blockers early, especially when the blocker is likely something Jason can solve: missing live-game evidence, unclear product intent, Timberborn API uncertainty, local environment issues, screenshots/logs needed, or a choice between gameplay tradeoffs.
+- Move blocked tickets to `blocked/` with a short note in the ticket describing what is blocked, what was tried, what evidence is needed, and the smallest concrete question or action for Jason.
 - Verification happens before integration.
 - Integration happens in dependency order.
 - Each coding agent must report changed files, tests run, unknowns resolved or remaining, and live QA evidence when applicable.
@@ -44,4 +46,3 @@ todo -> ready -> in-progress -> verify -> integration -> done
 - Wave D: P2S-013 through P2S-018.
 - Wave E: P2S-019 through P2S-025.
 - Wave F: P2S-026 and P2S-027.
-
