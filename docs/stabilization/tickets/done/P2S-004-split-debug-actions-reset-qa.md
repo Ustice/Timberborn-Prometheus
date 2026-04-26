@@ -1,6 +1,6 @@
 # P2S-004 Split Debug Actions Reset QA
 
-Status: integration
+Status: done
 
 Agent level: Low
 
