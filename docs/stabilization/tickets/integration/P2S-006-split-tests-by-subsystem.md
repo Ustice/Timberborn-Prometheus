@@ -1,6 +1,6 @@
 # P2S-006 Split Tests By Subsystem
 
-Status: verify
+Status: integration
 
 Agent level: Low
 
