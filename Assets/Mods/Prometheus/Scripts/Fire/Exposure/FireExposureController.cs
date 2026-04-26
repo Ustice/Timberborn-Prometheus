@@ -17,6 +17,7 @@ namespace Mods.Prometheus.Scripts {
     private FireExposureRuntimeState _fireExposureRuntimeState;
     private FireGridRuntimeState _fireGridRuntimeState;
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
+    private FireResetRegistry _fireResetRegistry;
     private FireProfile _fireProfile;
     private FireResetRegistration _resetRegistration = FireResetRegistration.Empty;
     private float _remainingFuel = -1f;
@@ -44,14 +45,11 @@ namespace Mods.Prometheus.Scripts {
       _fireExposureRuntimeState = fireExposureRuntimeState;
       _fireGridRuntimeState = fireGridRuntimeState;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
-      _resetRegistration = fireResetRegistry.RegisterEntity(
-        GameObject.GetInstanceID(),
-        FireResetHookKind.SourceState,
-        nameof(FireExposureController),
-        DebugResetFireExposureState);
+      _fireResetRegistry = fireResetRegistry;
     }
 
     public void Awake() {
+      EnsureResetRegistration();
       _fireProfile = GetComponent<FireProfile>();
       _remainingFuel = MaxFuel;
       _remainingMoisture = MaxMoisture;
@@ -123,6 +121,18 @@ namespace Mods.Prometheus.Scripts {
 
     private void OnDestroy() {
       _resetRegistration.Dispose();
+    }
+
+    private void EnsureResetRegistration() {
+      if (_resetRegistration != FireResetRegistration.Empty) {
+        return;
+      }
+
+      _resetRegistration = _fireResetRegistry.RegisterEntity(
+        GameObject.GetInstanceID(),
+        FireResetHookKind.SourceState,
+        nameof(FireExposureController),
+        DebugResetFireExposureState);
     }
 
     private FireExposureSnapshot CreateSnapshotFromGrid(int entityId, FireGridFootprint footprint) {

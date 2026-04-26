@@ -10,6 +10,7 @@ namespace Mods.Prometheus.Scripts {
     private const float UpdateIntervalInSeconds = 1f;
 
     private FireRecoveryRuntimeState _fireRecoveryRuntimeState;
+    private FireResetRegistry _fireResetRegistry;
     private FireResetRegistration _resetRegistration = FireResetRegistration.Empty;
 
     private float _timeSinceLastUpdate;
@@ -23,14 +24,11 @@ namespace Mods.Prometheus.Scripts {
       FireRecoveryRuntimeState fireRecoveryRuntimeState,
       FireResetRegistry fireResetRegistry) {
       _fireRecoveryRuntimeState = fireRecoveryRuntimeState;
-      _resetRegistration = fireResetRegistry.RegisterEntity(
-        GameObject.GetInstanceID(),
-        FireResetHookKind.RecoveryEffect,
-        nameof(FireRecoveryEffectApplier),
-        DebugRestoreBaseRecoveryEffects);
+      _fireResetRegistry = fireResetRegistry;
     }
 
     public void Awake() {
+      EnsureResetRegistration();
       _growable = GameObject.GetComponent("Growable");
       if (_growable is null) {
         return;
@@ -81,6 +79,18 @@ namespace Mods.Prometheus.Scripts {
 
     private void OnDestroy() {
       _resetRegistration.Dispose();
+    }
+
+    private void EnsureResetRegistration() {
+      if (_resetRegistration != FireResetRegistration.Empty) {
+        return;
+      }
+
+      _resetRegistration = _fireResetRegistry.RegisterEntity(
+        GameObject.GetInstanceID(),
+        FireResetHookKind.RecoveryEffect,
+        nameof(FireRecoveryEffectApplier),
+        DebugRestoreBaseRecoveryEffects);
     }
 
     private void RestoreBaseGrowthTimeIfNeeded() {

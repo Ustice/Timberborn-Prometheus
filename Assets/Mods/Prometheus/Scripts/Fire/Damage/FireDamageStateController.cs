@@ -15,6 +15,7 @@ namespace Mods.Prometheus.Scripts {
     private FireExposureRuntimeState _fireExposureRuntimeState;
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
     private FireTuningRuntimeState _fireTuningRuntimeState;
+    private FireResetRegistry _fireResetRegistry;
     private FireResetRegistration _resetRegistration = FireResetRegistration.Empty;
 
     private float _timeSinceLastUpdate;
@@ -34,14 +35,11 @@ namespace Mods.Prometheus.Scripts {
       _fireExposureRuntimeState = fireExposureRuntimeState;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
       _fireTuningRuntimeState = fireTuningRuntimeState;
-      _resetRegistration = fireResetRegistry.RegisterEntity(
-        GameObject.GetInstanceID(),
-        FireResetHookKind.DamageState,
-        nameof(FireDamageStateController),
-        DebugResetDamageStateToHealthy);
+      _fireResetRegistry = fireResetRegistry;
     }
 
     public void Awake() {
+      EnsureResetRegistration();
       _category = DetectCategory();
     }
 
@@ -108,6 +106,18 @@ namespace Mods.Prometheus.Scripts {
 
     private void OnDestroy() {
       _resetRegistration.Dispose();
+    }
+
+    private void EnsureResetRegistration() {
+      if (_resetRegistration != FireResetRegistration.Empty) {
+        return;
+      }
+
+      _resetRegistration = _fireResetRegistry.RegisterEntity(
+        GameObject.GetInstanceID(),
+        FireResetHookKind.DamageState,
+        nameof(FireDamageStateController),
+        DebugResetDamageStateToHealthy);
     }
 
     private static float GetTickRate(FireDamageCategory category) {

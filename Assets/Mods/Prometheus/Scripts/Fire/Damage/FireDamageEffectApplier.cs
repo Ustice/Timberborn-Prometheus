@@ -10,6 +10,7 @@ namespace Mods.Prometheus.Scripts {
     private const float UpdateIntervalInSeconds = 1f;
 
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
+    private FireResetRegistry _fireResetRegistry;
     private FireResetRegistration _resetRegistration = FireResetRegistration.Empty;
 
     private float _timeSinceLastUpdate;
@@ -34,14 +35,11 @@ namespace Mods.Prometheus.Scripts {
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
       FireResetRegistry fireResetRegistry) {
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
-      _resetRegistration = fireResetRegistry.RegisterEntity(
-        GameObject.GetInstanceID(),
-        FireResetHookKind.DamageEffect,
-        nameof(FireDamageEffectApplier),
-        DebugRestoreHealthyState);
+      _fireResetRegistry = fireResetRegistry;
     }
 
     public void Awake() {
+      EnsureResetRegistration();
       BindTargetComponents();
       _lastAppliedState = FireDamageState.Healthy;
       _initialized = true;
@@ -81,6 +79,18 @@ namespace Mods.Prometheus.Scripts {
 
     private void OnDestroy() {
       _resetRegistration.Dispose();
+    }
+
+    private void EnsureResetRegistration() {
+      if (_resetRegistration != FireResetRegistration.Empty) {
+        return;
+      }
+
+      _resetRegistration = _fireResetRegistry.RegisterEntity(
+        GameObject.GetInstanceID(),
+        FireResetHookKind.DamageEffect,
+        nameof(FireDamageEffectApplier),
+        DebugRestoreHealthyState);
     }
 
     private void ApplyState(FireDamageState state) {

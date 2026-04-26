@@ -11,6 +11,7 @@ namespace Mods.Prometheus.Scripts {
 
     private FireExposureRuntimeState _fireExposureRuntimeState;
     private FireRecoveryRuntimeState _fireRecoveryRuntimeState;
+    private FireResetRegistry _fireResetRegistry;
     private FireResetRegistration _resetRegistration = FireResetRegistration.Empty;
 
     private float _timeSinceLastUpdate;
@@ -25,14 +26,11 @@ namespace Mods.Prometheus.Scripts {
       FireResetRegistry fireResetRegistry) {
       _fireExposureRuntimeState = fireExposureRuntimeState;
       _fireRecoveryRuntimeState = fireRecoveryRuntimeState;
-      _resetRegistration = fireResetRegistry.RegisterEntity(
-        GameObject.GetInstanceID(),
-        FireResetHookKind.RecoveryState,
-        nameof(FireRecoveryController),
-        DebugResetRecoveryState);
+      _fireResetRegistry = fireResetRegistry;
     }
 
     public void Update() {
+      EnsureResetRegistration();
       if (!TickGate.ShouldRun(ref _timeSinceLastUpdate, UpdateIntervalInSeconds)) {
         return;
       }
@@ -82,6 +80,18 @@ namespace Mods.Prometheus.Scripts {
 
     private void OnDestroy() {
       _resetRegistration.Dispose();
+    }
+
+    private void EnsureResetRegistration() {
+      if (_resetRegistration != FireResetRegistration.Empty) {
+        return;
+      }
+
+      _resetRegistration = _fireResetRegistry.RegisterEntity(
+        GameObject.GetInstanceID(),
+        FireResetHookKind.RecoveryState,
+        nameof(FireRecoveryController),
+        DebugResetRecoveryState);
     }
 
   }

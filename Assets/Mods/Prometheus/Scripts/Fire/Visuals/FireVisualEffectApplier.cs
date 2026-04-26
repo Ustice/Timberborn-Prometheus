@@ -20,6 +20,7 @@ namespace Mods.Prometheus.Scripts {
     private FireExposureRuntimeState _fireExposureRuntimeState;
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
     private FireVisualEffectRuntimeState _fireVisualEffectRuntimeState;
+    private FireResetRegistry _fireResetRegistry;
     private FireResetRegistration _resetRegistration = FireResetRegistration.Empty;
 
     private readonly List<RendererPropertyBlockState> _rendererStates = new();
@@ -41,14 +42,11 @@ namespace Mods.Prometheus.Scripts {
       _fireExposureRuntimeState = fireExposureRuntimeState;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
       _fireVisualEffectRuntimeState = fireVisualEffectRuntimeState;
-      _resetRegistration = fireResetRegistry.RegisterEntity(
-        GameObject.GetInstanceID(),
-        FireResetHookKind.VisualEffect,
-        nameof(FireVisualEffectApplier),
-        DebugResetVisualEffects);
+      _fireResetRegistry = fireResetRegistry;
     }
 
     public void Awake() {
+      EnsureResetRegistration();
       _propertyBlock = new MaterialPropertyBlock();
       CaptureRenderers();
       CreateParticleSystems();
@@ -91,6 +89,18 @@ namespace Mods.Prometheus.Scripts {
 
     private void OnDestroy() {
       _resetRegistration.Dispose();
+    }
+
+    private void EnsureResetRegistration() {
+      if (_resetRegistration != FireResetRegistration.Empty) {
+        return;
+      }
+
+      _resetRegistration = _fireResetRegistry.RegisterEntity(
+        GameObject.GetInstanceID(),
+        FireResetHookKind.VisualEffect,
+        nameof(FireVisualEffectApplier),
+        DebugResetVisualEffects);
     }
 
     private void CaptureRenderers() {
