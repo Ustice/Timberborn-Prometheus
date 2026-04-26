@@ -1,6 +1,7 @@
 using System;
 using TimberUi;
 using TimberUi.CommonUi;
+using Timberborn.CoreUI;
 using UnityEngine.UIElements;
 
 namespace Mods.Prometheus.Scripts {
