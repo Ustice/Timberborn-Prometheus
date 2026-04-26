@@ -1,4 +1,5 @@
 using Mods.Prometheus.Scripts;
+using UnityEngine;
 using Xunit;
 
 namespace Prometheus.Tests
@@ -134,6 +135,33 @@ namespace Prometheus.Tests
             TestSupport.Equal(0, result.EntityHookCount);
             TestSupport.Equal(0, result.EntityCount);
             TestSupport.Equal(0, entityHookCount);
+        }
+
+        [Fact]
+        public void FireResetRegistry_IsolatesFailingHooksAndContinues_Test()
+        {
+            var registry = new FireResetRegistry(
+                new FireGridRuntimeState(),
+                new FireExposureRuntimeState(),
+                new FireImpactRuntimeState(),
+                new FireDamageStateRuntimeState(),
+                new FireRecoveryRuntimeState(),
+                new FireVisualEffectPreviewRuntimeState());
+            var successfulEntityHookCount = 0;
+
+            registry.RegisterEntity(8, FireResetHookKind.VisualEffect, "failing-visual", () => throw new MissingReferenceException("destroyed visual target"));
+            registry.RegisterEntity(9, FireResetHookKind.WorkplaceEffect, "successful-workplace", () => successfulEntityHookCount++);
+
+            var firstResult = registry.ResetAll("test");
+            var secondResult = registry.ResetAll("test");
+
+            TestSupport.Equal(1, firstResult.FailureCount);
+            TestSupport.Equal(2, firstResult.EntityHookCount);
+            TestSupport.Equal(2, firstResult.EntityCount);
+            TestSupport.Equal(1, secondResult.EntityHookCount);
+            TestSupport.Equal(1, secondResult.EntityCount);
+            TestSupport.Equal(0, secondResult.FailureCount);
+            TestSupport.Equal(2, successfulEntityHookCount);
         }
 
     }

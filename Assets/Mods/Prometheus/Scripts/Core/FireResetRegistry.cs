@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 namespace Mods.Prometheus.Scripts {
   internal enum FireResetHookKind {
@@ -66,10 +67,23 @@ namespace Mods.Prometheus.Scripts {
         .ToArray();
       var hooks = globalHooks.Concat(entityHooks).ToArray();
 
-      FireTelemetry.Log($"event={FireTelemetryEvents.RuntimeResetRegistryStarted} reason={reason} globalHooks={globalHooks.Length} entityHooks={entityHooks.Length} entities={_entityHooksByEntityId.Count}");
+      var entityCount = _entityHooksByEntityId.Count;
+      FireTelemetry.Log($"event={FireTelemetryEvents.RuntimeResetRegistryStarted} reason={reason} globalHooks={globalHooks.Length} entityHooks={entityHooks.Length} entities={entityCount}");
 
-      var failures = hooks.Count(hook => !TryRunHook(hook, reason));
-      var result = new FireResetRegistryResult(globalHooks.Length, entityHooks.Length, _entityHooksByEntityId.Count, failures);
+      var failures = 0;
+      foreach (var hook in hooks) {
+        if (TryRunHook(hook, reason, out var exception)) {
+          continue;
+        }
+
+        failures++;
+        LogHookFailure(hook, reason, exception);
+        if (exception is MissingReferenceException && hook.EntityId != 0) {
+          UnregisterEntityHook(hook.EntityId, hook);
+        }
+      }
+
+      var result = new FireResetRegistryResult(globalHooks.Length, entityHooks.Length, entityCount, failures);
 
       FireTelemetry.Log($"event={FireTelemetryEvents.RuntimeResetRegistryCompleted} reason={reason} globalHooks={result.GlobalHookCount} entityHooks={result.EntityHookCount} entities={result.EntityCount} failures={result.FailureCount} kinds=\"{CreateKindSummary(hooks)}\"");
       return result;
@@ -89,18 +103,26 @@ namespace Mods.Prometheus.Scripts {
       }
     }
 
-    private static bool TryRunHook(FireResetHook hook, string reason) {
+    private static bool TryRunHook(FireResetHook hook, string reason, out Exception exception) {
+      exception = null;
       if (hook.Reset is null) {
+        exception = new InvalidOperationException("Reset hook has no callback.");
         return false;
       }
 
       try {
         hook.Reset();
         return true;
-      } catch (Exception exception) {
-        FireTelemetry.LogWarning($"event={FireTelemetryEvents.RuntimeResetHookFailed} reason={reason} kind={hook.Kind} owner=\"{hook.Owner}\" entityId={hook.EntityId} error=\"{exception.Message}\"");
+      } catch (Exception caughtException) {
+        exception = caughtException;
         return false;
       }
+    }
+
+    private static void LogHookFailure(FireResetHook hook, string reason, Exception exception) {
+      var exceptionType = exception?.GetType().Name ?? "Unknown";
+      var message = EscapeToken(exception?.Message ?? "Unknown reset hook failure.");
+      FireTelemetry.LogWarning($"event={FireTelemetryEvents.RuntimeResetHookFailed} reason={reason} kind={hook.Kind} owner=\"{EscapeToken(hook.Owner)}\" entityId={hook.EntityId} errorType={exceptionType} error=\"{message}\"");
     }
 
     private static string CreateKindSummary(IEnumerable<FireResetHook> hooks) =>
@@ -108,6 +130,11 @@ namespace Mods.Prometheus.Scripts {
         .GroupBy(hook => hook.Kind)
         .OrderBy(group => group.Key.ToString())
         .Select(group => $"{group.Key}:{group.Count()}"));
+
+    internal static string EscapeToken(string value) =>
+      string.IsNullOrEmpty(value)
+        ? string.Empty
+        : value.Replace("\\", "\\\\").Replace("\"", "\\\"");
 
     private readonly struct FireResetHook {
 

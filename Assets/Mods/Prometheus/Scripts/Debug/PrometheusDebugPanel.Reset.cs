@@ -1,3 +1,5 @@
+using System;
+
 namespace Mods.Prometheus.Scripts {
   internal partial class PrometheusDebugPanel {
 
@@ -28,7 +30,17 @@ namespace Mods.Prometheus.Scripts {
     }
 
     private void ResetAllFireState() {
-      var result = _fireResetRegistry.ResetAll("debug_reset_fire_state");
+      FireResetRegistryResult result;
+      try {
+        result = _fireResetRegistry.ResetAll("debug_reset_fire_state");
+      } catch (Exception exception) {
+        FireTelemetry.LogWarning($"event={FireTelemetryEvents.RuntimeResetHookFailed} reason=debug_reset_fire_state kind=Registry owner=\"PrometheusDebugPanel\" entityId=0 errorType={exception.GetType().Name} error=\"{FireResetRegistry.EscapeToken(exception.Message)}\"");
+        SetAdminFeedback("Reset fire state failed before completion");
+        _lastObservedEntryCount = FireTelemetry.GetRecentInGameLogEntries().Length;
+        RefreshLogPanel(force: true);
+        return;
+      }
+
       FireTelemetry.Log($"event={FireTelemetryEvents.DebugResetFireExposure} result={(result.FailureCount == 0 ? "success" : "partial_failure")} globalHooks={result.GlobalHookCount} entityHooks={result.EntityHookCount} entities={result.EntityCount} failures={result.FailureCount}");
       SetAdminFeedback(result.FailureCount == 0
         ? $"Reset fire state for {result.EntityCount} entities"
