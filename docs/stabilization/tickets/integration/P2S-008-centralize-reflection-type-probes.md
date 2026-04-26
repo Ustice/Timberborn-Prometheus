@@ -1,6 +1,6 @@
 # P2S-008 Centralize Reflection Type Probes
 
-Status: verify
+Status: integration
 
 Agent level: Medium
 
