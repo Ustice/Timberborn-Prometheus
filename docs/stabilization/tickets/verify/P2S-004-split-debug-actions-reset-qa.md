@@ -1,6 +1,6 @@
 # P2S-004 Split Debug Actions Reset QA
 
-Status: in-progress
+Status: verify
 
 Agent level: Low
 
