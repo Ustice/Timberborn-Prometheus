@@ -33,6 +33,10 @@ namespace Mods.Prometheus.Scripts {
       chunk.SetState(coordinate, chunk.GetState(coordinate).Add(state));
     }
 
+    public void Inject(FireGridSourceInjection injection) {
+      Inject(injection.Coordinate, injection.State);
+    }
+
     public bool TryGetState(FireGridCoordinate coordinate, out FireCellState state) {
       var chunkCoordinate = FireGridChunkCoordinate.FromCell(coordinate);
       if (_chunks.TryGetValue(chunkCoordinate, out var chunk) && chunk.TryGetState(coordinate, out state)) {
@@ -57,6 +61,8 @@ namespace Mods.Prometheus.Scripts {
       var moistureDampening = 0f;
       var oxygenAvailability = 0f;
       var dominantBurnState = FireGridBurnState.Cold;
+      var sourceAttribution = FireSourceAttribution.Unknown;
+      var sourceStrength = 0f;
       var environmentCount = 0;
 
       foreach (var coordinate in coordinates) {
@@ -79,6 +85,12 @@ namespace Mods.Prometheus.Scripts {
         if (state.BurnState > dominantBurnState) {
           dominantBurnState = state.BurnState;
         }
+
+        var stateSourceStrength = UnityEngine.Mathf.Max(state.Heat, state.EmberPressure, state.Smoke, state.IgnitionProgress);
+        if (state.SourceAttribution.HasSource && stateSourceStrength >= sourceStrength) {
+          sourceAttribution = state.SourceAttribution;
+          sourceStrength = stateSourceStrength;
+        }
       }
 
       if (!hasAnyCoordinate) {
@@ -94,7 +106,8 @@ namespace Mods.Prometheus.Scripts {
         fuelConsumed,
         environmentCount == 0 ? 0f : moistureDampening / environmentCount,
         environmentCount == 0 ? 1f : oxygenAvailability / environmentCount,
-        dominantBurnState);
+        dominantBurnState,
+        sourceAttribution);
     }
 
     public void ClearCell(FireGridCoordinate coordinate) {
