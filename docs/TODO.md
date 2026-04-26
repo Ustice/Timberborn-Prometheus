@@ -89,8 +89,7 @@
 - [ ] Run plain C# tests for each new grid rule.
 - [ ] Run `bash scripts/test.sh && bash scripts/build.sh --launch` after implementation slices.
 - [ ] Prefer `bash scripts/build.sh --qa` when a slice needs tests, fresh launch, cleared logs, and startup readiness.
-- [ ] For CLI save autoload, launch Timberborn with `-settlementName "<settlement>" -saveName "<save without .timber>"`.
-- [ ] Avoid the current `Prometheus Testing` Day 4-15 autosave for QA until its `SleepNeedBehavior.SleepAtHome()` crash is resolved or a cleaner save is chosen.
+- [ ] Use normal menu loading for live QA until Timberborn's CLI instant-load crash is understood or bypassed.
 - [ ] Use `Fire.log` for runtime evidence.
 - [ ] Update [HANDOFF.md](HANDOFF.md), [DESIGN.md](DESIGN.md), and [TEST_PLAN.md](TEST_PLAN.md) when milestone state changes.
 
