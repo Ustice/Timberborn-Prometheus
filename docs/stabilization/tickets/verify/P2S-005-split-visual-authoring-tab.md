@@ -1,6 +1,6 @@
 # P2S-005 Split Visual Authoring Tab
 
-Status: in-progress
+Status: verify
 
 Agent level: Low
 
