@@ -32,6 +32,7 @@ Prometheus is moving into the 3D grid fire rewrite. The old entity-neighbor spre
 | 2026-04-25 | CLI autoload + log scan | Blocked | `-settlementName "<settlement>" -saveName "<save>"` reaches Prometheus startup but crashes Timberborn behavior/navigation ticks, including the clean `Prometheus QA` / `beginning` save. Normal UI loading can still work; CLI autostart uses `LoadSceneInstantly(...)` while menu loading uses `LoadScene(...)`. |
 | 2026-04-25 | `cliclick` menu automation | Pass | Verified `osascript` activation plus `cliclick` Return/Return/click events can drive Timberborn's normal menu path; `bash scripts/build.sh --qa` now uses that path when `cliclick` is installed. |
 | 2026-04-25 | `bash scripts/build.sh --qa` + `cliclick` Prometheus QA panel | Pass | Loaded `Prometheus QA`, opened `Prometheus` -> `QA`, confirmed the instruction/result buttons rendered, clicked `Passed`, and saw `event=qa_result_recorded result=passed` in `Fire.log`. |
+| 2026-04-25 | `cliclick` + `screencapture` tight QA loop | Pass | Verified a single shell command can activate Timberborn, click a coordinate, wait briefly, and capture the result image for immediate inspection. |
 
 ## Durable Context
 
@@ -41,6 +42,8 @@ Prometheus is moving into the 3D grid fire rewrite. The old entity-neighbor spre
 - Timberborn can autoload saves from the command line with `-settlementName "<settlement>" -saveName "<save without .timber>"`; experimental saves are used when the game is in experimental mode. Treat this as unsafe for live QA on the current mod stack because autostart uses `LoadSceneInstantly(...)` rather than the normal menu `LoadScene(...)` path.
 - `bash scripts/build.sh --qa` can drive the normal menu path with `cliclick`: activate Timberborn, wait, press Return twice, wait, then click `Continue` at `960,323`. Tune with `QA_MENU_*` environment variables or disable with `QA_MENU_AUTOMATION=0`.
 - Current verified Prometheus toolbar coordinates at 1920x1080: root `Prometheus` button around `632,1043`; `QA` child around `1024,970`.
+- Use this tight click-and-see loop for in-game QA:
+  `osascript -e 'tell application id "com.mechanistry.timberborn" to activate' && sleep 0.2 && cliclick c:<x>,<y> && sleep 0.7 && screencapture -x /tmp/timberborn-tight-loop.png`
 - The visual authoring tool remains available for `Smoke`, `Ash`, `Steam`, `Fire`, `Sparks`, and `Char`, including selected-entity temporary preview and JSON/log export.
 - `Reset Fire Sim` must clear fire, damage, recovery, preview, and pending debug-ignition state without changing saved design data.
 - Old bucket-kit, firefighting-foam, fire-control-gear, fireworks-crate, and festival-risk scaffolding has been pruned from active content; Fertile Ash remains the core post-fire resource direction.

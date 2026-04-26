@@ -42,6 +42,12 @@ This is the authoritative runbook for active Prometheus validation.
 
 Last verified at 1920x1080 on 2026-04-25: `Prometheus` root around `632,1043`, `QA` child around `1024,970`, and `Passed` recorded `event=qa_result_recorded result=passed`.
 
+For coordinate-based in-game checks, use a single click-and-capture command so the action and evidence stay together:
+
+```bash
+osascript -e 'tell application id "com.mechanistry.timberborn" to activate' && sleep 0.2 && cliclick c:<x>,<y> && sleep 0.7 && screencapture -x /tmp/timberborn-tight-loop.png
+```
+
 Source of truth: exact UI labels and control construction live in the debug UI source; this checklist defines behavior to verify, not an inventory to keep synchronized.
 
 ## Temporary Removal-Pass Regression
