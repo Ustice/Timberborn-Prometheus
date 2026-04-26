@@ -16,7 +16,7 @@ This is the authoritative runbook for active Prometheus validation.
 
 - [ ] Run `bash scripts/test.sh`.
 - [ ] Run `bash scripts/build.sh --launch` for in-game QA.
-- [ ] Prefer `bash scripts/build.sh --qa` when you want tests, launch, cleared logs, and Prometheus startup readiness in one command.
+- [ ] Prefer `bash scripts/build.sh --qa` when you want tests, launch, cleared logs, normal-menu continue automation, and Prometheus startup readiness in one command.
 - [ ] Use normal menu loading for live QA; CLI `-settlementName "<settlement>" -saveName "<save without .timber>"` uses Timberborn's instant scene-load path and currently crashes after Prometheus startup.
 - [ ] Confirm Timberborn launches with Prometheus enabled.
 - [ ] Confirm fresh logs are available for the measurement window.
@@ -79,7 +79,7 @@ Use this section as the next validation gate once the sparse grid lands.
 
 Run across each profile once behavior is coherent.
 
-Current QA caveat: CLI autoload reaches Prometheus startup but crashes Timberborn behavior/navigation ticks, including the clean `Prometheus QA` / `beginning` save. The CLI path calls Timberborn's instant scene loader, while normal menu loading uses the non-instant scene-loader path. Use normal menu loading before treating forest-spread QA as a Prometheus failure.
+Current QA caveat: CLI autoload reaches Prometheus startup but crashes Timberborn behavior/navigation ticks, including the clean `Prometheus QA` / `beginning` save. The CLI path calls Timberborn's instant scene loader, while normal menu loading uses the non-instant scene-loader path. Use normal menu loading, or `bash scripts/build.sh --qa` with `cliclick` installed, before treating forest-spread QA as a Prometheus failure.
 
 | Profile | Dry fuel propagation | Moisture/steam dampening | Firebreak/barrier | High-risk source | Low-risk non-source | Outcome |
 | --- | --- | --- | --- | --- | --- | --- |

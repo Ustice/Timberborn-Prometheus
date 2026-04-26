@@ -13,6 +13,12 @@ WAIT_FOR_BUILD_POLL_SECONDS=2
 WAIT_FOR_BUILD_STABLE_POLLS=2
 QA_READY_TIMEOUT_SECONDS="${QA_READY_TIMEOUT_SECONDS:-180}"
 QA_READY_POLL_SECONDS="${QA_READY_POLL_SECONDS:-5}"
+QA_MENU_AUTOMATION="${QA_MENU_AUTOMATION:-1}"
+QA_MENU_INITIAL_SLEEP_SECONDS="${QA_MENU_INITIAL_SLEEP_SECONDS:-6}"
+QA_MENU_FIRST_WAIT_MS="${QA_MENU_FIRST_WAIT_MS:-1000}"
+QA_MENU_CONTINUE_WAIT_MS="${QA_MENU_CONTINUE_WAIT_MS:-9000}"
+QA_MENU_CONTINUE_CLICK_X="${QA_MENU_CONTINUE_CLICK_X:-960}"
+QA_MENU_CONTINUE_CLICK_Y="${QA_MENU_CONTINUE_CLICK_Y:-323}"
 DEFAULT_TIMBERBORN_APP_ID="1062090"
 DEFAULT_PLAYER_LOG_PATH="$HOME/Library/Logs/Mechanistry/Timberborn/Player.log"
 DEFAULT_FIRE_LOG_PATH="$HOME/Library/Logs/Mechanistry/Timberborn/Fire.log"
@@ -46,8 +52,8 @@ Options:
                 Implies stopping any running Timberborn process and waiting
                 for a fresh + stable Unity DLL before build/deploy.
                 Also clears Timberborn Player.log and Fire.log before launch.
-  --qa          Run tests, build/deploy, launch Timberborn, then wait for
-                Prometheus startup readiness in Player.log / Fire.log.
+  --qa          Run tests, build/deploy, launch Timberborn, try normal menu
+                continue automation, then wait for Prometheus startup readiness.
                 Implies --test and --launch.
 
 Common combos:
@@ -55,7 +61,7 @@ Common combos:
   bash scripts/build.sh --test           # test + build + deploy
   bash scripts/build.sh --launch         # build + stop running + wait for fresh/stable build + deploy + wait + launch
   bash scripts/build.sh --test --launch  # test + launch workflow
-  bash scripts/build.sh --qa             # test + launch + Prometheus readiness wait
+  bash scripts/build.sh --qa             # test + launch + menu continue + readiness wait
 
 Build/deploy model:
   The deployed mod directory is recreated as symlinks on each run:
@@ -71,6 +77,9 @@ QA model:
   - QA mode waits up to QA_READY_TIMEOUT_SECONDS (default: 180) for Player.log
     to show Prometheus startup with no scanned Prometheus errors.
   - Set QA_READY_POLL_SECONDS to tune the readiness polling interval.
+  - When cliclick is installed, QA mode also tries the normal menu load path:
+    activate Timberborn, press Return twice, wait, then click Continue.
+    Override with QA_MENU_AUTOMATION=0 or QA_MENU_* timing/coordinate vars.
 USAGE
 }
 
@@ -625,6 +634,39 @@ wait_for_qa_readiness() {
   return 1
 }
 
+run_qa_menu_automation() {
+  if [[ "$QA_MODE" != "true" || "$QA_MENU_AUTOMATION" != "1" ]]; then
+    return 0
+  fi
+
+  if ! command -v osascript >/dev/null 2>&1; then
+    echo "[qa] Menu automation skipped: osascript not found." >&2
+    return 0
+  fi
+
+  if ! command -v cliclick >/dev/null 2>&1; then
+    echo "[qa] Menu automation skipped: cliclick not found." >&2
+    echo "[qa] Install cliclick or set QA_MENU_AUTOMATION=0 to silence this warning." >&2
+    return 0
+  fi
+
+  echo "[qa] Activating Timberborn and driving normal menu load path..."
+  echo "[qa] Sequence: sleep ${QA_MENU_INITIAL_SLEEP_SECONDS}s, Return, wait ${QA_MENU_FIRST_WAIT_MS}ms, Return, wait ${QA_MENU_CONTINUE_WAIT_MS}ms, click ${QA_MENU_CONTINUE_CLICK_X},${QA_MENU_CONTINUE_CLICK_Y}"
+
+  if ! osascript -e 'tell application id "com.mechanistry.timberborn" to activate' >/dev/null 2>&1; then
+    echo "[qa] Menu automation skipped: could not activate Timberborn." >&2
+    return 0
+  fi
+
+  sleep "$QA_MENU_INITIAL_SLEEP_SECONDS"
+  cliclick \
+    kp:return \
+    "w:$QA_MENU_FIRST_WAIT_MS" \
+    kp:return \
+    "w:$QA_MENU_CONTINUE_WAIT_MS" \
+    "c:$QA_MENU_CONTINUE_CLICK_X,$QA_MENU_CONTINUE_CLICK_Y"
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --test)
@@ -718,5 +760,6 @@ if [[ "$LAUNCH_AFTER_BUILD" == "true" ]]; then
   echo "[build] Waiting 5s before launch..."
   sleep 5
   launch_timberborn
+  run_qa_menu_automation
   wait_for_qa_readiness
 fi
