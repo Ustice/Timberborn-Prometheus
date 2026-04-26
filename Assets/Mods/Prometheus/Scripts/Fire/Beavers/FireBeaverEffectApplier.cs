@@ -179,29 +179,21 @@ namespace Mods.Prometheus.Scripts {
       var cachedComponentCount = 0;
       var needManagerCount = 0;
 
-      var unityComponents = UnityEngine.Object.FindObjectsByType<Component>(FindObjectsSortMode.None);
-      foreach (var unityComponent in unityComponents) {
-        if (unityComponent is null) {
-          continue;
-        }
-
-        if (unityComponent.GetType().Name != "ComponentCache") {
-          continue;
-        }
+      foreach (var componentCache in TimberbornComponentCacheLookup.FindLoadedComponentCaches()) {
         componentCacheCount++;
 
-        if (!TryGetCachedComponents(unityComponent, out var cachedComponents)) {
+        if (!componentCache.HasCachedComponents) {
           continue;
         }
 
-        foreach (var component in cachedComponents) {
+        foreach (var component in componentCache.CachedComponents) {
           cachedComponentCount++;
           if (component is null || component.GetType().Name != "NeedManager") {
             continue;
           }
           needManagerCount++;
 
-          _cachedNeedManagers.Add(new NeedManagerTarget(component, unityComponent.transform));
+          _cachedNeedManagers.Add(new NeedManagerTarget(component, componentCache.ComponentCache.transform));
 
           if (!HasNeedApplicationApi()) {
             BindNeedApplicationApi(component.GetType());
@@ -210,29 +202,6 @@ namespace Mods.Prometheus.Scripts {
       }
 
       return new NeedManagerScanSummary(componentCacheCount, cachedComponentCount, needManagerCount);
-    }
-
-    private static bool TryGetCachedComponents(Component componentCache, out System.Collections.IEnumerable cachedComponents) {
-      var componentCacheType = componentCache.GetType();
-      var componentsField = componentCacheType.GetField(
-        "_components",
-        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-
-      if (componentsField?.GetValue(componentCache) is System.Collections.IEnumerable components) {
-        cachedComponents = components;
-        return true;
-      }
-
-      var allComponentsProperty = componentCacheType.GetProperty(
-        "AllComponents",
-        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-      if (allComponentsProperty?.GetValue(componentCache) is System.Collections.IEnumerable allComponents) {
-        cachedComponents = allComponents;
-        return true;
-      }
-
-      cachedComponents = null;
-      return false;
     }
 
     private static bool HasNeedApplicationApi() {
