@@ -23,8 +23,13 @@
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Core/EntitySnapshotStore.cs" Link="Source/Core/EntitySnapshotStore.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Core/TickGate.cs" Link="Source/Core/TickGate.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Damage/FireDamageStateRuntimeState.cs" Link="Source/Fire/Damage/FireDamageStateRuntimeState.cs" />
+    <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Grid/FireGridChunk.cs" Link="Source/Fire/Grid/FireGridChunk.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Grid/FireGridEnvironmentSampler.cs" Link="Source/Fire/Grid/FireGridEnvironmentSampler.cs" />
+    <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Grid/FireGridFootprintSampler.cs" Link="Source/Fire/Grid/FireGridFootprintSampler.cs" />
+    <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Grid/FireGridKernel.cs" Link="Source/Fire/Grid/FireGridKernel.cs" />
+    <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Grid/FireGridPropagationRules.cs" Link="Source/Fire/Grid/FireGridPropagationRules.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Grid/FireGridRuntimeState.cs" Link="Source/Fire/Grid/FireGridRuntimeState.cs" />
+    <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Grid/FireGridValues.cs" Link="Source/Fire/Grid/FireGridValues.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Impact/FireImpactRuntimeState.cs" Link="Source/Fire/Impact/FireImpactRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Recovery/FireRecoveryRuntimeState.cs" Link="Source/Fire/Recovery/FireRecoveryRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Exposure/FireExposureRuntimeState.cs" Link="Source/Fire/Exposure/FireExposureRuntimeState.cs" />
