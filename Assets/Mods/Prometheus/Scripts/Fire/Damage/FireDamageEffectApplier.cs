@@ -115,25 +115,37 @@ namespace Mods.Prometheus.Scripts {
       if (deteriorableComponent is not null) {
         _deteriorableComponent = deteriorableComponent;
         var type = deteriorableComponent.GetType();
-        _setDeteriorationToMaximumMethod = type.GetMethod("SetDeteriorationToMaximum", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-        _setDeteriorationToZeroMethod = type.GetMethod("SetDeteriorationToZero", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        _setDeteriorationToMaximumMethod = TimberbornCompatibility.FindMethod(type, "SetDeteriorationToMaximum");
+        _setDeteriorationToZeroMethod = TimberbornCompatibility.FindMethod(type, "SetDeteriorationToZero");
+        TimberbornCompatibility.RecordProbe(
+          TimberbornCompatibilityArea.Damage,
+          _setDeteriorationToMaximumMethod is not null && _setDeteriorationToZeroMethod is not null,
+          "Deteriorable.SetDeteriorationToMaximum/SetDeteriorationToZero");
       }
 
       var growableComponent = GameObject.GetComponent("Growable");
       if (growableComponent is not null) {
         _growableComponent = growableComponent;
         var type = growableComponent.GetType();
-        _pauseGrowingMethod = type.GetMethod("PauseGrowing", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-        _resumeGrowingMethod = type.GetMethod("ResumeGrowing", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-        _removeMethod = type.GetMethod("Remove", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, System.Type.EmptyTypes, null);
+        _pauseGrowingMethod = TimberbornCompatibility.FindMethod(type, "PauseGrowing");
+        _resumeGrowingMethod = TimberbornCompatibility.FindMethod(type, "ResumeGrowing");
+        _removeMethod = TimberbornCompatibility.FindMethod(type, "Remove", System.Type.EmptyTypes);
+        TimberbornCompatibility.RecordProbe(
+          TimberbornCompatibilityArea.Damage,
+          _pauseGrowingMethod is not null && _resumeGrowingMethod is not null,
+          "Growable.PauseGrowing/ResumeGrowing/Remove");
       }
 
       var livingNaturalResourceComponent = GameObject.GetComponent("LivingNaturalResource");
       if (livingNaturalResourceComponent is not null) {
         _livingNaturalResourceComponent = livingNaturalResourceComponent;
         var type = livingNaturalResourceComponent.GetType();
-        _isDyingProperty = type.GetProperty("IsDying", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-        _isDeadProperty = type.GetProperty("IsDead", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        _isDyingProperty = TimberbornCompatibility.FindProperty(type, "IsDying");
+        _isDeadProperty = TimberbornCompatibility.FindProperty(type, "IsDead");
+        TimberbornCompatibility.RecordProbe(
+          TimberbornCompatibilityArea.Damage,
+          _isDyingProperty is not null && _isDeadProperty is not null,
+          "LivingNaturalResource.IsDying/IsDead");
       }
     }
 

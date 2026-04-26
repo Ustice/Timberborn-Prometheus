@@ -37,13 +37,15 @@ namespace Mods.Prometheus.Scripts {
       }
 
       var type = _growable.GetType();
-      _growthTimeInDaysProperty = type.GetProperty("GrowthTimeInDays", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+      _growthTimeInDaysProperty = TimberbornCompatibility.FindProperty(type, "GrowthTimeInDays");
       if (_growthTimeInDaysProperty is null || !_growthTimeInDaysProperty.CanRead || !_growthTimeInDaysProperty.CanWrite) {
+        TimberbornCompatibility.RecordProbe(TimberbornCompatibilityArea.Recovery, false, "Growable.GrowthTimeInDays read/write");
         _growable = null;
         _growthTimeInDaysProperty = null;
         return;
       }
 
+      TimberbornCompatibility.RecordProbe(TimberbornCompatibilityArea.Recovery, true, "Growable.GrowthTimeInDays read/write");
       _baseGrowthTimeInDays = (float)_growthTimeInDaysProperty.GetValue(_growable);
     }
 

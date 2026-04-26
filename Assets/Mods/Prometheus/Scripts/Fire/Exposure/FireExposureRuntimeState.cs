@@ -45,6 +45,8 @@ namespace Mods.Prometheus.Scripts {
     public const string GridIgnitionSeeded = "grid_ignition_seeded";
     public const string GridSourceInjected = "grid_source_injected";
     public const string GridBurstInjected = "grid_burst_injected";
+    public const string TimberbornCompatibilitySummary = "timberborn_compatibility_summary";
+    public const string TimberbornCompatibilityProbe = "timberborn_compatibility_probe";
 
     public static readonly string[] All = {
       ModLoaded,
@@ -88,6 +90,8 @@ namespace Mods.Prometheus.Scripts {
       GridIgnitionSeeded,
       GridSourceInjected,
       GridBurstInjected,
+      TimberbornCompatibilitySummary,
+      TimberbornCompatibilityProbe,
     };
 
   }

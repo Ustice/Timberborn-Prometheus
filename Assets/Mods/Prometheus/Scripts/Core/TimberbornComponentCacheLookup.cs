@@ -7,8 +7,6 @@ using UnityEngine;
 namespace Mods.Prometheus.Scripts {
   internal static class TimberbornComponentCacheLookup {
 
-    private const string ComponentCacheTypeName = "ComponentCache";
-
     private static readonly BindingFlags CacheMemberBindingFlags =
       BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
@@ -125,21 +123,24 @@ namespace Mods.Prometheus.Scripts {
       var componentsField = componentCacheType.GetField("_components", CacheMemberBindingFlags);
       if (componentsField?.GetValue(componentCache) is IEnumerable components) {
         cachedComponents = components;
+        TimberbornCompatibility.RecordProbe(TimberbornCompatibilityArea.Cache, true, "ComponentCache._components");
         return true;
       }
 
       var allComponentsProperty = componentCacheType.GetProperty("AllComponents", CacheMemberBindingFlags);
       if (allComponentsProperty?.GetValue(componentCache) is IEnumerable allComponents) {
         cachedComponents = allComponents;
+        TimberbornCompatibility.RecordProbe(TimberbornCompatibilityArea.Cache, true, "ComponentCache.AllComponents");
         return true;
       }
 
       cachedComponents = null;
+      TimberbornCompatibility.RecordProbe(TimberbornCompatibilityArea.Cache, false, "ComponentCache components enumerable missing");
       return false;
     }
 
     private static bool IsComponentCache(Component component) =>
-      component is not null && component.GetType().Name == ComponentCacheTypeName;
+      component is not null && TimberbornCompatibility.IsComponentCacheTypeName(component.GetType().Name);
 
     internal readonly struct CachedComponentCache {
 

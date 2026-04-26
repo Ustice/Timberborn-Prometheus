@@ -33,6 +33,7 @@ namespace Mods.Prometheus.Scripts {
     private bool _isIgnited;
     private bool _isBurnedOut;
     private bool _wasBurning;
+    private FireSourceAttribution _ignitionSourceAttribution = FireSourceAttribution.Unknown;
 
     [Inject]
     public void InjectDependencies(
@@ -85,15 +86,14 @@ namespace Mods.Prometheus.Scripts {
       }
 
       if (_fireExposureRuntimeState.ConsumeForcedIgnitionRequest(entityId)) {
-        TryIgnite();
+        TryIgnite(FireSourceAttribution.DebugIgnition(entityId.ToString()));
         FireTelemetry.Log($"event={FireTelemetryEvents.GridIgnitionSeeded} entity={GameObject.name} id={entityId}");
       }
 
       if (_isIgnited) {
-        _fireGridRuntimeState.Inject(coordinate, CreateBurningSourceCell());
+        _fireGridRuntimeState.Inject(new FireGridSourceInjection(coordinate, CreateBurningSourceCell(), _ignitionSourceAttribution));
       }
 
-      _fireGridRuntimeState.StepOncePerFrame(Time.frameCount, FireGridKernel.Full27);
       PublishSnapshot(entityId, CreateSnapshotFromGrid(entityId, footprint));
     }
 
@@ -105,6 +105,7 @@ namespace Mods.Prometheus.Scripts {
       _fireGridRuntimeState.ClearCell(GetGridCoordinate());
       _isIgnited = false;
       _wasBurning = false;
+      _ignitionSourceAttribution = FireSourceAttribution.Unknown;
       return hadActiveFire;
     }
 
@@ -117,6 +118,7 @@ namespace Mods.Prometheus.Scripts {
       _isIgnited = false;
       _isBurnedOut = false;
       _wasBurning = false;
+      _ignitionSourceAttribution = FireSourceAttribution.Unknown;
     }
 
     private void OnDestroy() {
@@ -132,7 +134,7 @@ namespace Mods.Prometheus.Scripts {
       }
 
       if (!_isIgnited && ShouldIgniteFromField(entityId, sample)) {
-        TryIgnite();
+        TryIgnite(sample.SourceAttribution);
       }
 
       EvaporateMoisture(sample);
@@ -161,7 +163,7 @@ namespace Mods.Prometheus.Scripts {
         FuelConsumed,
         MoistureRemainingFraction,
         sample.OxygenAvailability,
-        "Grid");
+        _isIgnited ? _ignitionSourceAttribution.ToTelemetryToken() : sample.SourceAttribution.ToTelemetryToken());
     }
 
     private void SetEnvironment(FireGridFootprint footprint, FireCellEnvironment environment) {
@@ -205,12 +207,13 @@ namespace Mods.Prometheus.Scripts {
     private FireExposureSnapshot CreateColdSnapshotWithFuel() =>
       new(false, 0f, 0f, 0f, 0f, 0f, FuelConsumed, MoistureRemainingFraction, 1f, "None");
 
-    private bool TryIgnite() {
+    private bool TryIgnite(FireSourceAttribution sourceAttribution) {
       if (_isBurnedOut || _remainingFuel <= 0f) {
         return false;
       }
 
       _isIgnited = true;
+      _ignitionSourceAttribution = sourceAttribution.HasSource ? sourceAttribution : FireSourceAttribution.Unknown;
       return true;
     }
 
@@ -257,6 +260,7 @@ namespace Mods.Prometheus.Scripts {
 
       _isIgnited = false;
       _isBurnedOut = true;
+      _ignitionSourceAttribution = FireSourceAttribution.Unknown;
       _fireGridRuntimeState.ClearCell(GetGridCoordinate());
     }
 
@@ -290,7 +294,8 @@ namespace Mods.Prometheus.Scripts {
         Mathf.Lerp(0.15f, 0.35f, fuelRemaining),
         1f,
         FuelConsumed,
-        FireGridBurnState.Burning);
+        FireGridBurnState.Burning,
+        _ignitionSourceAttribution);
     }
 
     private void PublishSnapshot(int entityId, FireExposureSnapshot snapshot) {

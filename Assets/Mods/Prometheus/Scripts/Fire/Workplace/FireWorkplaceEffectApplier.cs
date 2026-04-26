@@ -277,7 +277,7 @@ namespace Mods.Prometheus.Scripts {
         }
 
         var componentTypeName = component.GetType().Name;
-        if (!FireWorkplaceRules.IsWorkplaceSupportComponentName(componentTypeName)) {
+        if (!TimberbornCompatibility.IsWorkplaceSupportComponentName(componentTypeName)) {
           continue;
         }
 
@@ -336,7 +336,7 @@ namespace Mods.Prometheus.Scripts {
         }
 
         var componentTypeName = component.GetType().Name;
-        if (!FireWorkplaceRules.IsOperationalComponentName(componentTypeName)) {
+        if (!TimberbornCompatibility.IsOperationalComponentName(componentTypeName)) {
           continue;
         }
 

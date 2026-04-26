@@ -196,7 +196,7 @@ namespace Mods.Prometheus.Scripts {
 
         foreach (var component in componentCache.CachedComponents) {
           cachedComponentCount++;
-          if (component is null || component.GetType().Name != "NeedManager") {
+          if (component is null || !TimberbornCompatibility.IsNeedManagerTypeName(component.GetType().Name)) {
             continue;
           }
           needManagerCount++;
@@ -219,93 +219,19 @@ namespace Mods.Prometheus.Scripts {
     }
 
     private static void BindNeedApplicationApi(Type needManagerType) {
-      var managerAddPointsCandidate = needManagerType.GetMethod(
-        "AddPoints",
-        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-
-      if (HasParameters(managerAddPointsCandidate, typeof(string), typeof(float))) {
-        _managerAddPointsMethod = managerAddPointsCandidate;
-        LogNeedManagerApiResolved("NeedManager.AddPoints(string,float)");
+      var api = TimberbornCompatibility.ProbeNeedManagerApi(needManagerType);
+      if (!api.IsResolved) {
+        TimberbornCompatibility.RecordProbe(TimberbornCompatibilityArea.Beaver, false, api.Description);
         return;
       }
 
-      var getNeedCandidate = needManagerType.GetMethod(
-        "GetNeed",
-        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
-        null,
-        new[] { typeof(string) },
-        null);
-
-      if (getNeedCandidate is not null && TryBindNeedMethods(getNeedCandidate.ReturnType)) {
-        _getNeedMethod = getNeedCandidate;
-        LogNeedManagerApiResolved("NeedManager.GetNeed(string) + Need.AddPoints(float)");
-        return;
-      }
-
-      var tryGetNeedCandidate = needManagerType.GetMethod(
-        "TryGetNeed",
-        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-
-      if (tryGetNeedCandidate is null) {
-        return;
-      }
-
-      var parameters = tryGetNeedCandidate.GetParameters();
-      if (parameters.Length != 2
-          || parameters[0].ParameterType != typeof(string)
-          || !parameters[1].ParameterType.IsByRef) {
-        return;
-      }
-
-      var needType = parameters[1].ParameterType.GetElementType();
-      if (!TryBindNeedMethods(needType)) {
-        return;
-      }
-
-      _tryGetNeedMethod = tryGetNeedCandidate;
-      LogNeedManagerApiResolved("NeedManager.TryGetNeed + Need.AddPoints(float)");
-    }
-
-    private static bool TryBindNeedMethods(Type needType) {
-      var needAddPointsCandidate = needType?.GetMethod(
-        "AddPoints",
-        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
-        null,
-        new[] { typeof(float) },
-        null);
-      var needSetPointsCandidate = needType?.GetMethod(
-        "SetPoints",
-        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
-        null,
-        new[] { typeof(float) },
-        null);
-
-      if (needAddPointsCandidate is null) {
-        return false;
-      }
-
-      _needAddPointsMethod = needAddPointsCandidate;
-      _needSetPointsMethod = needSetPointsCandidate;
-      return true;
-    }
-
-    private static bool HasParameters(MethodInfo methodInfo, params Type[] parameterTypes) {
-      if (methodInfo is null) {
-        return false;
-      }
-
-      var parameters = methodInfo.GetParameters();
-      if (parameters.Length != parameterTypes.Length) {
-        return false;
-      }
-
-      for (var i = 0; i < parameterTypes.Length; i++) {
-        if (parameters[i].ParameterType != parameterTypes[i]) {
-          return false;
-        }
-      }
-
-      return true;
+      _managerAddPointsMethod = api.ManagerAddPointsMethod;
+      _getNeedMethod = api.GetNeedMethod;
+      _tryGetNeedMethod = api.TryGetNeedMethod;
+      _needAddPointsMethod = api.NeedAddPointsMethod;
+      _needSetPointsMethod = api.NeedSetPointsMethod;
+      TimberbornCompatibility.RecordProbe(TimberbornCompatibilityArea.Beaver, true, api.Description);
+      LogNeedManagerApiResolved(api.Description);
     }
 
     private static void LogNeedManagerApiResolved(string api) {
