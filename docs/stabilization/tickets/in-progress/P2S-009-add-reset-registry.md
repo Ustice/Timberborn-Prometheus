@@ -1,6 +1,6 @@
 # P2S-009 Add Reset Registry
 
-Status: todo
+Status: in-progress
 
 Agent level: Medium
 
@@ -38,4 +38,3 @@ Create a reset registry so debug and QA reset paths cannot miss runtime effects.
 ## Integration Notes
 
 Do not integrate without QA evidence because reset paths have caused crashes before.
-

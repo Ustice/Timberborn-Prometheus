@@ -1,6 +1,6 @@
 # P2S-008 Centralize Reflection Type Probes
 
-Status: todo
+Status: in-progress
 
 Agent level: Medium
 
@@ -36,4 +36,3 @@ Centralize fragile Timberborn reflection and string type policies.
 ## Integration Notes
 
 Medium agent should review this ticket because it sets compatibility boundaries for later High tickets.
-

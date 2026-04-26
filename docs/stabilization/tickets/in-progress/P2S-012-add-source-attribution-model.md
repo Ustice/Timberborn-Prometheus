@@ -1,6 +1,6 @@
 # P2S-012 Add Source Attribution Model
 
-Status: todo
+Status: in-progress
 
 Agent level: Low
 
@@ -35,4 +35,3 @@ Add shared source injection and attribution types.
 ## Integration Notes
 
 This ticket prepares configured source implementation but should not wire profile fields yet.
-

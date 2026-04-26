@@ -1,6 +1,6 @@
 # P2S-011 Add Grid Simulation Coordinator
 
-Status: todo
+Status: in-progress
 
 Agent level: Medium
 
@@ -35,4 +35,3 @@ Move once-per-frame grid stepping out of entity controllers and into one simulat
 ## Integration Notes
 
 Medium review required because this changes runtime ownership.
-
