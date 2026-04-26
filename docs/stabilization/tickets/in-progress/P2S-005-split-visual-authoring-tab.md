@@ -1,6 +1,6 @@
 # P2S-005 Split Visual Authoring Tab
 
-Status: todo
+Status: in-progress
 
 Agent level: Low
 
@@ -34,4 +34,3 @@ Extract visual authoring and preview tab logic from the debug panel.
 ## Integration Notes
 
 Keep this separate from particle catalog behavior changes.
-
