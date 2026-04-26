@@ -1,6 +1,6 @@
 # P2S-010 Name Grid Policies Tests
 
-Status: verify
+Status: integration
 
 Agent level: Low
 
