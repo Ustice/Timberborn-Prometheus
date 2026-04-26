@@ -44,19 +44,19 @@ namespace Mods.Prometheus.Scripts {
 
     private static FireGridKernelEntry CreateEntry(int dx, int dy, int dz) {
       if (dx == 0 && dy == 0 && dz == 0) {
-        return new FireGridKernelEntry(new FireGridOffset(dx, dy, dz), 0.72f, 0.60f, 0.55f);
+        return new FireGridKernelEntry(
+          new FireGridOffset(dx, dy, dz),
+          FireGridPropagationPolicy.SelfHeatWeight,
+          FireGridPropagationPolicy.SelfEmberWeight,
+          FireGridPropagationPolicy.SelfSmokeWeight);
       }
 
-      var manhattan = Mathf.Abs(dx) + Mathf.Abs(dy) + Mathf.Abs(dz);
-      var distancePenalty = 1f / manhattan;
-      var upward = dy > 0 ? 1.8f : dy < 0 ? 0.35f : 1f;
-      var smokeUpward = dy > 0 ? 2.2f : dy < 0 ? 0.08f : 0.35f;
-      var emberVertical = dy > 0 ? 0.7f : dy < 0 ? 0.25f : 1f;
+      var distancePenalty = FireGridPropagationPolicy.DistancePenalty(dx, dy, dz);
       return new FireGridKernelEntry(
         new FireGridOffset(dx, dy, dz),
-        0.08f * distancePenalty * upward,
-        0.06f * distancePenalty * emberVertical,
-        0.07f * distancePenalty * smokeUpward);
+        FireGridPropagationPolicy.NeighborHeatBaseWeight * distancePenalty * FireGridPropagationPolicy.HeatDirectionMultiplier(dy),
+        FireGridPropagationPolicy.NeighborEmberBaseWeight * distancePenalty * FireGridPropagationPolicy.EmberDirectionMultiplier(dy),
+        FireGridPropagationPolicy.NeighborSmokeBaseWeight * distancePenalty * FireGridPropagationPolicy.SmokeDirectionMultiplier(dy));
     }
 
   }

@@ -36,6 +36,139 @@ namespace Prometheus.Tests
         }
 
         [Fact]
+        public void FireGridPropagationPolicy_UpwardHeatBiasPreservesCurrentWeights_Test()
+        {
+            var upward = TestSupport.FindKernelEntry(FireGridKernel.Full27.Entries, 0, 1, 0);
+            var lateral = TestSupport.FindKernelEntry(FireGridKernel.Full27.Entries, 1, 0, 0);
+            var downward = TestSupport.FindKernelEntry(FireGridKernel.Full27.Entries, 0, -1, 0);
+
+            TestSupport.NearlyEqual(
+              FireGridPropagationPolicy.NeighborHeatBaseWeight * FireGridPropagationPolicy.UpwardHeatMultiplier,
+              upward.HeatWeight);
+            TestSupport.NearlyEqual(
+              FireGridPropagationPolicy.NeighborHeatBaseWeight * FireGridPropagationPolicy.LateralHeatMultiplier,
+              lateral.HeatWeight);
+            TestSupport.NearlyEqual(
+              FireGridPropagationPolicy.NeighborHeatBaseWeight * FireGridPropagationPolicy.DownwardHeatMultiplier,
+              downward.HeatWeight);
+            TestSupport.True(upward.HeatWeight > lateral.HeatWeight);
+            TestSupport.True(lateral.HeatWeight > downward.HeatWeight);
+        }
+
+        [Fact]
+        public void FireGridPropagationPolicy_UpwardSmokeBiasPreservesCurrentWeights_Test()
+        {
+            var upward = TestSupport.FindKernelEntry(FireGridKernel.Full27.Entries, 0, 1, 0);
+            var lateral = TestSupport.FindKernelEntry(FireGridKernel.Full27.Entries, 1, 0, 0);
+            var downward = TestSupport.FindKernelEntry(FireGridKernel.Full27.Entries, 0, -1, 0);
+
+            TestSupport.NearlyEqual(
+              FireGridPropagationPolicy.NeighborSmokeBaseWeight * FireGridPropagationPolicy.UpwardSmokeMultiplier,
+              upward.SmokeWeight);
+            TestSupport.NearlyEqual(
+              FireGridPropagationPolicy.NeighborSmokeBaseWeight * FireGridPropagationPolicy.LateralSmokeMultiplier,
+              lateral.SmokeWeight);
+            TestSupport.NearlyEqual(
+              FireGridPropagationPolicy.NeighborSmokeBaseWeight * FireGridPropagationPolicy.DownwardSmokeMultiplier,
+              downward.SmokeWeight);
+            TestSupport.True(upward.SmokeWeight > lateral.SmokeWeight);
+            TestSupport.True(lateral.SmokeWeight > downward.SmokeWeight);
+        }
+
+        [Fact]
+        public void FireGridPropagationPolicy_OutwardEmberBiasPreservesCurrentWeights_Test()
+        {
+            var upward = TestSupport.FindKernelEntry(FireGridKernel.Full27.Entries, 0, 1, 0);
+            var lateral = TestSupport.FindKernelEntry(FireGridKernel.Full27.Entries, 1, 0, 0);
+            var downward = TestSupport.FindKernelEntry(FireGridKernel.Full27.Entries, 0, -1, 0);
+
+            TestSupport.NearlyEqual(
+              FireGridPropagationPolicy.NeighborEmberBaseWeight * FireGridPropagationPolicy.UpwardEmberMultiplier,
+              upward.EmberWeight);
+            TestSupport.NearlyEqual(
+              FireGridPropagationPolicy.NeighborEmberBaseWeight * FireGridPropagationPolicy.OutwardEmberMultiplier,
+              lateral.EmberWeight);
+            TestSupport.NearlyEqual(
+              FireGridPropagationPolicy.NeighborEmberBaseWeight * FireGridPropagationPolicy.DownwardEmberMultiplier,
+              downward.EmberWeight);
+            TestSupport.True(lateral.EmberWeight > upward.EmberWeight);
+            TestSupport.True(upward.EmberWeight > downward.EmberWeight);
+        }
+
+        [Fact]
+        public void FireGridPropagationPolicy_OxygenPolicyDeterministicallyReducesIgnition_Test()
+        {
+            var source = TestSupport.HotCell();
+            var entry = TestSupport.FindKernelEntry(FireGridKernel.Full27.Entries, 1, 0, 0);
+            var highOxygen = FireGridPropagationRules.Transfer(
+              source,
+              TestSupport.BurnableEnvironment(),
+              new FireCellEnvironment(FireGridStructureKind.Vegetation, 1f, 0f, 0f, 1f, 0f, 63),
+              entry);
+            var lowOxygen = FireGridPropagationRules.Transfer(
+              source,
+              TestSupport.BurnableEnvironment(),
+              new FireCellEnvironment(FireGridStructureKind.Vegetation, 1f, 0f, 0f, 0.1f, 0f, 63),
+              entry);
+
+            TestSupport.True(lowOxygen.IgnitionProgress < highOxygen.IgnitionProgress);
+            TestSupport.NearlyEqual(0f, new FireCellEnvironment(FireGridStructureKind.Vegetation, 1f, 0f, 0f, 0.1f, 0f, 63).EffectiveOxygen(1f));
+        }
+
+        [Fact]
+        public void FireGridPropagationPolicy_WaterPolicyDeterministicallyBlocksPropagation_Test()
+        {
+            var entry = TestSupport.FindKernelEntry(FireGridKernel.Full27.Entries, 1, 0, 0);
+            var underwater = new FireCellEnvironment(FireGridStructureKind.Water, 1f, 0f, 0f, 1f, FireGridPropagationPolicy.WaterSuppressionDepth + 0.01f, 63);
+
+            var transfer = FireGridPropagationRules.Transfer(
+              TestSupport.HotCell(),
+              TestSupport.BurnableEnvironment(),
+              underwater,
+              entry);
+            var finalized = FireGridPropagationRules.FinalizeCell(TestSupport.HotCell(), underwater);
+
+            TestSupport.False(transfer.IsActive);
+            TestSupport.False(finalized.IsActive);
+        }
+
+        [Fact]
+        public void FireGridPropagationPolicy_BarrierPolicyDeterministicallyReducesTransfer_Test()
+        {
+            var source = TestSupport.HotCell();
+            var entry = TestSupport.FindKernelEntry(FireGridKernel.Full27.Entries, 1, 0, 0);
+            var open = FireGridPropagationRules.Transfer(
+              source,
+              TestSupport.BurnableEnvironment(),
+              new FireCellEnvironment(FireGridStructureKind.Vegetation, 1f, 0f, 0f, 1f, 0f, 63),
+              entry);
+            var barrier = FireGridPropagationRules.Transfer(
+              source,
+              TestSupport.BurnableEnvironment(),
+              new FireCellEnvironment(FireGridStructureKind.Vegetation, 1f, 0f, 0.75f, 1f, 0f, 63),
+              entry);
+
+            TestSupport.True(barrier.Heat < open.Heat);
+            TestSupport.True(barrier.EmberPressure < open.EmberPressure);
+            TestSupport.NearlyEqual(0.25f, new FireCellEnvironment(FireGridStructureKind.Vegetation, 1f, 0f, 0.75f, 1f, 0f, 63).TransferMultiplier);
+        }
+
+        [Fact]
+        public void FireGridPropagationPolicy_BoundsPolicyLimitsOneStepPropagationToKernelNeighbors_Test()
+        {
+            var grid = TestSupport.CreateGridWithFuelAroundOrigin();
+            var source = new FireGridCoordinate(0, 0, 0);
+            var neighbor = new FireGridCoordinate(1, 0, 0);
+            var beyondKernel = new FireGridCoordinate(2, 0, 0);
+
+            grid.Inject(source, TestSupport.HotCell());
+            grid.Step(FireGridKernel.Full27);
+
+            TestSupport.True(grid.TryGetState(neighbor, out var neighborState) && neighborState.IsActive);
+            TestSupport.False(grid.TryGetState(beyondKernel, out var beyondState) && beyondState.IsActive);
+        }
+
+        [Fact]
         public void FireGridRuntimeState_WritesAcrossChunkBoundaries_Test()
         {
             var grid = TestSupport.CreateGridWithFuelAroundOrigin();

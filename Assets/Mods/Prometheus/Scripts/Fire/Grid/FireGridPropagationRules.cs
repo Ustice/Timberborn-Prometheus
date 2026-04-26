@@ -18,16 +18,17 @@ namespace Mods.Prometheus.Scripts {
       }
 
       var fuelRemaining = Mathf.Clamp01(1f - source.FuelConsumed);
-      var fuelMultiplier = entry.IsSelf ? 1f : Mathf.Max(0.2f, targetEnvironment.Fuel);
+      var fuelMultiplier = entry.IsSelf ? 1f : Mathf.Max(FireGridPropagationPolicy.MinimumTargetFuelMultiplier, targetEnvironment.Fuel);
       var oxygen = targetEnvironment.EffectiveOxygen(source.Smoke);
-      var emissionMultiplier = entry.IsSelf ? 1f : EmissionMultiplier(source);
-      var activeHeat = Mathf.Max(source.Heat, source.IgnitionProgress * 0.65f);
-      var activeEmberPressure = Mathf.Max(source.EmberPressure, source.IgnitionProgress * 0.55f);
-      var activeSmoke = Mathf.Max(source.Smoke, source.IgnitionProgress * 0.35f);
+      var emissionMultiplier = entry.IsSelf ? 1f : FireGridPropagationPolicy.EmissionMultiplier(source);
+      var activeHeat = Mathf.Max(source.Heat, source.IgnitionProgress * FireGridPropagationPolicy.IgnitionHeatFromProgress);
+      var activeEmberPressure = Mathf.Max(source.EmberPressure, source.IgnitionProgress * FireGridPropagationPolicy.IgnitionEmberFromProgress);
+      var activeSmoke = Mathf.Max(source.Smoke, source.IgnitionProgress * FireGridPropagationPolicy.IgnitionSmokeFromProgress);
       var heat = activeHeat * entry.HeatWeight * targetMultiplier * emissionMultiplier * fuelRemaining;
       var ember = activeEmberPressure * entry.EmberWeight * targetMultiplier * fuelMultiplier * emissionMultiplier * fuelRemaining;
       var smoke = activeSmoke * entry.SmokeWeight * targetMultiplier * emissionMultiplier * fuelRemaining;
-      var ignition = (heat * 0.55f) + (ember * 0.85f * oxygen * fuelMultiplier);
+      var ignition = (heat * FireGridPropagationPolicy.IgnitionHeatWeight)
+        + (ember * FireGridPropagationPolicy.IgnitionEmberWeight * oxygen * fuelMultiplier);
       return new FireCellState(
         heat,
         ember,
@@ -45,24 +46,12 @@ namespace Mods.Prometheus.Scripts {
       var oxygen = environment.EffectiveOxygen(state.Smoke);
       var heat = state.Heat * oxygen;
       var emberPressure = state.EmberPressure * oxygen;
-      var smoke = Mathf.Clamp01(state.Smoke * 0.92f);
+      var smoke = Mathf.Clamp01(state.Smoke * FireGridPropagationPolicy.SmokeDecayMultiplier);
       var ignitionProgress = Mathf.Clamp01(state.IgnitionProgress * oxygen);
       var burnState = state.BurnState == FireGridBurnState.Burning
         ? FireGridBurnState.Burning
-        : (ignitionProgress >= 0.35f || emberPressure >= 0.2f ? FireGridBurnState.Smoldering : FireGridBurnState.Heating);
+        : FireGridPropagationPolicy.BurnStateFromValues(heat, emberPressure, ignitionProgress);
       return new FireCellState(heat, emberPressure, smoke, ignitionProgress, state.FuelConsumed, burnState);
-    }
-
-    private static float EmissionMultiplier(FireCellState source) {
-      if (source.BurnState == FireGridBurnState.Burning) {
-        return 2.25f;
-      }
-
-      if (source.BurnState == FireGridBurnState.Smoldering) {
-        return 1.1f;
-      }
-
-      return 0.85f;
     }
 
     private static bool FacesAllowTransfer(
