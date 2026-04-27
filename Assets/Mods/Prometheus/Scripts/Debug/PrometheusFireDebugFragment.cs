@@ -329,6 +329,7 @@ namespace Mods.Prometheus.Scripts {
     private readonly FireDamageStateRuntimeState _fireDamageStateRuntimeState;
     private readonly FireRecoveryRuntimeState _fireRecoveryRuntimeState;
     private readonly FireVisualEffectPreviewRuntimeState _fireVisualEffectPreviewRuntimeState;
+    private readonly FireResetRegistry _fireResetRegistry;
     private readonly EntitySelectionService _entitySelectionService;
     private readonly ILoc _loc;
     private readonly PrometheusQaExchange _qaExchange = new();
@@ -392,6 +393,7 @@ namespace Mods.Prometheus.Scripts {
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
       FireRecoveryRuntimeState fireRecoveryRuntimeState,
       FireVisualEffectPreviewRuntimeState fireVisualEffectPreviewRuntimeState,
+      FireResetRegistry fireResetRegistry,
       EntitySelectionService entitySelectionService,
       ILoc loc) {
       _uiLayout = uiLayout;
@@ -402,6 +404,7 @@ namespace Mods.Prometheus.Scripts {
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
       _fireRecoveryRuntimeState = fireRecoveryRuntimeState;
       _fireVisualEffectPreviewRuntimeState = fireVisualEffectPreviewRuntimeState;
+      _fireResetRegistry = fireResetRegistry;
       _entitySelectionService = entitySelectionService;
       _loc = loc;
     }

@@ -10,7 +10,6 @@ namespace Mods.Prometheus.Scripts {
     private const float UpdateIntervalInSeconds = 1f;
 
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
-
     private float _timeSinceLastUpdate;
     private FireDamageState _lastAppliedState;
     private bool _initialized;

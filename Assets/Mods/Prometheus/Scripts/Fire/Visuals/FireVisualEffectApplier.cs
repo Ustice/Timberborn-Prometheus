@@ -75,10 +75,10 @@ namespace Mods.Prometheus.Scripts {
 
     internal void DebugResetVisualEffects() {
       var tuning = _fireVisualEffectRuntimeState.CurrentTuning;
-      _emberEffect.ApplyIntensity(0f, 0.75f, 1.4f, tuning.EffectSize);
-      _smokeEffect.ApplyIntensity(0f, 1.2f, 2.6f, tuning.EffectSize);
-      _fireEffect.ApplyIntensity(0f, 0.45f, 1.0f, tuning.EffectSize);
-      _steamEffect.ApplyIntensity(0f, 0.9f, 2.0f, tuning.EffectSize);
+      _emberEffect?.ApplyIntensity(0f, 0.75f, 1.4f, tuning.EffectSize);
+      _smokeEffect?.ApplyIntensity(0f, 1.2f, 2.6f, tuning.EffectSize);
+      _fireEffect?.ApplyIntensity(0f, 0.45f, 1.0f, tuning.EffectSize);
+      _steamEffect?.ApplyIntensity(0f, 0.9f, 2.0f, tuning.EffectSize);
       ApplySurfaceTint(0f, 0f);
     }
 

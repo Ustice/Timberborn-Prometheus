@@ -37,6 +37,7 @@ namespace Mods.Prometheus.Scripts {
       Bind<FireRecoveryRuntimeState>().AsSingleton();
       Bind<FireVisualEffectRuntimeState>().AsSingleton();
       Bind<FireVisualEffectPreviewRuntimeState>().AsSingleton();
+      Bind<FireResetRegistry>().AsSingleton();
     }
 
     private void BindFireComponents() {

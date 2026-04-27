@@ -15,7 +15,6 @@ namespace Mods.Prometheus.Scripts {
     private FireExposureRuntimeState _fireExposureRuntimeState;
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
     private FireTuningRuntimeState _fireTuningRuntimeState;
-
     private float _timeSinceLastUpdate;
     private FireDamageCategory _category;
     private float _severity;
