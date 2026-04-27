@@ -41,13 +41,12 @@ Do not integrate without live evidence. This is the first end-to-end crop produc
 
 ## Blocker
 
-P2S-025 has a compile-clean partial implementation in worktree `/Users/jasonkleinberg/repos/Timberborn-Prometheus-P2S-025`, but it is not verified enough to integrate.
+P2S-025 had a compile-clean partial implementation, but that prototype is intentionally discarded. Re-implement this later from the P2S-024 discovery notes after the product behavior and live fixture path are clearer.
 
 Evidence collected:
 
-- `bash scripts/test.sh` passed with 90 tests in the P2S-025 worktree.
-- `bash scripts/build.sh --qa` passed preflight tests, compiled, deployed, cleared logs, and launched Timberborn.
-- The compile-clean prototype is committed on branch `codex/P2S-025-implement-farmhouse-amendment` at `e2c70ac`.
+- The discarded prototype passed `bash scripts/test.sh` with 90 tests.
+- The discarded prototype passed `bash scripts/build.sh --qa`, which compiled, deployed, cleared logs, and launched Timberborn.
 - The default `Prometheus QA` save has stored `FertileAsh` but no finished farmhouse/crop fixture.
 - A copied fixture save was prepared at `/Users/jasonkleinberg/Documents/Timberborn/ExperimentalSaves/Prometheus P2S-025 QA/P2S-025 farmhouse fixture.timber`.
 - The copied fixture has an efficient farmhouse, carrot plots, and copied District Center `FertileAsh` storage.
@@ -65,5 +64,5 @@ Blocked on:
 Sprint decision:
 
 - P2S-025 is pushed out of the current stabilization sprint.
-- Keep this ticket blocked as the follow-up record and keep branch `codex/P2S-025-implement-farmhouse-amendment` for the compile-clean prototype.
+- Keep this ticket blocked as the follow-up record, but do not keep or merge the prototype branch. The next implementation should be redone once the farmhouse application product behavior and live fixture are known.
 - P2S-027 may close the sprint without farmhouse amendment acceptance evidence, as long as the deferral and evidence gap stay documented.
