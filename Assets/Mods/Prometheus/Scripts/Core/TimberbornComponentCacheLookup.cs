@@ -62,9 +62,11 @@ namespace Mods.Prometheus.Scripts {
       if (gameObject.GetComponent<FireExposureController>() is not null
           || gameObject.GetComponent<FireDamageStateController>() is not null
           || gameObject.GetComponent<FireDamageEffectApplier>() is not null
+          || gameObject.GetComponent<FireBeaverEffectApplier>() is not null
           || gameObject.GetComponent<FireWorkplaceEffectApplier>() is not null
           || gameObject.GetComponent<FireRecoveryController>() is not null
-          || gameObject.GetComponent<FireRecoveryEffectApplier>() is not null) {
+          || gameObject.GetComponent<FireRecoveryEffectApplier>() is not null
+          || gameObject.GetComponent<FireVisualEffectApplier>() is not null) {
         return true;
       }
 
@@ -73,6 +75,7 @@ namespace Mods.Prometheus.Scripts {
              && (componentCache.TryGetCachedComponent<FireExposureController>(out _)
                  || componentCache.TryGetCachedComponent<FireDamageStateController>(out _)
                  || componentCache.TryGetCachedComponent<FireDamageEffectApplier>(out _)
+                 || componentCache.TryGetCachedComponent<FireBeaverEffectApplier>(out _)
                  || componentCache.TryGetCachedComponent<FireVisualEffectApplier>(out _)
                  || componentCache.TryGetCachedComponent<FireWorkplaceEffectApplier>(out _)
                  || componentCache.TryGetCachedComponent<FireRecoveryController>(out _)
@@ -110,6 +113,69 @@ namespace Mods.Prometheus.Scripts {
 
       component = directComponent;
       return true;
+    }
+
+    internal static bool TryGetCachedOrDirectComponentByTypeName(
+      GameObject gameObject,
+      string componentTypeName,
+      out object component) {
+      component = null;
+      if (gameObject == null || string.IsNullOrWhiteSpace(componentTypeName)) {
+        return false;
+      }
+
+      foreach (var candidate in EnumerateGameObjectAndCachedComponents(gameObject)) {
+        if (candidate is null || !string.Equals(candidate.GetType().Name, componentTypeName, System.StringComparison.Ordinal)) {
+          continue;
+        }
+
+        component = candidate;
+        return true;
+      }
+
+      return false;
+    }
+
+    internal static IEnumerable<Behaviour> FindBehavioursByPolicy(
+      GameObject gameObject,
+      System.Func<string, bool> typeNamePolicy) {
+      var seenBehaviours = new HashSet<Behaviour>();
+      foreach (var component in EnumerateGameObjectAndCachedComponents(gameObject)) {
+        if (component is not Behaviour behaviour || behaviour == null || !seenBehaviours.Add(behaviour)) {
+          continue;
+        }
+
+        if (typeNamePolicy?.Invoke(component.GetType().Name) != true) {
+          continue;
+        }
+
+        yield return behaviour;
+      }
+    }
+
+    internal static IEnumerable<object> EnumerateGameObjectAndCachedComponents(GameObject gameObject) {
+      if (gameObject == null) {
+        yield break;
+      }
+
+      var directComponents = gameObject.GetComponents<Component>();
+      for (var i = 0; i < directComponents.Length; i++) {
+        if (directComponents[i] is not null) {
+          yield return directComponents[i];
+        }
+      }
+
+      for (var i = 0; i < directComponents.Length; i++) {
+        if (!TryGetCachedComponents(directComponents[i], out var cachedComponents)) {
+          continue;
+        }
+
+        foreach (var cachedComponent in cachedComponents) {
+          if (cachedComponent is not null) {
+            yield return cachedComponent;
+          }
+        }
+      }
     }
 
     internal static bool TryGetCachedComponents(Component componentCache, out IEnumerable cachedComponents) {

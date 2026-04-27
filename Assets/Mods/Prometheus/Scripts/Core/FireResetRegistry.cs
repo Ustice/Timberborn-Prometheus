@@ -109,37 +109,32 @@ namespace Mods.Prometheus.Scripts {
       return Array.Empty<FireResetHook>();
 #else
       foreach (var gameObject in TimberbornComponentCacheLookup.FindLoadedPrometheusFireEntityGameObjects()) {
-        var componentCache = gameObject.GetComponent<ComponentCache>();
-        if (componentCache is null) {
-          continue;
-        }
-
         var entityId = gameObject.GetInstanceID();
-        if (componentCache.TryGetCachedComponent<FireExposureController>(out var fireExposureController)) {
+        if (TimberbornComponentCacheLookup.TryGetPrometheusFireComponent<FireExposureController>(gameObject, out var fireExposureController)) {
           yield return CreateHook(FireResetHookKind.SourceState, entityId, nameof(FireExposureController), fireExposureController.DebugResetFireExposureState);
         }
 
-        if (componentCache.TryGetCachedComponent<FireDamageStateController>(out var fireDamageStateController)) {
+        if (TimberbornComponentCacheLookup.TryGetPrometheusFireComponent<FireDamageStateController>(gameObject, out var fireDamageStateController)) {
           yield return CreateHook(FireResetHookKind.DamageState, entityId, nameof(FireDamageStateController), fireDamageStateController.DebugResetDamageStateToHealthy);
         }
 
-        if (componentCache.TryGetCachedComponent<FireDamageEffectApplier>(out var fireDamageEffectApplier)) {
+        if (TimberbornComponentCacheLookup.TryGetPrometheusFireComponent<FireDamageEffectApplier>(gameObject, out var fireDamageEffectApplier)) {
           yield return CreateHook(FireResetHookKind.DamageEffect, entityId, nameof(FireDamageEffectApplier), fireDamageEffectApplier.DebugRestoreHealthyState);
         }
 
-        if (componentCache.TryGetCachedComponent<FireWorkplaceEffectApplier>(out var fireWorkplaceEffectApplier)) {
+        if (TimberbornComponentCacheLookup.TryGetPrometheusFireComponent<FireWorkplaceEffectApplier>(gameObject, out var fireWorkplaceEffectApplier)) {
           yield return CreateHook(FireResetHookKind.WorkplaceEffect, entityId, nameof(FireWorkplaceEffectApplier), fireWorkplaceEffectApplier.DebugResetFireEffects);
         }
 
-        if (componentCache.TryGetCachedComponent<FireRecoveryController>(out var fireRecoveryController)) {
+        if (TimberbornComponentCacheLookup.TryGetPrometheusFireComponent<FireRecoveryController>(gameObject, out var fireRecoveryController)) {
           yield return CreateHook(FireResetHookKind.RecoveryState, entityId, nameof(FireRecoveryController), fireRecoveryController.DebugResetRecoveryState);
         }
 
-        if (componentCache.TryGetCachedComponent<FireRecoveryEffectApplier>(out var fireRecoveryEffectApplier)) {
+        if (TimberbornComponentCacheLookup.TryGetPrometheusFireComponent<FireRecoveryEffectApplier>(gameObject, out var fireRecoveryEffectApplier)) {
           yield return CreateHook(FireResetHookKind.RecoveryEffect, entityId, nameof(FireRecoveryEffectApplier), fireRecoveryEffectApplier.DebugRestoreBaseRecoveryEffects);
         }
 
-        if (componentCache.TryGetCachedComponent<FireVisualEffectApplier>(out var fireVisualEffectApplier)) {
+        if (TimberbornComponentCacheLookup.TryGetPrometheusFireComponent<FireVisualEffectApplier>(gameObject, out var fireVisualEffectApplier)) {
           yield return CreateHook(FireResetHookKind.VisualEffect, entityId, nameof(FireVisualEffectApplier), fireVisualEffectApplier.DebugResetVisualEffects);
         }
       }

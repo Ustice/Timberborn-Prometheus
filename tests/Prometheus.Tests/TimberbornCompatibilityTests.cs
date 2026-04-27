@@ -25,8 +25,11 @@ namespace Prometheus.Tests
             TestSupport.True(TimberbornCompatibility.IsNeedManagerTypeName("NeedManager"));
             TestSupport.True(TimberbornCompatibility.IsTreeComponentName("TreeComponent"));
             TestSupport.True(TimberbornCompatibility.IsGrowableComponentName("Growable"));
+            TestSupport.True(TimberbornCompatibility.IsDeteriorableComponentName("Deteriorable"));
+            TestSupport.True(TimberbornCompatibility.IsLivingNaturalResourceComponentName("LivingNaturalResource"));
             TestSupport.False(TimberbornCompatibility.IsComponentCacheTypeName("PrometheusComponentCache"));
             TestSupport.False(TimberbornCompatibility.IsNeedManagerTypeName(""));
+            TestSupport.False(TimberbornCompatibility.IsDeteriorableComponentName("FireDeteriorableFacade"));
         }
 
         [Fact]
@@ -69,12 +72,16 @@ namespace Prometheus.Tests
             var missingApi = TimberbornCompatibility.ProbeNeedManagerApi(typeof(MissingNeedManager));
 
             TestSupport.True(directApi.IsResolved);
+            TestSupport.False(directApi.CanSetNeedPoints);
             TestSupport.Equal("NeedManager.AddPoints(string,float)", directApi.Description);
             TestSupport.True(getNeedApi.IsResolved);
+            TestSupport.True(getNeedApi.CanSetNeedPoints);
             TestSupport.Equal("NeedManager.GetNeed(string) + Need.AddPoints(float)", getNeedApi.Description);
             TestSupport.True(tryGetNeedApi.IsResolved);
+            TestSupport.True(tryGetNeedApi.CanSetNeedPoints);
             TestSupport.Equal("NeedManager.TryGetNeed + Need.AddPoints(float)", tryGetNeedApi.Description);
             TestSupport.False(missingApi.IsResolved);
+            TestSupport.False(missingApi.CanSetNeedPoints);
         }
 
         private sealed class DirectNeedManager

@@ -119,6 +119,7 @@ Use [VALIDATION/explosion-policy.md](VALIDATION/explosion-policy.md) when explos
 | --- | --- | --- | --- | --- | --- |
 | 2026-04-26 | Forced Pine ignition resource lifecycle | Standard | Partial Pass | `/tmp/prometheus-throttled-ignite-24s.png` + `Fire.log` | Moisture reached zero, fuel crossed 0.25 death threshold, fuel reached burnout, and throttled telemetry emitted 16 burn rows with no scanned Player.log errors. |
 | 2026-04-27 | Configured source dependency-light propagation | High-risk source | Pass | `bash scripts/test.sh` | Source fields produce attributed grid pressure, respect `RequiresOperation`, and can create nonzero stochastic ignition probability through grid propagation. Live menu startup had no emitting source rows because deployed authored profiles are zero-source at startup. |
+| 2026-04-27 | Effect facade and reset registry startup | Workplace, beaver, damage, recovery | Pass | `bash scripts/test.sh`, `bash scripts/build.sh --qa`, `Player.log`, `Fire.log` | Effect appliers resolve direct/cached Timberborn components through the integration facade; reset registry discovery uses the same facade lookup. Computer Use reached the main menu and startup logs showed Prometheus loaded with no scanned Prometheus exceptions. |
 | YYYY-MM-DD |  |  | Pass/Fail |  |  |
 
 ## Session Closeout

@@ -47,6 +47,8 @@ namespace Mods.Prometheus.Scripts {
       || (GetNeedMethod is not null && NeedAddPointsMethod is not null)
       || (TryGetNeedMethod is not null && NeedAddPointsMethod is not null);
 
+    public bool CanSetNeedPoints => NeedSetPointsMethod is not null;
+
     public TimberbornNeedManagerApi(
       MethodInfo managerAddPointsMethod,
       MethodInfo getNeedMethod,
@@ -68,6 +70,10 @@ namespace Mods.Prometheus.Scripts {
 
     internal const string ComponentCacheTypeName = "ComponentCache";
     internal const string NeedManagerTypeName = "NeedManager";
+    internal const string DeteriorableTypeName = "Deteriorable";
+    internal const string GrowableTypeName = "Growable";
+    internal const string LivingNaturalResourceTypeName = "LivingNaturalResource";
+    internal const string TreeComponentTypeName = "TreeComponent";
 
     private static readonly BindingFlags InstanceBindingFlags =
       BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
@@ -88,10 +94,16 @@ namespace Mods.Prometheus.Scripts {
       string.Equals(componentTypeName, NeedManagerTypeName, StringComparison.Ordinal);
 
     internal static bool IsTreeComponentName(string componentTypeName) =>
-      string.Equals(componentTypeName, "TreeComponent", StringComparison.Ordinal);
+      string.Equals(componentTypeName, TreeComponentTypeName, StringComparison.Ordinal);
 
     internal static bool IsGrowableComponentName(string componentTypeName) =>
-      string.Equals(componentTypeName, "Growable", StringComparison.Ordinal);
+      string.Equals(componentTypeName, GrowableTypeName, StringComparison.Ordinal);
+
+    internal static bool IsDeteriorableComponentName(string componentTypeName) =>
+      string.Equals(componentTypeName, DeteriorableTypeName, StringComparison.Ordinal);
+
+    internal static bool IsLivingNaturalResourceComponentName(string componentTypeName) =>
+      string.Equals(componentTypeName, LivingNaturalResourceTypeName, StringComparison.Ordinal);
 
     internal static bool IsBuildingDamageComponentName(string componentTypeName) {
       if (string.IsNullOrWhiteSpace(componentTypeName)) {
