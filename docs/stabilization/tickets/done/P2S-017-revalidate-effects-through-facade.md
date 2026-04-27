@@ -1,6 +1,6 @@
 # P2S-017 Revalidate Effects Through Facade
 
-Status: integration
+Status: done
 
 Agent level: Medium
 
