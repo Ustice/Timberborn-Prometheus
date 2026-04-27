@@ -54,8 +54,10 @@ Evidence collected:
 - Loading the copied fixture through the known Timberborn mod-version mismatch warning crashed during save deserialization before amendment QA could run.
 - Crash evidence: `/Users/jasonkleinberg/Documents/Timberborn/Error reports/error-report-2026-04-27-04h47m00s.zip`; `Player.log` recorded `NullReferenceException` in `Timberborn.WorldPersistence.ReferenceSerializer+TypedReferenceSerializer.Parse` from `Timberborn.DwellingSystem.Dweller.Load`.
 - Prometheus startup evidence before the crash: `Fire.log` recorded `event=timberborn_compatibility_probe area=recovery status=resolved detail="PlantingSpotFinder.FindClosest(Vector3)"`.
+- A local repair removed stale `Dweller` components with `Home: null` from the copied fixture after backing it up as `/Users/jasonkleinberg/Documents/Timberborn/ExperimentalSaves/Prometheus P2S-025 QA/P2S-025 farmhouse fixture.before-dweller-repair.timber`.
+- The repaired copied fixture no longer hit the same `Dweller.Load` exception, but it hung during load after `event=timberborn_compatibility_probe area=cache status=resolved detail="ComponentCache._components"` and never reached `Load time` or farmhouse amendment telemetry. Timberborn was stopped after the hung load.
 
 Blocked on:
 
-- A loadable live QA fixture with finished farmhouse, eligible crop planting spots, and stored `FertileAsh`.
+- A loadable live QA fixture with finished farmhouse, eligible crop planting spots, and stored `FertileAsh`. The current copied fixture should not be reused for acceptance evidence.
 - Live QA evidence after load: `fertile_ash_farmhouse_amendment_applied`, decreased stored ash, and amended crop growth faster than a nearby control crop.
