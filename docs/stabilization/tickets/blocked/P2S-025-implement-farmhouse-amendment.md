@@ -47,11 +47,15 @@ Evidence collected:
 
 - `bash scripts/test.sh` passed with 90 tests in the P2S-025 worktree.
 - `bash scripts/build.sh --qa` passed preflight tests, compiled, deployed, cleared logs, and launched Timberborn.
+- The compile-clean prototype is committed on branch `codex/P2S-025-implement-farmhouse-amendment` at `e2c70ac`.
 - The default `Prometheus QA` save has stored `FertileAsh` but no finished farmhouse/crop fixture.
 - A copied fixture save was prepared at `/Users/jasonkleinberg/Documents/Timberborn/ExperimentalSaves/Prometheus P2S-025 QA/P2S-025 farmhouse fixture.timber`.
 - The copied fixture has an efficient farmhouse, carrot plots, and copied District Center `FertileAsh` storage.
+- Loading the copied fixture through the known Timberborn mod-version mismatch warning crashed during save deserialization before amendment QA could run.
+- Crash evidence: `/Users/jasonkleinberg/Documents/Timberborn/Error reports/error-report-2026-04-27-04h47m00s.zip`; `Player.log` recorded `NullReferenceException` in `Timberborn.WorldPersistence.ReferenceSerializer+TypedReferenceSerializer.Parse` from `Timberborn.DwellingSystem.Dweller.Load`.
+- Prometheus startup evidence before the crash: `Fire.log` recorded `event=timberborn_compatibility_probe area=recovery status=resolved detail="PlantingSpotFinder.FindClosest(Vector3)"`.
 
 Blocked on:
 
-- User confirmation before clicking Timberborn's mod-version mismatch `Are you sure you want to load it?` warning for the copied fixture save.
+- A loadable live QA fixture with finished farmhouse, eligible crop planting spots, and stored `FertileAsh`.
 - Live QA evidence after load: `fertile_ash_farmhouse_amendment_applied`, decreased stored ash, and amended crop growth faster than a nearby control crop.
