@@ -6,7 +6,7 @@ Last updated: 2026-04-27
 
 Prometheus is moving into the 3D grid fire rewrite. The old entity-neighbor spread and responder-first runtime model has been removed from active source so the new sparse chunked cellular system can land without legacy behavior mixed in.
 
-Phase 2 stabilization is running from the file board under `docs/stabilization/tickets/`. P2S-001 through P2S-024 and P2S-026 are integrated and done. P2S-025 is blocked on live farmhouse amendment evidence after a compile-clean partial implementation, and P2S-027 remains todo until that gate is resolved. This includes P2S-009 reset-registry live QA, P2S-013 configured-source startup QA, P2S-017 effect-facade startup QA, native recovered-good spawning/storage proof for Fertile Ash, dependency-light field amendment state, the crop growth buff for active amendments, ash reset telemetry that clears Prometheus ash queue evidence without destroying Timberborn-owned recovered-good stacks, and repo guardrails for shipped Markdown, telemetry tokens, and compile-item sync.
+Phase 2 stabilization closeout is complete for the integrated scope. P2S-001 through P2S-024, P2S-026, and P2S-027 are integrated or closeout-verified. P2S-025 is explicitly pushed out of this sprint and remains blocked on live farmhouse amendment evidence after a compile-clean partial implementation. The closed scope includes P2S-009 reset-registry live QA, P2S-013 configured-source dependency-light and startup QA, P2S-017 effect-facade startup QA, native recovered-good spawning/storage proof for Fertile Ash, dependency-light field amendment state, the crop growth buff for active amendments, ash reset telemetry that clears Prometheus ash queue evidence without destroying Timberborn-owned recovered-good stacks, repo guardrails for shipped Markdown, telemetry tokens, compile-item sync, and P2S-027 closeout docs validation.
 
 ## Verified Since Last Checkpoint
 
@@ -58,6 +58,7 @@ Phase 2 stabilization is running from the file board under `docs/stabilization/t
 | 2026-04-27 | P2S-024 integration on `main`: `git diff --check` + `bash scripts/test.sh` | Pass | Farmhouse ash application discovery chose a farmhouse-scoped `WorkplaceBehavior` decorator, native `PlantingSpotFinder.FindClosest(Vector3)` reflection adapter, direct district-inventory `FertileAsh` consumption after target selection, and `FireFieldAmendmentRuntimeState.SetAmendment(...)` as the P2S-025 path. Plain C# suite was 86 passing tests after integration. |
 | 2026-04-27 | P2S-025 worker and orchestrator checks: `bash scripts/test.sh` + `bash scripts/build.sh --qa` + copied fixture load attempts | Blocked | Farmhouse amendment prototype is committed on `codex/P2S-025-implement-farmhouse-amendment` at `e2c70ac`; worktree tests passed 90 tests and `--qa` built/deployed. The copied `Prometheus P2S-025 QA` fixture has farmhouse, carrots, and injected District Center `FertileAsh`, but loading it through the known mod-version mismatch warning crashed during `Timberborn.DwellingSystem.Dweller.Load`. Removing stale `Dweller` components with `Home: null` avoided that crash but left the save hung after `ComponentCache._components` resolution, with no `Load time` or amendment telemetry. |
 | 2026-04-27 | P2S-026 integration on `main`: `git diff --check` + `bash scripts/test.sh` | Pass | Added repo guardrails for internal Markdown under `Assets/Mods/Prometheus`, dependency-light compile-item sync in `Prometheus.Tests.csproj`, and QA-facing telemetry token stability/registration. Plain C# suite is now 89 passing tests. |
+| 2026-04-27 | P2S-027 closeout: `git diff --check` + `bash scripts/test.sh` + `bash scripts/build.sh --qa` + startup log scan | Pass | Closeout validation passed with 89 plain C# tests. `--qa` deployed the current branch, cleared logs, and launched Timberborn. `Player.log` showed `- Prometheus (v0.2)` and `Prometheus loaded: fire system foundation initialized.`; `Fire.log` recorded the compatibility summary. No scanned Prometheus exceptions were present. |
 
 ## Durable Context
 
@@ -73,7 +74,7 @@ Phase 2 stabilization is running from the file board under `docs/stabilization/t
 - `Reset Fire State` is now backed by `FireResetRegistry`: global runtime-state hooks are registered once, while entity reset hooks are discovered from loaded ComponentCache entries only when the reset command runs. Do not hold singleton delegates to transient entity components.
 - `scripts/build.sh` rewrites external build-project Prometheus compile items to point at the active worktree source, avoiding stale sibling-project DLLs during ticket worktree validation.
 - Old bucket-kit, firefighting-foam, fire-control-gear, fireworks-crate, and festival-risk scaffolding has been pruned from active content; Fertile Ash remains the core post-fire resource direction.
-- Fertile Ash currently has valid-charred-source recovered-good spawning, visible recovered stack proof, normal District Center storage proof, reset telemetry for Prometheus-owned ash queue evidence, field-amendment runtime state, and a crop growth effect. Farmhouse/farmer application has a compile-clean partial implementation in `/Users/jasonkleinberg/repos/Timberborn-Prometheus-P2S-025`, but it remains blocked until live ash-consumption and crop-growth evidence is captured.
+- Fertile Ash currently has valid-charred-source recovered-good spawning, visible recovered stack proof, normal District Center storage proof, reset telemetry for Prometheus-owned ash queue evidence, field-amendment runtime state, and a dependency-light crop growth effect. Farmhouse/farmer application has a compile-clean partial implementation in `/Users/jasonkleinberg/repos/Timberborn-Prometheus-P2S-025`, but P2S-025 is pushed out of this sprint and remains blocked until live ash-consumption and live farmhouse-applied crop-growth evidence is captured.
 
 Source of truth: current UI labels and telemetry event names should be checked in source rather than copied here.
 
@@ -81,7 +82,7 @@ Source of truth: current UI labels and telemetry event names should be checked i
 
 | Blocker | Status | Next Check |
 | --- | --- | --- |
-| Sparse 3D grid needs propagation/profile validation | Active | Configured source injection is dependency-light verified; next live slice should load a save with an authored emitting source and capture `grid_source_injected` plus downstream ignition evidence. |
+| Sparse 3D grid needs propagation/profile validation | Active | Configured source injection is dependency-light verified and startup-clean. A future live slice should load a save with an authored emitting source and capture `grid_source_injected` plus downstream ignition evidence. |
 | Fertile Ash farmhouse application live QA | Blocked | Provide or create a fresh loadable fixture with a finished farmhouse, eligible crop planting spots, and stored `FertileAsh`. The copied `Prometheus P2S-025 QA` fixture is not viable for acceptance evidence; do not integrate P2S-025 until `fertile_ash_farmhouse_amendment_applied`, decreased stored ash, and faster amended crop growth than a nearby control crop are captured. |
 | CLI autoload crashes saves after Prometheus startup | Mitigated | Use normal menu loading for live QA. `--qa` launches Timberborn and then hands navigation to Computer Use. |
 | Runtime visuals need reconnection to grid state | Active | Keep authoring tool intact, then map grid fire state into visual rules. |
@@ -92,7 +93,7 @@ Source of truth: current UI labels and telemetry event names should be checked i
 
 ## Next Exact Action
 
-Resolve P2S-025's live QA gate with a fresh loadable farmhouse/crop/ash fixture. The copied fixture is not viable: the original crashed during `Dweller.Load`, and the repaired copy hung during load. Then capture ash consumption and amended-vs-control crop growth evidence from `Fire.log`, `Player.log`, and the game UI. Do not start P2S-027 until P2S-025 is either integrated or explicitly descoped.
+Start Phase 3 only from the integrated Phase 2 scope. Keep P2S-025 out of the sprint until a fresh loadable farmhouse/crop/ash fixture can prove live ash consumption and amended-vs-control crop growth from `Fire.log`, `Player.log`, and the game UI.
 
 ## Resume Checklist
 
