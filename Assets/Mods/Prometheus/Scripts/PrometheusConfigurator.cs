@@ -37,6 +37,7 @@ namespace Mods.Prometheus.Scripts {
       Bind<FireDamageStateRuntimeState>().AsSingleton();
       Bind<FireRuntimeProjectionRuntimeState>().AsSingleton();
       Bind<FireRecoveryRuntimeState>().AsSingleton();
+      Bind<FertileAshRecoveredGoodStackSpawner>().AsSingleton();
       Bind<FireVisualEffectRuntimeState>().AsSingleton();
       Bind<FireVisualEffectPreviewRuntimeState>().AsSingleton();
       Bind<FireResetRegistry>().AsSingleton();
