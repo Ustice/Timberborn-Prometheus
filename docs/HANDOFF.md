@@ -6,7 +6,7 @@ Last updated: 2026-04-27
 
 Prometheus is moving into the 3D grid fire rewrite. The old entity-neighbor spread and responder-first runtime model has been removed from active source so the new sparse chunked cellular system can land without legacy behavior mixed in.
 
-Phase 2 stabilization is now running from the file board under `docs/stabilization/tickets/`. Wave A, Wave B, Wave C, Wave D, P2S-019, P2S-022, and P2S-023 are integrated and done, including P2S-009 reset-registry live QA, P2S-013 configured-source startup QA, P2S-017 effect-facade startup QA, the native recovered-good wrapper for Fertile Ash, dependency-light field amendment state, and the crop growth buff for active amendments.
+Phase 2 stabilization is now running from the file board under `docs/stabilization/tickets/`. Wave A, Wave B, Wave C, Wave D, P2S-019, P2S-020, P2S-022, and P2S-023 are integrated and done, including P2S-009 reset-registry live QA, P2S-013 configured-source startup QA, P2S-017 effect-facade startup QA, native recovered-good spawning/storage proof for Fertile Ash, dependency-light field amendment state, and the crop growth buff for active amendments.
 
 ## Verified Since Last Checkpoint
 
@@ -53,6 +53,7 @@ Phase 2 stabilization is now running from the file board under `docs/stabilizati
 | 2026-04-27 | P2S-022 integration on `main`: `git diff --check` + `bash scripts/test.sh` | Pass | Added Fertile Ash field amendment runtime state keyed by fire-grid coordinate with duration, charges, consume, expiry, reset, and debug count. Plain C# suite is now 78 passing tests. |
 | 2026-04-27 | P2S-019 integration on `main`: `git diff --check` + `bash scripts/test.sh` + `bash scripts/build.sh` | Pass | Native gatherable discovery found no authored ash natural-resource template, so the safe wrapper uses Timberborn recovered-good stacks and validates `IGoodService.HasGood("FertileAsh")` before queueing. Plain C# suite is now 81 passing tests. Live collection proof remains for P2S-020/P2S-021. |
 | 2026-04-27 | P2S-023 integration on `main`: `git diff --check` + `bash scripts/test.sh` + `bash scripts/build.sh --qa` + Computer Use save load + startup log scan | Pass | Fertile Ash field amendments now reduce eligible crop `Growable.GrowthTimeInDays` by 10%, exclude trees and bushes through component classification, tick amendment expiry from a runtime singleton, and restore base growth time on expiry/reset. Plain C# suite is now 83 passing tests. Computer Use loaded `Prometheus QA - 2026-04-26 23h01m, Day 3-2.autosave`; logs showed `Load time: 11999ms` with Prometheus loaded and no scanned Prometheus errors. |
+| 2026-04-27 | P2S-020 integration on `main`: `git diff --check`, `bash scripts/test.sh`, `bash scripts/build.sh --qa`, Computer Use live QA | Pass | Valid charred Pine aftermath queues visible native recovered-good stacks with `FertileAsh`: `fertile_ash_recovered_good_stack_queued` and `fertile_ash_spawn_queued` were captured at coordinates `49,3,7` and `23,4,11`. Computer Use confirmed a visible Rubble stack containing `Fertile ash 1`, and the District Center inventory showed `Fertile ash 7` after beavers picked up ash. A repeated soil-moisture sample warning is now de-duplicated so live QA remains observable. Plain C# suite is now 85 passing tests; final main `--qa` reached the main menu after deploy. |
 
 ## Durable Context
 
@@ -68,7 +69,7 @@ Phase 2 stabilization is now running from the file board under `docs/stabilizati
 - `Reset Fire State` is now backed by `FireResetRegistry`: global runtime-state hooks are registered once, while entity reset hooks are discovered from loaded ComponentCache entries only when the reset command runs. Do not hold singleton delegates to transient entity components.
 - `scripts/build.sh` rewrites external build-project Prometheus compile items to point at the active worktree source, avoiding stale sibling-project DLLs during ticket worktree validation.
 - Old bucket-kit, firefighting-foam, fire-control-gear, fireworks-crate, and festival-risk scaffolding has been pruned from active content; Fertile Ash remains the core post-fire resource direction.
-- Fertile Ash currently has a narrow recovered-good stack wrapper and a field-amendment crop growth effect, not an end-to-end production/application loop. The next proof must show visible stack spawn, builder collection, storage, and clean logs.
+- Fertile Ash currently has valid-charred-source recovered-good spawning, visible recovered stack proof, normal District Center storage proof, field-amendment runtime state, and a crop growth effect. Farmhouse/farmer application remains unimplemented and is owned by P2S-024/P2S-025.
 
 Source of truth: current UI labels and telemetry event names should be checked in source rather than copied here.
 
@@ -77,7 +78,7 @@ Source of truth: current UI labels and telemetry event names should be checked i
 | Blocker | Status | Next Check |
 | --- | --- | --- |
 | Sparse 3D grid needs propagation/profile validation | Active | Configured source injection is dependency-light verified; next live slice should load a save with an authored emitting source and capture `grid_source_injected` plus downstream ignition evidence. |
-| Fertile Ash recovered-good live proof | Active | P2S-020 should spawn one valid `FertileAsh` recovered-good stack, prove visible collection/storage, and scan `Player.log` / `Fire.log`. |
+| Fertile Ash farmhouse application path | Active | P2S-024 should discover how stored `FertileAsh` can be consumed by a farmhouse/farmer flow before P2S-025 implements application. |
 | CLI autoload crashes saves after Prometheus startup | Mitigated | Use normal menu loading for live QA. `--qa` launches Timberborn and then hands navigation to Computer Use. |
 | Runtime visuals need reconnection to grid state | Active | Keep authoring tool intact, then map grid fire state into visual rules. |
 | Timberborn menu automation map is missing | Active | Create a screenshot-backed map of main menu, Escape menu, in-game toolbar groups, Prometheus group entries, and keyboard controls before assigning more UI-heavy QA work to agents. |
@@ -87,7 +88,7 @@ Source of truth: current UI labels and telemetry event names should be checked i
 
 ## Next Exact Action
 
-P2S-020 is blocked after an unresponsive worker left uncommitted partial edits without live Fertile Ash spawn, collection, or storage proof. Reassign or resume P2S-020 before starting P2S-021, P2S-024, or P2S-025; those tickets depend on the recovered-good path being proven.
+P2S-021 is the next dependency ticket: verify ash reset/telemetry QA now that P2S-020 proved visible recovered-good spawn and District Center storage. After P2S-021, assign P2S-024 to discover the farmhouse ash application path.
 
 ## Resume Checklist
 

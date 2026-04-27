@@ -1,6 +1,6 @@
 # P2S-020 Spawn Native Fertile Ash
 
-Status: integration
+Status: done
 
 Agent level: High
 
@@ -36,6 +36,18 @@ Spawn visible Fertile Ash from valid charred sources and prove normal stockpile 
 ## Integration Notes
 
 Do not integrate if ash is only a debug/internal counter.
+
+## Acceptance Notes
+
+2026-04-27 integration:
+
+- `git diff --check` passed.
+- `bash scripts/test.sh` passed with 85 tests.
+- `bash scripts/build.sh --qa` passed preflight, deployed, launched Timberborn, and the final main pass reached the main menu.
+- Live QA on the accepted branch loaded the QA save, ignited valid Pine aftermath, and captured `fertile_ash_recovered_good_stack_queued` plus `fertile_ash_spawn_queued` in `Fire.log`.
+- Computer Use confirmed a visible native Rubble recovered-good stack containing `Fertile ash 1`.
+- District Center inventory confirmed normal storage with `Fertile ash 7` after beaver pickup.
+- A repeated soil-moisture sampling warning was de-duplicated to keep live QA observable.
 
 ## Blocker Notes
 
