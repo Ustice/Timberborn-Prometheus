@@ -38,6 +38,7 @@ namespace Mods.Prometheus.Scripts {
       Bind<FireRuntimeProjectionRuntimeState>().AsSingleton();
       Bind<FireRecoveryRuntimeState>().AsSingleton();
       Bind<FertileAshRecoveredGoodStackSpawner>().AsSingleton();
+      Bind<FireFieldAmendmentRuntimeState>().AsSingleton();
       Bind<FireVisualEffectRuntimeState>().AsSingleton();
       Bind<FireVisualEffectPreviewRuntimeState>().AsSingleton();
       Bind<FireResetRegistry>().AsSingleton();
@@ -125,6 +126,7 @@ namespace Mods.Prometheus.Scripts {
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
     private FireRuntimeProjectionRuntimeState _fireRuntimeProjectionRuntimeState;
     private FireRecoveryRuntimeState _fireRecoveryRuntimeState;
+    private FireFieldAmendmentRuntimeState _fireFieldAmendmentRuntimeState;
 
     [Inject]
     public void InjectDependencies(
@@ -133,13 +135,15 @@ namespace Mods.Prometheus.Scripts {
       FireImpactRuntimeState fireImpactRuntimeState,
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
       FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState,
-      FireRecoveryRuntimeState fireRecoveryRuntimeState) {
+      FireRecoveryRuntimeState fireRecoveryRuntimeState,
+      FireFieldAmendmentRuntimeState fireFieldAmendmentRuntimeState) {
       _fireExposureRuntimeState = fireExposureRuntimeState;
       _fireGridRuntimeState = fireGridRuntimeState;
       _fireImpactRuntimeState = fireImpactRuntimeState;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
       _fireRuntimeProjectionRuntimeState = fireRuntimeProjectionRuntimeState;
       _fireRecoveryRuntimeState = fireRecoveryRuntimeState;
+      _fireFieldAmendmentRuntimeState = fireFieldAmendmentRuntimeState;
     }
 
     private void OnDestroy() {
@@ -148,7 +152,8 @@ namespace Mods.Prometheus.Scripts {
           || _fireImpactRuntimeState == null
           || _fireDamageStateRuntimeState == null
           || _fireRuntimeProjectionRuntimeState == null
-          || _fireRecoveryRuntimeState == null) {
+          || _fireRecoveryRuntimeState == null
+          || _fireFieldAmendmentRuntimeState == null) {
         return;
       }
 

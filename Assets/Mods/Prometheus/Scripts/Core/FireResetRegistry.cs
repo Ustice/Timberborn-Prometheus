@@ -34,6 +34,7 @@ namespace Mods.Prometheus.Scripts {
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
       FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState,
       FireRecoveryRuntimeState fireRecoveryRuntimeState,
+      FireFieldAmendmentRuntimeState fireFieldAmendmentRuntimeState,
       FireVisualEffectPreviewRuntimeState fireVisualEffectPreviewRuntimeState) {
       RegisterGlobal(FireResetHookKind.GridState, nameof(FireGridRuntimeState), fireGridRuntimeState.Clear);
       RegisterGlobal(FireResetHookKind.SourceState, nameof(FireExposureRuntimeState), fireExposureRuntimeState.ClearSnapshotsAndIgnitionRequests);
@@ -41,6 +42,7 @@ namespace Mods.Prometheus.Scripts {
       RegisterGlobal(FireResetHookKind.DamageState, nameof(FireDamageStateRuntimeState), fireDamageStateRuntimeState.ClearSnapshots);
       RegisterGlobal(FireResetHookKind.DamageState, nameof(FireRuntimeProjectionRuntimeState), fireRuntimeProjectionRuntimeState.ClearSnapshots);
       RegisterGlobal(FireResetHookKind.AshState, nameof(FireRecoveryRuntimeState), fireRecoveryRuntimeState.ClearSnapshots);
+      RegisterGlobal(FireResetHookKind.AshState, nameof(FireFieldAmendmentRuntimeState), fireFieldAmendmentRuntimeState.ClearAmendments);
       RegisterGlobal(FireResetHookKind.PreviewState, nameof(FireVisualEffectPreviewRuntimeState), fireVisualEffectPreviewRuntimeState.ClearAllPreviews);
 #if !PROMETHEUS_TESTS
       RegisterGlobal(FireResetHookKind.BeaverEffect, nameof(FireBeaverEffectApplier), () => FireBeaverEffectApplier.DebugClearFireNeedEffects());

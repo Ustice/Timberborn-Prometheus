@@ -40,6 +40,7 @@ namespace Mods.Prometheus.Scripts {
     private readonly FireDamageStateRuntimeState _fireDamageStateRuntimeState;
     private readonly FireRuntimeProjectionRuntimeState _fireRuntimeProjectionRuntimeState;
     private readonly FireRecoveryRuntimeState _fireRecoveryRuntimeState;
+    private readonly FireFieldAmendmentRuntimeState _fireFieldAmendmentRuntimeState;
     private readonly PrometheusDebugPanel _prometheusDebugPanel;
 
     private VisualElement _root;
@@ -53,6 +54,7 @@ namespace Mods.Prometheus.Scripts {
     private int _baselineDamageSnapshotCount;
     private int _baselineProjectionSnapshotCount;
     private int _baselineRecoverySnapshotCount;
+    private int _baselineFieldAmendmentCount;
     private int _baselinePendingForcedIgnitionCount;
 
     public PrometheusFireDebugFragment(
@@ -62,6 +64,7 @@ namespace Mods.Prometheus.Scripts {
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
       FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState,
       FireRecoveryRuntimeState fireRecoveryRuntimeState,
+      FireFieldAmendmentRuntimeState fireFieldAmendmentRuntimeState,
       PrometheusDebugPanel prometheusDebugPanel) {
       _fireTuningRuntimeState = fireTuningRuntimeState;
       _fireExposureRuntimeState = fireExposureRuntimeState;
@@ -69,6 +72,7 @@ namespace Mods.Prometheus.Scripts {
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
       _fireRuntimeProjectionRuntimeState = fireRuntimeProjectionRuntimeState;
       _fireRecoveryRuntimeState = fireRecoveryRuntimeState;
+      _fireFieldAmendmentRuntimeState = fireFieldAmendmentRuntimeState;
       _prometheusDebugPanel = prometheusDebugPanel;
     }
 
@@ -139,6 +143,7 @@ namespace Mods.Prometheus.Scripts {
       AppendRuntimeCountLine(stringBuilder, "Damage snapshots", _fireDamageStateRuntimeState.SnapshotCount, _baselineDamageSnapshotCount);
       AppendRuntimeCountLine(stringBuilder, "Projection snapshots", _fireRuntimeProjectionRuntimeState.SnapshotCount, _baselineProjectionSnapshotCount);
       AppendRuntimeCountLine(stringBuilder, "Recovery snapshots", _fireRecoveryRuntimeState.SnapshotCount, _baselineRecoverySnapshotCount);
+      AppendRuntimeCountLine(stringBuilder, "Field amendments", _fireFieldAmendmentRuntimeState.ActiveAmendmentCount, _baselineFieldAmendmentCount);
       AppendRuntimeCountLine(stringBuilder, "Pending forced ignitions", _fireExposureRuntimeState.PendingForcedIgnitionCount, _baselinePendingForcedIgnitionCount);
       stringBuilder.AppendLine();
 
@@ -236,6 +241,7 @@ namespace Mods.Prometheus.Scripts {
       _baselineDamageSnapshotCount = _fireDamageStateRuntimeState.SnapshotCount;
       _baselineProjectionSnapshotCount = _fireRuntimeProjectionRuntimeState.SnapshotCount;
       _baselineRecoverySnapshotCount = _fireRecoveryRuntimeState.SnapshotCount;
+      _baselineFieldAmendmentCount = _fireFieldAmendmentRuntimeState.ActiveAmendmentCount;
       _baselinePendingForcedIgnitionCount = _fireExposureRuntimeState.PendingForcedIgnitionCount;
     }
 
