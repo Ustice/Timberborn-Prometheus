@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Timberborn.BlockSystem;
 using Timberborn.MapIndexSystem;
 using Timberborn.SoilMoistureSystem;
@@ -14,6 +15,7 @@ namespace Mods.Prometheus.Scripts {
     private readonly IThreadSafeWaterMap _waterMap;
     private readonly ISoilMoistureService _soilMoistureService;
     private readonly MapIndexService _mapIndexService;
+    private readonly HashSet<string> _loggedSampleFailures = new();
     private bool _loggedCompatibility;
 
     public TimberbornEnvironmentAdapter(
@@ -71,7 +73,7 @@ namespace Mods.Prometheus.Scripts {
         terrainTopSurfaceY = _terrainService.GetTerrainHeightBelow(timberbornCoordinates);
         return true;
       } catch (Exception exception) {
-        FireTelemetry.LogWarning($"event=environment_adapter_sample_failed input=terrain detail=\"{Escape(exception.GetType().Name)}\"");
+        LogSampleFailure("terrain", exception);
         return false;
       }
     }
@@ -91,7 +93,7 @@ namespace Mods.Prometheus.Scripts {
         hasTopBlockOccupancy = _blockService.AnyTopObjectAt(timberbornCoordinates);
         return true;
       } catch (Exception exception) {
-        FireTelemetry.LogWarning($"event=environment_adapter_sample_failed input=block_occupancy detail=\"{Escape(exception.GetType().Name)}\"");
+        LogSampleFailure("block_occupancy", exception);
         return false;
       }
     }
@@ -106,7 +108,7 @@ namespace Mods.Prometheus.Scripts {
         waterDepth = _waterMap.WaterDepth(timberbornCoordinates);
         return true;
       } catch (Exception exception) {
-        FireTelemetry.LogWarning($"event=environment_adapter_sample_failed input=water_depth detail=\"{Escape(exception.GetType().Name)}\"");
+        LogSampleFailure("water_depth", exception);
         return false;
       }
     }
@@ -122,7 +124,7 @@ namespace Mods.Prometheus.Scripts {
         soilMoisture = _soilMoistureService.SoilMoisture(index);
         return true;
       } catch (Exception exception) {
-        FireTelemetry.LogWarning($"event=environment_adapter_sample_failed input=soil_moisture detail=\"{Escape(exception.GetType().Name)}\"");
+        LogSampleFailure("soil_moisture", exception);
         return false;
       }
     }
@@ -193,6 +195,16 @@ namespace Mods.Prometheus.Scripts {
 
     private static Vector3Int ToTimberbornCoordinates(FireGridCoordinate coordinate) =>
       new(coordinate.X, coordinate.Z, coordinate.Y);
+
+    private void LogSampleFailure(string input, Exception exception) {
+      var detail = exception.GetType().Name;
+      var key = $"{input}:{detail}";
+      if (!_loggedSampleFailures.Add(key)) {
+        return;
+      }
+
+      FireTelemetry.LogWarning($"event=environment_adapter_sample_failed input={input} detail=\"{Escape(detail)}\"");
+    }
 
     private static string Escape(string value) =>
       (value ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"");

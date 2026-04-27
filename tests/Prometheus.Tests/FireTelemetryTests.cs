@@ -21,6 +21,8 @@ namespace Prometheus.Tests
             TestSupport.True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.GridIgnitionSeeded) >= 0);
             TestSupport.True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.GridSourceInjected) >= 0);
             TestSupport.True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.GridSourceSuppressed) >= 0);
+            TestSupport.True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.FertileAshSpawnQueued) >= 0);
+            TestSupport.True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.FertileAshRecoveredGoodStackQueued) >= 0);
         }
 
     }

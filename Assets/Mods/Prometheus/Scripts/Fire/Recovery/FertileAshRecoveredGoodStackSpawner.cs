@@ -58,12 +58,12 @@ namespace Mods.Prometheus.Scripts {
           new[] { new GoodAmount(FertileAshRecoveredGoodStackRules.FertileAshGoodId, amount) });
         reason = "queued_recovered_good_stack";
         FireTelemetry.Log(
-          $"event=fertile_ash_recovered_good_stack_queued good={FertileAshRecoveredGoodStackRules.FertileAshGoodId} amount={amount} coordinates={coordinates.x},{coordinates.y},{coordinates.z}");
+          $"event={FireTelemetryEvents.FertileAshRecoveredGoodStackQueued} good={FertileAshRecoveredGoodStackRules.FertileAshGoodId} amount={amount} coordinates={coordinates.x},{coordinates.y},{coordinates.z}");
         return true;
       } catch (Exception exception) {
         reason = "recovered_good_stack_queue_failed";
         FireTelemetry.LogWarning(
-          $"event=fertile_ash_recovered_good_stack_failed reason={reason} exception={exception.GetType().Name}");
+          $"event={FireTelemetryEvents.FertileAshRecoveredGoodStackFailed} reason={reason} exception={exception.GetType().Name}");
         return false;
       }
     }
