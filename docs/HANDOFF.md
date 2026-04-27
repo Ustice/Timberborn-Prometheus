@@ -66,7 +66,7 @@ Phase 2 stabilization is now running from the file board under `docs/stabilizati
 - Use Computer Use for in-game QA clicks, screenshots, and menu evidence.
 - The visual authoring tool remains available for `Smoke`, `Ash`, `Steam`, `Fire`, `Sparks`, and `Char`, including selected-entity temporary preview and JSON/log export.
 - `Reset Fire State` is now backed by `FireResetRegistry`: global runtime-state hooks are registered once, while entity reset hooks are discovered from loaded ComponentCache entries only when the reset command runs. Do not hold singleton delegates to transient entity components.
-- `scripts/build.sh` rewrites external build-project Prometheus compile items to point at the active worktree source, avoiding stale sibling-worktree DLLs during ticket worktree validation.
+- `scripts/build.sh` rewrites external build-project Prometheus compile items to point at the active worktree source, avoiding stale sibling-project DLLs during ticket worktree validation.
 - Old bucket-kit, firefighting-foam, fire-control-gear, fireworks-crate, and festival-risk scaffolding has been pruned from active content; Fertile Ash remains the core post-fire resource direction.
 - Fertile Ash currently has a narrow recovered-good stack wrapper and a field-amendment crop growth effect, not an end-to-end production/application loop. The next proof must show visible stack spawn, builder collection, storage, and clean logs.
 
