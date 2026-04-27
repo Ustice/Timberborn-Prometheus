@@ -11,15 +11,7 @@ WAIT_FOR_BUILD=false
 WAIT_FOR_BUILD_TIMEOUT_SECONDS=10
 WAIT_FOR_BUILD_POLL_SECONDS=2
 WAIT_FOR_BUILD_STABLE_POLLS=2
-QA_READY_TIMEOUT_SECONDS="${QA_READY_TIMEOUT_SECONDS:-180}"
-QA_READY_POLL_SECONDS="${QA_READY_POLL_SECONDS:-5}"
 LAUNCH_DELAY_SECONDS="${LAUNCH_DELAY_SECONDS:-15}"
-QA_MENU_AUTOMATION="${QA_MENU_AUTOMATION:-1}"
-QA_MENU_INITIAL_SLEEP_SECONDS="${QA_MENU_INITIAL_SLEEP_SECONDS:-6}"
-QA_MENU_FIRST_WAIT_MS="${QA_MENU_FIRST_WAIT_MS:-1000}"
-QA_MENU_CONTINUE_WAIT_MS="${QA_MENU_CONTINUE_WAIT_MS:-9000}"
-QA_MENU_CONTINUE_CLICK_X="${QA_MENU_CONTINUE_CLICK_X:-960}"
-QA_MENU_CONTINUE_CLICK_Y="${QA_MENU_CONTINUE_CLICK_Y:-323}"
 DEFAULT_TIMBERBORN_APP_ID="1062090"
 DEFAULT_PLAYER_LOG_PATH="$HOME/Library/Logs/Mechanistry/Timberborn/Player.log"
 DEFAULT_FIRE_LOG_PATH="$HOME/Library/Logs/Mechanistry/Timberborn/Fire.log"
@@ -575,96 +567,6 @@ clear_fire_log_for_launch() {
   fi
 
   echo "[build] Cleared Fire.log: $FIRE_LOG_PATH"
-}
-
-prometheus_startup_errors_detected() {
-  local error_pattern='Prometheus.*(Exception|Error|error|failed|Failed|Could not|ReflectionTypeLoadException|NullReferenceException)|Exception.*Prometheus|Error.*Prometheus'
-  local matched=false
-
-  if [[ -f "$PLAYER_LOG_PATH" ]] && grep -Eiq "$error_pattern" "$PLAYER_LOG_PATH"; then
-    echo "[qa] Prometheus-related error detected in Player.log:" >&2
-    grep -Ein "$error_pattern" "$PLAYER_LOG_PATH" | tail -n 12 >&2 || true
-    matched=true
-  fi
-
-  if [[ -f "$FIRE_LOG_PATH" ]] && grep -Eiq "$error_pattern" "$FIRE_LOG_PATH"; then
-    echo "[qa] Prometheus-related error detected in Fire.log:" >&2
-    grep -Ein "$error_pattern" "$FIRE_LOG_PATH" | tail -n 12 >&2 || true
-    matched=true
-  fi
-
-  [[ "$matched" == "true" ]]
-}
-
-prometheus_loaded_from_player_log() {
-  [[ -f "$PLAYER_LOG_PATH" ]] && grep -Eq 'Prometheus \(v[0-9]+(\.[0-9]+)*\)' "$PLAYER_LOG_PATH"
-}
-
-wait_for_qa_readiness() {
-  if [[ "$QA_MODE" != "true" ]]; then
-    return 0
-  fi
-
-  echo "[qa] Waiting for Timberborn + Prometheus readiness..."
-  echo "[qa] Timeout: ${QA_READY_TIMEOUT_SECONDS}s (poll ${QA_READY_POLL_SECONDS}s)"
-  echo "[qa] Player.log: $PLAYER_LOG_PATH"
-  echo "[qa] Fire.log: $FIRE_LOG_PATH"
-
-  local waited=0
-  while (( waited < QA_READY_TIMEOUT_SECONDS )); do
-    if prometheus_startup_errors_detected; then
-      echo "[qa] failed: Prometheus startup/runtime error detected." >&2
-      return 1
-    fi
-
-    if is_timberborn_running && prometheus_loaded_from_player_log; then
-      echo "[qa] ready: Timberborn is running and Prometheus startup was detected."
-      return 0
-    fi
-
-    sleep "$QA_READY_POLL_SECONDS"
-    waited=$(( waited + QA_READY_POLL_SECONDS ))
-  done
-
-  if is_timberborn_running; then
-    echo "[qa] still-loading: Timberborn is running, but Prometheus startup was not detected within ${QA_READY_TIMEOUT_SECONDS}s." >&2
-  else
-    echo "[qa] failed: Timberborn process was not detected within ${QA_READY_TIMEOUT_SECONDS}s." >&2
-  fi
-  return 1
-}
-
-run_qa_menu_automation() {
-  if [[ "$QA_MODE" != "true" || "$QA_MENU_AUTOMATION" != "1" ]]; then
-    return 0
-  fi
-
-  if ! command -v osascript >/dev/null 2>&1; then
-    echo "[qa] Menu automation skipped: osascript not found." >&2
-    return 0
-  fi
-
-  if ! command -v cliclick >/dev/null 2>&1; then
-    echo "[qa] Menu automation skipped: cliclick not found." >&2
-    echo "[qa] Install cliclick or set QA_MENU_AUTOMATION=0 to silence this warning." >&2
-    return 0
-  fi
-
-  echo "[qa] Activating Timberborn and driving normal menu load path..."
-  echo "[qa] Sequence: sleep ${QA_MENU_INITIAL_SLEEP_SECONDS}s, Return, wait ${QA_MENU_FIRST_WAIT_MS}ms, Return, wait ${QA_MENU_CONTINUE_WAIT_MS}ms, click ${QA_MENU_CONTINUE_CLICK_X},${QA_MENU_CONTINUE_CLICK_Y}"
-
-  if ! osascript -e 'tell application id "com.mechanistry.timberborn" to activate' >/dev/null 2>&1; then
-    echo "[qa] Menu automation skipped: could not activate Timberborn." >&2
-    return 0
-  fi
-
-  sleep "$QA_MENU_INITIAL_SLEEP_SECONDS"
-  cliclick \
-    kp:return \
-    "w:$QA_MENU_FIRST_WAIT_MS" \
-    kp:return \
-    "w:$QA_MENU_CONTINUE_WAIT_MS" \
-    "c:$QA_MENU_CONTINUE_CLICK_X,$QA_MENU_CONTINUE_CLICK_Y"
 }
 
 while [[ $# -gt 0 ]]; do

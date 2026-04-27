@@ -39,7 +39,7 @@ todo -> ready -> in-progress -> verify -> integration -> done
 
 - Every ticket runs `git diff --check`.
 - Every ticket runs `bash scripts/test.sh`.
-- Run `bash scripts/build.sh --qa` after P2S-009, P2S-013, P2S-017, P2S-021, P2S-023, and P2S-025.
+- Run `bash scripts/build.sh --qa` after P2S-009, P2S-013, P2S-017, P2S-021, P2S-023, and P2S-025, then use Computer Use for startup dialogs, menu loading, and in-game evidence.
 
 ## Wave Order
 
