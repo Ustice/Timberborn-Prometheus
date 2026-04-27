@@ -1,6 +1,6 @@
 # P2S-009 Add Reset Registry
 
-Status: verify
+Status: integration
 
 Agent level: Medium
 
