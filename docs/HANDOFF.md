@@ -6,7 +6,7 @@ Last updated: 2026-04-27
 
 Prometheus is moving into the 3D grid fire rewrite. The old entity-neighbor spread and responder-first runtime model has been removed from active source so the new sparse chunked cellular system can land without legacy behavior mixed in.
 
-Phase 2 stabilization closeout is complete for the integrated scope. P2S-001 through P2S-024, P2S-026, and P2S-027 are integrated or closeout-verified. P2S-025 is explicitly pushed out of this sprint and remains blocked on live farmhouse amendment evidence; its compile-clean prototype was discarded so the next pass can be redesigned from the P2S-024 discovery notes. The closed scope includes P2S-009 reset-registry live QA, P2S-013 configured-source dependency-light and startup QA, P2S-017 effect-facade startup QA, native recovered-good spawning/storage proof for Fertile Ash, dependency-light field amendment state, the crop growth buff for active amendments, ash reset telemetry that clears Prometheus ash queue evidence without destroying Timberborn-owned recovered-good stacks, repo guardrails for shipped Markdown, telemetry tokens, compile-item sync, and P2S-027 closeout docs validation.
+Phase 2 stabilization closeout is complete for the integrated scope. P2S-001 through P2S-024, P2S-026, and P2S-027 are integrated or closeout-verified. P2S-025 is explicitly pushed out of this sprint and remains blocked on live farmhouse amendment evidence; its compile-clean prototype was discarded so the next pass can be redesigned from the P2S-024 discovery notes. The closed sprint ticket board is archived under [ARCHIVE/stabilization-sprint-2026-04/](ARCHIVE/stabilization-sprint-2026-04/), and ongoing ticket tracking now lives under [tickets/README.md](tickets/README.md). The deferred farmhouse work is tracked as [tickets/deferred/TKT-001-farmhouse-fertile-ash-application.md](tickets/deferred/TKT-001-farmhouse-fertile-ash-application.md). The closed scope includes P2S-009 reset-registry live QA, P2S-013 configured-source dependency-light and startup QA, P2S-017 effect-facade startup QA, native recovered-good spawning/storage proof for Fertile Ash, dependency-light field amendment state, the crop growth buff for active amendments, ash reset telemetry that clears Prometheus ash queue evidence without destroying Timberborn-owned recovered-good stacks, repo guardrails for shipped Markdown, telemetry tokens, compile-item sync, and P2S-027 closeout docs validation.
 
 ## Verified Since Last Checkpoint
 
@@ -96,6 +96,8 @@ Source of truth: current UI labels and telemetry event names should be checked i
 
 Start Phase 3 only from the integrated Phase 2 scope. Keep P2S-025 out of the sprint until a fresh loadable farmhouse/crop/ash fixture can prove live ash consumption and amended-vs-control crop growth from `Fire.log`, `Player.log`, and the game UI.
 
+Use [tickets/README.md](tickets/README.md) for new ticket assignment and status moves. Documentation-only ticket updates do not require runtime verification; keep claims tied to the right source of truth and run heavier checks only when behavior, scripts, content, or code changes.
+
 ## Resume Checklist
 
 - [ ] Run `bash scripts/test.sh`.
@@ -117,3 +119,4 @@ Start Phase 3 only from the integrated Phase 2 scope. Keep P2S-025 out of the sp
 | Validation gates | [TEST_PLAN.md](TEST_PLAN.md) |
 | Durable design | [DESIGN.md](DESIGN.md) |
 | Repo map | [INDEX.md](INDEX.md) |
+| Ticket board | [tickets/README.md](tickets/README.md) |

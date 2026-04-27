@@ -2,6 +2,8 @@
 
 Last analyzed: 2026-04-26
 
+Status: closed and archived. Active ticket tracking now lives in [tickets/README.md](tickets/README.md), and the closed sprint ticket board lives in [ARCHIVE/stabilization-sprint-2026-04/](ARCHIVE/stabilization-sprint-2026-04/).
+
 ## Purpose
 
 This sprint is the bridge between the Phase 2 grid rewrite and Phase 3 renewal economy work. The goal is not broad polish. The goal is to reduce architectural risk, make live fire behavior easier to reason about, and put enough guardrails in place that Phase 3 can build on verified systems instead of debug-only scaffolding.

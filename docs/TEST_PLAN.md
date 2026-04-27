@@ -14,6 +14,7 @@ This is the authoritative runbook for active Prometheus validation.
 
 ## Preflight
 
+- [ ] Skip runtime verification for documentation-only updates when the diff only changes documentation and does not claim new runtime behavior.
 - [ ] Run `bash scripts/test.sh`.
 - [ ] Run `bash scripts/build.sh --launch` for in-game QA.
 - [ ] Prefer `bash scripts/build.sh --qa` when you want tests, deployment, cleared logs, and a fresh Timberborn launch before Computer Use navigation.
@@ -149,3 +150,5 @@ Use [VALIDATION/explosion-policy.md](VALIDATION/explosion-policy.md) when explos
 - [ ] Update [HANDOFF.md](HANDOFF.md) with new verified results, blockers, and next action.
 - [ ] Update [DESIGN.md](DESIGN.md) only when a durable design decision, milestone, or accepted default changes.
 - [ ] Add archive/changelog detail only when the history is useful after the next startup.
+
+Documentation-only updates do not require `bash scripts/test.sh`, `bash scripts/build.sh`, or live QA. Verify source-of-truth links and claims instead; run `git diff --check` when practical.

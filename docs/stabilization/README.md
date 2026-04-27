@@ -1,10 +1,10 @@
-# Prometheus Stabilization Ticket Board
+# Prometheus Stabilization Notes
 
-This directory is the file-based board for the Phase 2 stabilization sprint.
+The Phase 2 stabilization sprint is closed.
 
-Move ticket files with `git mv` to update status.
+The archived sprint ticket board and backlog live under [../ARCHIVE/stabilization-sprint-2026-04/](../ARCHIVE/stabilization-sprint-2026-04/). Active ticket tracking now lives under [../tickets/README.md](../tickets/README.md).
 
-Unscheduled follow-ups live in [BACKLOG.md](BACKLOG.md) until the orchestrator promotes them into ticket files.
+Use this directory only as a compatibility pointer for older links.
 
 ## Status Flow
 
@@ -25,6 +25,7 @@ todo -> ready -> in-progress -> verify -> integration -> done
 
 ## Orchestrator Rules
 
+- Use [../tickets/README.md](../tickets/README.md) for new work.
 - A Medium agent owns wave orchestration.
 - Assign disjoint write scopes before agents start.
 - Give workers [WORKER_INSTRUCTIONS.md](WORKER_INSTRUCTIONS.md) plus the assigned ticket instead of repeating the full standard handoff in every prompt.
@@ -40,6 +41,7 @@ todo -> ready -> in-progress -> verify -> integration -> done
 - Every ticket runs `git diff --check`.
 - Every ticket runs `bash scripts/test.sh`.
 - Run `bash scripts/build.sh --qa` after P2S-009, P2S-013, P2S-017, P2S-021, P2S-023, and P2S-025, then use Computer Use for startup dialogs, menu loading, and in-game evidence.
+- Documentation-only ticket updates do not require runtime verification steps.
 
 ## Wave Order
 

@@ -18,12 +18,13 @@ Source of truth: run `bash scripts/build.sh --help` for current build/deploy beh
 | --- | --- |
 | Startup order and doc map | [docs/INDEX.md](docs/INDEX.md) |
 | Current state and next action | [docs/HANDOFF.md](docs/HANDOFF.md) |
+| Ticket board | [docs/tickets/README.md](docs/tickets/README.md) |
 | Durable design and roadmap | [docs/DESIGN.md](docs/DESIGN.md) |
 | Validation runbook | [docs/TEST_PLAN.md](docs/TEST_PLAN.md) |
 
 ## Current Focus
 
-Prometheus is in a 3D grid fire rewrite. The old entity-neighbor spread and responder-first runtime model has been removed from active code, and the current validation focus is the field-first resource model: heat/ember/smoke transfer, stochastic entity ignition, moisture loss, fuel depletion, charred remnants, and Fertile Ash recovery reset evidence.
+Prometheus is in a 3D grid fire rewrite. Phase 2 stabilization is closed for the integrated scope, and active work now tracks through the permanent file board in [docs/tickets/README.md](docs/tickets/README.md). The current validation focus is the field-first resource model: heat/ember/smoke transfer, stochastic entity ignition, moisture loss, fuel depletion, charred remnants, and Fertile Ash recovery reset evidence.
 
 Use [docs/HANDOFF.md](docs/HANDOFF.md) for the latest verified result, blocker list, and resume checklist.
 

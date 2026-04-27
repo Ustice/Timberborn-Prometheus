@@ -1,11 +1,11 @@
-# Stabilization Worker Instructions
+# Ticket Worker Instructions
 
-These are archived Phase 2 stabilization instructions. Use [../tickets/WORKER_INSTRUCTIONS.md](../tickets/WORKER_INSTRUCTIONS.md) for new work unless an archived sprint ticket specifically points here.
+Use these instructions for every Prometheus ticket worker unless the ticket says otherwise.
 
 ## Worktree
 
 - Work in your assigned ticket worktree only.
-- Use a worktree name that includes the ticket number, for example `/Users/jasonkleinberg/repos/Timberborn-Prometheus-P2S-001`.
+- Use a worktree name that includes the ticket number, for example `/Users/jasonkleinberg/repos/Timberborn-Prometheus-TKT-001`.
 - Do not touch ticket board status files unless the orchestrator explicitly assigns that as part of your scope.
 - You are not alone in the codebase. Do not revert edits made by others, and adjust your implementation to accommodate already-integrated changes.
 
@@ -13,24 +13,24 @@ These are archived Phase 2 stabilization instructions. Use [../tickets/WORKER_IN
 
 - Read `AGENTS.md`.
 - Read `docs/INDEX.md`.
-- Read `docs/STABILIZATION_SPRINT.md`.
-- Read `docs/stabilization/README.md`.
+- Read `docs/tickets/README.md`.
 - Read your assigned ticket file.
-- Read `docs/ARCHITECTURE.md` when it exists.
 - Read `docs/HANDOFF.md`, `docs/DESIGN.md`, and `docs/TEST_PLAN.md` when your ticket changes verified behavior, architecture, or validation state.
+- Read archived sprint notes only when the ticket points to them.
 
 ## Scope
 
 - Stay inside the ticket's explicit write scope.
 - Do not overlap another worker's write scope unless the orchestrator approves it.
-- Keep behavior unchanged for split/refactor tickets.
+- Keep behavior unchanged for split/refactor tickets unless the ticket explicitly asks for behavior changes.
 - Prefer small reconciliation edits over broad refactors when compile or integration requires support outside the nominal scope.
 
 ## Verification
 
 - Run `git diff --check`.
-- Run `bash scripts/test.sh`.
+- Run `bash scripts/test.sh` for code, content, script, or behavior changes.
 - Run `bash scripts/build.sh --qa` only when the ticket or board requires live QA.
+- Skip runtime verification for documentation-only tickets marked `doc_only: true` when the diff only changes documentation.
 - Capture log or QA evidence when behavior, runtime integration, or live-game state changes.
 - Follow `AGENTS.md` Markdown style for documentation changes.
 
