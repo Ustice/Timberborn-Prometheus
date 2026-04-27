@@ -80,6 +80,8 @@ Use this section as the next validation gate once the sparse grid lands.
 - [x] Confirm trees and bushes are excluded from the field-amendment growth rule.
 - [x] Confirm `Reset Fire State` clears stale ash runtime state without deleting unrelated Timberborn entities unsafely.
 - [x] Scan `Player.log` and `Fire.log` for Prometheus and recovered-good exceptions.
+- [ ] Confirm farmhouse-driven `FertileAsh` consumption applies a field amendment in a live save.
+- [ ] Confirm a farmhouse-amended crop grows faster than a nearby control crop in a live save.
 
 ## Visual Authoring QA
 
@@ -135,6 +137,8 @@ Use [VALIDATION/explosion-policy.md](VALIDATION/explosion-policy.md) when explos
 | 2026-04-27 | Fertile Ash field amendment crop growth | Recovery | Dependency-Light Pass | `git diff --check`, `bash scripts/test.sh`, `bash scripts/build.sh --qa`, `Player.log`, `Fire.log` | Eligible crop growables receive a 10% growth-speed buff from active field amendments; trees and bushes are excluded. Startup logs showed Prometheus loaded with no scanned Prometheus errors. Live farmhouse/farmer application remains owned by P2S-024/P2S-025. |
 | 2026-04-27 | Fertile Ash recovered-good spawn and storage | Recovery | Live Pass | `git diff --check`, `bash scripts/test.sh`, `bash scripts/build.sh --qa`, `Fire.log`, Computer Use | Valid charred Pine aftermath queued native recovered-good stacks at `49,3,7` and `23,4,11`; Computer Use confirmed visible Rubble with `Fertile ash 1`, and District Center storage showed `Fertile ash 7` after beaver pickup. Logs had one de-duplicated soil-moisture sample warning and no scanned recovered-good exception. |
 | 2026-04-27 | Fertile Ash reset telemetry | Recovery | Live Pass | `git diff --check`, `bash scripts/test.sh`, `bash scripts/build.sh --qa`, `Player.log`, `Fire.log`, Computer Use | Ash recovered-good queue telemetry clears through `Reset Fire State` while leaving Timberborn-owned recovered-good entities alone. Live reset logged `fertile_ash_reset_state queuedStacks=0 queuedAmount=0 source=none sourceKind=none damageCategory=none nativeStacksDestroyed=0 reason=native_recovered_good_stack_owned_by_timberborn`, followed by `runtime_reset_registry_completed failures=0`. |
+| 2026-04-27 | Sprint guardrails | Repo | Pass | `git diff --check`, `bash scripts/test.sh` | Guardrails now fail the plain C# suite if internal Markdown ships under `Assets/Mods/Prometheus`, dependency-light compile items drift from `Prometheus.Tests.csproj`, or QA-facing telemetry event tokens disappear from `FireTelemetryEvents.All`. |
+| 2026-04-27 | Fertile Ash farmhouse amendment | Recovery | Blocked | `bash scripts/test.sh`, `bash scripts/build.sh --qa`, copied save fixture | Partial implementation passed 90 tests and built/deployed, but live QA is blocked on loading the copied `Prometheus P2S-025 QA` farmhouse fixture through Timberborn's mod-version warning. Required evidence remains ash consumption, `fertile_ash_farmhouse_amendment_applied`, and faster amended crop growth than a nearby control. |
 | YYYY-MM-DD |  |  | Pass/Fail |  |  |
 
 ## Session Closeout
