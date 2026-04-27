@@ -6,7 +6,7 @@ Last updated: 2026-04-27
 
 Prometheus is moving into the 3D grid fire rewrite. The old entity-neighbor spread and responder-first runtime model has been removed from active source so the new sparse chunked cellular system can land without legacy behavior mixed in.
 
-Phase 2 stabilization is now running from the file board under `docs/stabilization/tickets/`. Wave A, Wave B, and the unblocked Wave C tickets through P2S-012 are integrated; P2S-009 is intentionally blocked until the reset action is exercised in live QA.
+Phase 2 stabilization is now running from the file board under `docs/stabilization/tickets/`. Wave A, Wave B, and Wave C tickets through P2S-012 are integrated and done, including P2S-009 reset-registry live QA.
 
 ## Verified Since Last Checkpoint
 
@@ -46,6 +46,7 @@ Phase 2 stabilization is now running from the file board under `docs/stabilizati
 | 2026-04-26 | P2S-009 live QA attempts | Blocked | Candidate branch reached persistent `LOADING` after the QA save load started, with logs stopping after `Good group Juice has no goods`. Current `main` reached the main menu after `--qa`, proving the readiness gate is startup-only and does not prove save-load completion. Manual `cliclick` and Computer Use input did not activate the visible `Continue` button in the observed run. |
 | 2026-04-26 | `bash scripts/test.sh` + `bash scripts/build.sh --launch` + manual Continue path | Pass | Fixed the current `main` QA-save load lock by removing the global grid `IUpdatableSingleton` and stepping the shared grid coordinator from awakened fire-profiled entities instead. Manual `Return`, `Return`, `Continue`, `Yes` loaded `Prometheus QA - 2026-04-26 18h52m, Day 3-2.autosave` into the settlement; `Player.log` showed `Load time: 11776ms` plus native visual resolution logs and no Prometheus exception. |
 | 2026-04-27 | `bash -n scripts/build.sh` + `bash scripts/build.sh --help` | Pass | Removed the old QA readiness wait and `cliclick` menu automation from `scripts/build.sh`. `--qa` now runs tests, deploys, clears logs, launches Timberborn, and exits for Computer Use navigation. |
+| 2026-04-27 | P2S-009: `git diff --check` + `bash scripts/test.sh` + `bash scripts/build.sh --qa` + Computer Use reset QA | Pass | Reset registry is integrated. The QA save loaded through Computer Use with `Load time: 12000ms`; `Reset Fire State` reported 989 entities and logs recorded `runtime_reset_registry_started`, `runtime_reset_registry_completed failures=0`, and `debug_reset_fire_exposure result=success`. |
 
 ## Durable Context
 
@@ -58,7 +59,8 @@ Phase 2 stabilization is now running from the file board under `docs/stabilizati
 - Current verified Prometheus toolbar coordinates at 1920x1080 can drift by active Timberborn tool groups; prefer screenshot-confirmed clicks before recording live QA evidence.
 - Use Computer Use for in-game QA clicks, screenshots, and menu evidence.
 - The visual authoring tool remains available for `Smoke`, `Ash`, `Steam`, `Fire`, `Sparks`, and `Char`, including selected-entity temporary preview and JSON/log export.
-- `Reset Fire Sim` must clear fire, damage, recovery, preview, and pending debug-ignition state without changing saved design data.
+- `Reset Fire State` is now backed by `FireResetRegistry`: global runtime-state hooks are registered once, while entity reset hooks are discovered from loaded ComponentCache entries only when the reset command runs. Do not hold singleton delegates to transient entity components.
+- `scripts/build.sh` rewrites external build-project Prometheus compile items to point at the active worktree source, avoiding stale sibling-project DLLs during ticket worktree validation.
 - Old bucket-kit, firefighting-foam, fire-control-gear, fireworks-crate, and festival-risk scaffolding has been pruned from active content; Fertile Ash remains the core post-fire resource direction.
 
 Source of truth: current UI labels and telemetry event names should be checked in source rather than copied here.
@@ -70,7 +72,6 @@ Source of truth: current UI labels and telemetry event names should be checked i
 | Sparse 3D grid needs propagation/profile validation | Active | Resource lifecycle now has one live Pine pass; next slice should validate stochastic field ignition from a separate heat source, profile differences, and readable dry-brown feedback on a visible target. |
 | CLI autoload crashes saves after Prometheus startup | Mitigated | Use normal menu loading for live QA. `--qa` launches Timberborn and then hands navigation to Computer Use. |
 | Runtime visuals need reconnection to grid state | Active | Keep authoring tool intact, then map grid fire state into visual rules. |
-| P2S-009 reset registry needs live reset evidence | Blocked | Current `main` can load the QA save through the normal menu again. Rebase or merge the load-lock fix into `codex/P2S-009-add-reset-registry`, retry the same menu path, then click `Reset Fire State`. |
 | Timberborn menu automation map is missing | Active | Create a screenshot-backed map of main menu, Escape menu, in-game toolbar groups, Prometheus group entries, and keyboard controls before assigning more UI-heavy QA work to agents. |
 | Explosion request/apply policy needs broader re-validation | Carryover | Use [VALIDATION/explosion-policy.md](VALIDATION/explosion-policy.md) if gaps reappear. |
 | Worker/building exposure needs Phase 2 live validation | Carryover | Validate after the grid model stabilizes. |
@@ -78,15 +79,7 @@ Source of truth: current UI labels and telemetry event names should be checked i
 
 ## Next Exact Action
 
-Retry P2S-009 reset-registry live QA now that current `main` can load the QA save:
-
-1. Rebase or merge the current `main` load-lock fix into `codex/P2S-009-add-reset-registry`.
-2. Build and launch with `bash scripts/build.sh --launch`.
-3. Drive `Return`, `Return`, `Continue`, `Yes`; confirm `Player.log` reaches `Load time`.
-4. Open `Prometheus` -> `Actions` in the loaded QA save.
-5. Click `Reset Fire State`.
-6. Check `Player.log` and `Fire.log` for reset registry start/completion/failure telemetry and crashes.
-7. If clean, move P2S-009 back through `verify` and `integration`, merge it, rerun checks, and only then proceed to Wave D.
+Start Wave D with P2S-013 through P2S-018 in dependency order. P2S-013 requires live QA after implementation; use `bash scripts/build.sh --qa`, then Computer Use for startup dialogs, save loading, and in-game evidence.
 
 ## Resume Checklist
 
@@ -98,7 +91,7 @@ Retry P2S-009 reset-registry live QA now that current `main` can load the QA sav
 - [ ] Open `Prometheus` -> `Visuals`; confirm Timberborn object selection still works while the panel is open.
 - [ ] Select a Bakery, platform, tree, and berry bush; confirm the Visuals target summary and JSON target kind are readable.
 - [ ] Apply one particle effect and the full preset, then `Clear Preview`; confirm particles and material overrides are removed.
-- [ ] Trigger `Reset Fire Sim`; confirm active visual previews clear without breaking selection behavior.
+- [ ] Trigger `Reset Fire State`; confirm registry telemetry completes with `failures=0`.
 - [ ] Record any new verified behavior here before ending meaningful work.
 
 ## References

@@ -1,6 +1,6 @@
 # P2S-009 Add Reset Registry
 
-Status: integration
+Status: done
 
 Agent level: Medium
 
@@ -61,6 +61,9 @@ Unknowns resolved:
 - The save-load hang was caused by singleton-held reset delegates to transient entity components. The fix keeps global hooks in the singleton registry, but discovers loaded entity hooks at reset time through the component cache.
 - The stale-DLL false pass was caused by the external sibling build project compiling its own `Assets/Mods/Prometheus/Scripts` tree. `scripts/build.sh` now points external-project compile items at the active worktree source.
 
-Remaining verification:
+Integration result:
 
-- Orchestrator should review the diff, then move through `integration` and `done` after merge-order checks pass on `main`.
+- Merged to `main`.
+- Integrated `git diff --check` passed.
+- Integrated `bash scripts/test.sh` passed with 56 tests.
+- Integrated `bash scripts/build.sh --qa` passed with successful compile/deploy and fresh Timberborn launch.

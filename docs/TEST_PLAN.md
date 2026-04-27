@@ -30,7 +30,7 @@ This is the authoritative runbook for active Prometheus validation.
 - [ ] Moddable Tool Groups shows `Prometheus` with `Actions`, `Visuals`, `Selection`, `QA`, and `Log`.
 - [ ] Opening a Prometheus submenu returns Timberborn to normal selection after the panel opens.
 - [ ] Selecting a Prometheus-profiled entity updates the panel.
-- [ ] `Copy`, `Ignite`, `Reset Fire Sim`, `Stop Fires`, `Clear Beavers`, and `Clear Log` are manually QA'd through the current UI.
+- [ ] `Copy`, `Ignite`, `Reset Fire State`, `Stop Fires`, `Clear Beavers`, and `Clear Log` are manually QA'd through the current UI.
 
 ## In-Game QA Channel
 
@@ -54,7 +54,7 @@ Source of truth: exact UI labels and control construction live in the debug UI s
 - [ ] Confirm `Stop Fires` extinguishes active fire.
 - [ ] Drive one building to dead/ash.
 - [ ] Confirm dead/ash does not keep burning.
-- [ ] Click `Reset Fire Sim`.
+- [ ] Click `Reset Fire State`.
 - [ ] Confirm the entity is healthy/functioning again and can be re-ignited.
 
 ## 3D Grid Foundation Validation
@@ -66,7 +66,7 @@ Use this section as the next validation gate once the sparse grid lands.
 | Debug ignition writes grid state | Selected target creates an active grid fire snapshot | Panel screenshot + `Fire.log` |
 | Cooling/decay update | Active cell intensity decreases deterministically | Test output + log sample |
 | 27-direction neighbor pass | Fire pressure can evaluate adjacent cells in 3D | Passing plain C# test |
-| Reset clears grid | `Reset Fire Sim` clears active grid, preview, damage, and recovery state | Panel screenshot + log sample |
+| Reset clears grid | `Reset Fire State` clears active grid, preview, damage, recovery, workplace, beaver, visual, and ash state | Panel screenshot + `runtime_reset_registry_completed failures=0` log sample |
 | Chunk boundary propagation | Fire pressure can cross chunk boundaries without duplicate/missing cells | Passing plain C# test |
 
 ## Visual Authoring QA
@@ -77,7 +77,7 @@ Use this section as the next validation gate once the sparse grid lands.
 - [ ] Apply one effect and the full preset to supported entities.
 - [ ] Change native source/search/preset values and confirm the armed preview updates.
 - [ ] `Clear Preview` removes temporary particles/material overrides.
-- [ ] `Reset Fire Sim` clears active visual previews without changing selection behavior.
+- [ ] `Reset Fire State` clears active visual previews without changing selection behavior.
 - [ ] `Copy JSON` / `Log JSON` include selected target context.
 
 ## Ember/Grid Spread Validation Matrix
@@ -106,7 +106,7 @@ Pass criteria:
 - [ ] Assigned workers inside burning buildings receive intended exposure effects.
 - [ ] Assigned worker exposure does not depend on the worker being physically near the building transform.
 - [ ] Nearby beavers are affected by proximity without colony-wide spillover.
-- [ ] Workers recover after fire pressure clears or `Reset Fire Sim` is used.
+- [ ] Workers recover after fire pressure clears or `Reset Fire State` is used.
 
 ## Explosion Policy
 

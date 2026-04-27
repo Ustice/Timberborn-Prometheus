@@ -16,7 +16,7 @@ Design target: fire should be dangerous enough to matter, manageable with prepar
 - Make fire risk readable in the world, not only in debug panels.
 - Prefer terrain, moisture, firebreaks, and grid shaping over direct beaver-control minigames.
 - Keep gameplay decisions in dependency-light rules/runtime state; keep Unity/Timberborn adapters thin.
-- Make every applied runtime effect define how `Reset Fire Sim` clears it.
+- Make every applied runtime effect define how `Reset Fire State` clears it.
 - Keep fragile integration points centralized: type-name matching, entity identity assumptions, telemetry names, and reflection hooks.
 
 ## Current Architecture Direction
@@ -26,6 +26,7 @@ The active rewrite replaces direct entity-neighbor spread and responder-first as
 | Layer | Owns |
 | --- | --- |
 | Runtime state | Current fire/grid facts, snapshots, and resettable state |
+| Reset registry | Central reset path for global runtime state plus loaded-entity reset hooks discovered at command time |
 | Rules | Dependency-light decisions: propagation, dampening, thresholds, recovery eligibility |
 | Appliers | Translation from runtime decisions into Unity/Timberborn effects |
 | Debug UI | Commands, inspection, evidence capture, in-game QA coordination, and temporary visual authoring |
@@ -89,6 +90,7 @@ In-game QA instructions and tester results use Markdown exchange files under `~/
 ## Phase 2 Acceptance Criteria
 
 - Sparse 3D fire state can ignite, cool, decay, and reset through dependency-light rules.
+- Admin reset remains safe for live Timberborn entities by avoiding singleton-held delegates to transient components.
 - Propagation across neighboring cells is visible, attributable, and tuneable.
 - Moisture, barriers, and firebreaks reduce or block propagation in ways players can read.
 - High-risk configured sources can emit fire pressure; low-risk warm buildings do not by default.
