@@ -1,6 +1,6 @@
 # P2S-014 Add Environment Adapters
 
-Status: in-progress
+Status: integration
 
 Agent level: High
 
