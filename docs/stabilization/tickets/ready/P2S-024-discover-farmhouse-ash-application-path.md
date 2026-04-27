@@ -1,6 +1,6 @@
 # P2S-024 Discover Farmhouse Ash Application Path
 
-Status: todo
+Status: ready
 
 Agent level: High
 
