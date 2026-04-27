@@ -16,6 +16,7 @@ namespace Mods.Prometheus.Scripts {
 
     private FireExposureRuntimeState _fireExposureRuntimeState;
     private FireGridRuntimeState _fireGridRuntimeState;
+    private FireGridSimulationCoordinator _fireGridSimulationCoordinator;
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
     private FireResetRegistry _fireResetRegistry;
     private FireProfile _fireProfile;
@@ -40,10 +41,12 @@ namespace Mods.Prometheus.Scripts {
     public void InjectDependencies(
       FireExposureRuntimeState fireExposureRuntimeState,
       FireGridRuntimeState fireGridRuntimeState,
+      FireGridSimulationCoordinator fireGridSimulationCoordinator,
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
       FireResetRegistry fireResetRegistry) {
       _fireExposureRuntimeState = fireExposureRuntimeState;
       _fireGridRuntimeState = fireGridRuntimeState;
+      _fireGridSimulationCoordinator = fireGridSimulationCoordinator;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
       _fireResetRegistry = fireResetRegistry;
     }
@@ -92,6 +95,7 @@ namespace Mods.Prometheus.Scripts {
         _fireGridRuntimeState.Inject(new FireGridSourceInjection(coordinate, CreateBurningSourceCell(), _ignitionSourceAttribution));
       }
 
+      _fireGridSimulationCoordinator.StepFrame(Time.frameCount);
       PublishSnapshot(entityId, CreateSnapshotFromGrid(entityId, footprint));
     }
 

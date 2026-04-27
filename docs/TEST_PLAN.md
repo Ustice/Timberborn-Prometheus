@@ -88,7 +88,7 @@ Use this section as the next validation gate once the sparse grid lands.
 
 Run across each profile once behavior is coherent.
 
-Current QA caveat: CLI autoload reaches Prometheus startup but crashes Timberborn behavior/navigation ticks, including the clean `Prometheus QA` / `beginning` save. The CLI path calls Timberborn's instant scene loader, while normal menu loading uses the non-instant scene-loader path. Use normal menu loading, or `bash scripts/build.sh --qa` with `cliclick` installed, before treating forest-spread QA as a Prometheus failure.
+Current QA caveat: CLI autoload reaches Prometheus startup but crashes Timberborn behavior/navigation ticks, including the clean `Prometheus QA` / `beginning` save. The CLI path calls Timberborn's instant scene loader, while normal menu loading uses the non-instant scene-loader path. As of 2026-04-26, current `main` loads the latest `Prometheus QA` autosave through `Return`, `Return`, `Continue`, `Yes`; use that normal-menu path before treating forest-spread QA as a Prometheus failure.
 
 | Profile | Dry fuel propagation | Moisture/steam dampening | Firebreak/barrier | High-risk source | Low-risk non-source | Outcome |
 | --- | --- | --- | --- | --- | --- | --- |
