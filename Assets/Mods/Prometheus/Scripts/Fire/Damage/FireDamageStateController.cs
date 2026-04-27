@@ -15,9 +15,6 @@ namespace Mods.Prometheus.Scripts {
     private FireExposureRuntimeState _fireExposureRuntimeState;
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
     private FireTuningRuntimeState _fireTuningRuntimeState;
-    private FireResetRegistry _fireResetRegistry;
-    private FireResetRegistration _resetRegistration = FireResetRegistration.Empty;
-
     private float _timeSinceLastUpdate;
     private FireDamageCategory _category;
     private float _severity;
@@ -29,13 +26,11 @@ namespace Mods.Prometheus.Scripts {
       FireImpactRuntimeState fireImpactRuntimeState,
       FireExposureRuntimeState fireExposureRuntimeState,
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
-      FireTuningRuntimeState fireTuningRuntimeState,
-      FireResetRegistry fireResetRegistry) {
+      FireTuningRuntimeState fireTuningRuntimeState) {
       _fireImpactRuntimeState = fireImpactRuntimeState;
       _fireExposureRuntimeState = fireExposureRuntimeState;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
       _fireTuningRuntimeState = fireTuningRuntimeState;
-      _fireResetRegistry = fireResetRegistry;
     }
 
     public void Awake() {
@@ -43,7 +38,6 @@ namespace Mods.Prometheus.Scripts {
     }
 
     public void Update() {
-      EnsureResetRegistration();
       if (!TickGate.ShouldRun(ref _timeSinceLastUpdate, UpdateIntervalInSeconds)) {
         return;
       }
@@ -102,22 +96,6 @@ namespace Mods.Prometheus.Scripts {
       _fireDamageStateRuntimeState.SetSnapshot(
         entityId,
         new FireDamageStateSnapshot(_category, FireDamageState.Healthy, 0f, 0f, 0));
-    }
-
-    private void OnDestroy() {
-      _resetRegistration.Dispose();
-    }
-
-    private void EnsureResetRegistration() {
-      if (_resetRegistration != FireResetRegistration.Empty) {
-        return;
-      }
-
-      _resetRegistration = _fireResetRegistry.RegisterEntity(
-        GameObject.GetInstanceID(),
-        FireResetHookKind.DamageState,
-        nameof(FireDamageStateController),
-        DebugResetDamageStateToHealthy);
     }
 
     private static float GetTickRate(FireDamageCategory category) {

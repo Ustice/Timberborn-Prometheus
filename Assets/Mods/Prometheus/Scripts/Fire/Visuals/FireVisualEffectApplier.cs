@@ -20,8 +20,6 @@ namespace Mods.Prometheus.Scripts {
     private FireExposureRuntimeState _fireExposureRuntimeState;
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
     private FireVisualEffectRuntimeState _fireVisualEffectRuntimeState;
-    private FireResetRegistry _fireResetRegistry;
-    private FireResetRegistration _resetRegistration = FireResetRegistration.Empty;
 
     private readonly List<RendererPropertyBlockState> _rendererStates = new();
     private ParticleEffectGroup _emberEffect;
@@ -37,12 +35,10 @@ namespace Mods.Prometheus.Scripts {
     public void InjectDependencies(
       FireExposureRuntimeState fireExposureRuntimeState,
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
-      FireVisualEffectRuntimeState fireVisualEffectRuntimeState,
-      FireResetRegistry fireResetRegistry) {
+      FireVisualEffectRuntimeState fireVisualEffectRuntimeState) {
       _fireExposureRuntimeState = fireExposureRuntimeState;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
       _fireVisualEffectRuntimeState = fireVisualEffectRuntimeState;
-      _fireResetRegistry = fireResetRegistry;
     }
 
     public void Awake() {
@@ -52,7 +48,6 @@ namespace Mods.Prometheus.Scripts {
     }
 
     public void Update() {
-      EnsureResetRegistration();
       if (!TickGate.ShouldRun(ref _timeSinceLastUpdate, UpdateIntervalInSeconds)) {
         return;
       }
@@ -85,22 +80,6 @@ namespace Mods.Prometheus.Scripts {
       _fireEffect?.ApplyIntensity(0f, 0.45f, 1.0f, tuning.EffectSize);
       _steamEffect?.ApplyIntensity(0f, 0.9f, 2.0f, tuning.EffectSize);
       ApplySurfaceTint(0f, 0f);
-    }
-
-    private void OnDestroy() {
-      _resetRegistration.Dispose();
-    }
-
-    private void EnsureResetRegistration() {
-      if (_resetRegistration != FireResetRegistration.Empty) {
-        return;
-      }
-
-      _resetRegistration = _fireResetRegistry.RegisterEntity(
-        GameObject.GetInstanceID(),
-        FireResetHookKind.VisualEffect,
-        nameof(FireVisualEffectApplier),
-        DebugResetVisualEffects);
     }
 
     private void CaptureRenderers() {

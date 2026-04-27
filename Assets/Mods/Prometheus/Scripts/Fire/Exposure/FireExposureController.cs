@@ -18,9 +18,7 @@ namespace Mods.Prometheus.Scripts {
     private FireGridRuntimeState _fireGridRuntimeState;
     private FireGridSimulationCoordinator _fireGridSimulationCoordinator;
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
-    private FireResetRegistry _fireResetRegistry;
     private FireProfile _fireProfile;
-    private FireResetRegistration _resetRegistration = FireResetRegistration.Empty;
     private float _remainingFuel = -1f;
     private float _remainingMoisture = -1f;
     private float _timeSinceLastUpdate;
@@ -42,13 +40,11 @@ namespace Mods.Prometheus.Scripts {
       FireExposureRuntimeState fireExposureRuntimeState,
       FireGridRuntimeState fireGridRuntimeState,
       FireGridSimulationCoordinator fireGridSimulationCoordinator,
-      FireDamageStateRuntimeState fireDamageStateRuntimeState,
-      FireResetRegistry fireResetRegistry) {
+      FireDamageStateRuntimeState fireDamageStateRuntimeState) {
       _fireExposureRuntimeState = fireExposureRuntimeState;
       _fireGridRuntimeState = fireGridRuntimeState;
       _fireGridSimulationCoordinator = fireGridSimulationCoordinator;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
-      _fireResetRegistry = fireResetRegistry;
     }
 
     public void Awake() {
@@ -58,7 +54,6 @@ namespace Mods.Prometheus.Scripts {
     }
 
     public void Update() {
-      EnsureResetRegistration();
       _fireExposureRuntimeState.TickIgnitionBlock(Time.deltaTime);
       if (!TickGate.ShouldRun(ref _timeSinceLastUpdate, UpdateIntervalInSeconds)) {
         return;
@@ -121,22 +116,6 @@ namespace Mods.Prometheus.Scripts {
       _isBurnedOut = false;
       _wasBurning = false;
       _ignitionSourceAttribution = FireSourceAttribution.Unknown;
-    }
-
-    private void OnDestroy() {
-      _resetRegistration.Dispose();
-    }
-
-    private void EnsureResetRegistration() {
-      if (_resetRegistration != FireResetRegistration.Empty) {
-        return;
-      }
-
-      _resetRegistration = _fireResetRegistry.RegisterEntity(
-        GameObject.GetInstanceID(),
-        FireResetHookKind.SourceState,
-        nameof(FireExposureController),
-        DebugResetFireExposureState);
     }
 
     private FireExposureSnapshot CreateSnapshotFromGrid(int entityId, FireGridFootprint footprint) {

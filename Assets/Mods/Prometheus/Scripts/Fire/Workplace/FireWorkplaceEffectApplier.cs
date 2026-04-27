@@ -12,8 +12,6 @@ namespace Mods.Prometheus.Scripts {
 
     private FireImpactRuntimeState _fireImpactRuntimeState;
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
-    private FireResetRegistry _fireResetRegistry;
-    private FireResetRegistration _resetRegistration = FireResetRegistration.Empty;
     private float _timeSinceLastUpdate;
     private Workplace _workplace;
     private readonly List<Behaviour> _workplaceSupportBehaviours = new();
@@ -33,15 +31,12 @@ namespace Mods.Prometheus.Scripts {
     [Inject]
     public void InjectDependencies(
       FireImpactRuntimeState fireImpactRuntimeState,
-      FireDamageStateRuntimeState fireDamageStateRuntimeState,
-      FireResetRegistry fireResetRegistry) {
+      FireDamageStateRuntimeState fireDamageStateRuntimeState) {
       _fireImpactRuntimeState = fireImpactRuntimeState;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
-      _fireResetRegistry = fireResetRegistry;
     }
 
     public void Update() {
-      EnsureResetRegistration();
       if (!TickGate.ShouldRun(ref _timeSinceLastUpdate, UpdateIntervalInSeconds)) {
         return;
       }
@@ -101,22 +96,6 @@ namespace Mods.Prometheus.Scripts {
       _lastLoggedPenaltyDelta = float.NaN;
       _lastLoggedAssignedWorkerCount = -1;
       _lastLoggedIndoorExposedWorkerCount = -1;
-    }
-
-    private void OnDestroy() {
-      _resetRegistration.Dispose();
-    }
-
-    private void EnsureResetRegistration() {
-      if (_resetRegistration != FireResetRegistration.Empty) {
-        return;
-      }
-
-      _resetRegistration = _fireResetRegistry.RegisterEntity(
-        GameObject.GetInstanceID(),
-        FireResetHookKind.WorkplaceEffect,
-        nameof(FireWorkplaceEffectApplier),
-        DebugResetFireEffects);
     }
 
     private void EnsureWorkplaceBound() {

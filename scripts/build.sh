@@ -126,23 +126,55 @@ compile_if_possible() {
 }
 
 sync_prometheus_compile_items() {
+  prune_non_current_prometheus_compile_items
   add_missing_prometheus_compile_items
   prune_stale_prometheus_compile_items
   prune_stale_external_mod_references
   add_missing_external_mod_references
 }
 
+relative_to_build_project() {
+  perl -MFile::Spec -e 'print File::Spec->abs2rel($ARGV[0], $ARGV[1])' "$1" "$BUILD_PROJECT_DIR"
+}
+
+prometheus_compile_items() {
+  grep -Eo '[^"]*Assets/Mods/Prometheus/Scripts/[^"]*\.cs' "$PROJECT_CSPROJ" | sort -u
+}
+
+remove_prometheus_compile_item() {
+  local include_path="$1"
+  perl -0pi -e "s#\\s*<Compile Include=\"\\Q$include_path\\E\" />##g" "$PROJECT_CSPROJ"
+}
+
+prune_non_current_prometheus_compile_items() {
+  local current_scripts_prefix
+  current_scripts_prefix="$(relative_to_build_project "$SRC_MOD_DIR/Scripts")/"
+
+  local include_path
+  while IFS= read -r include_path; do
+    if [[ -z "$include_path" ]]; then
+      continue
+    fi
+
+    if [[ "$include_path" == "$current_scripts_prefix"* ]]; then
+      continue
+    fi
+
+    remove_prometheus_compile_item "$include_path"
+  done < <(prometheus_compile_items)
+}
+
 add_missing_prometheus_compile_items() {
   local source_file
   while IFS= read -r source_file; do
     local relative_source
-    relative_source="${source_file#$BUILD_PROJECT_DIR/}"
+    relative_source="$(relative_to_build_project "$source_file")"
     if grep -Fq "<Compile Include=\"$relative_source\" />" "$PROJECT_CSPROJ"; then
       continue
     fi
 
     perl -0pi -e "s#(\\s*</ItemGroup>\\s*<ItemGroup>\\s*<None Include=\"Assets/Mods/Prometheus/Scripts/Timberborn\\.ModExamples\\.Prometheus\\.asmdef\")#    <Compile Include=\"$relative_source\" />\\n\\1#" "$PROJECT_CSPROJ"
-  done < <(find "$BUILD_PROJECT_DIR/Assets/Mods/Prometheus/Scripts" -type f -name '*.cs' | sort)
+  done < <(find "$SRC_MOD_DIR/Scripts" -type f -name '*.cs' | sort)
 }
 
 prune_stale_prometheus_compile_items() {
@@ -156,8 +188,8 @@ prune_stale_prometheus_compile_items() {
       continue
     fi
 
-    perl -0pi -e "s#\\s*<Compile Include=\"\\Q$relative_source\\E\" />##g" "$PROJECT_CSPROJ"
-  done < <(grep -o 'Assets/Mods/Prometheus/Scripts/[^"]*\.cs' "$PROJECT_CSPROJ" | sort -u)
+    remove_prometheus_compile_item "$relative_source"
+  done < <(prometheus_compile_items)
 }
 
 prune_stale_external_mod_references() {

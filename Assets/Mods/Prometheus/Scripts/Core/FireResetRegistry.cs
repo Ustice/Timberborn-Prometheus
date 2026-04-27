@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+#if !PROMETHEUS_TESTS
+using Timberborn.BaseComponentSystem;
+#endif
 using UnityEngine;
 
 namespace Mods.Prometheus.Scripts {
@@ -37,6 +40,9 @@ namespace Mods.Prometheus.Scripts {
       RegisterGlobal(FireResetHookKind.DamageState, nameof(FireDamageStateRuntimeState), fireDamageStateRuntimeState.ClearSnapshots);
       RegisterGlobal(FireResetHookKind.AshState, nameof(FireRecoveryRuntimeState), fireRecoveryRuntimeState.ClearSnapshots);
       RegisterGlobal(FireResetHookKind.PreviewState, nameof(FireVisualEffectPreviewRuntimeState), fireVisualEffectPreviewRuntimeState.ClearAllPreviews);
+#if !PROMETHEUS_TESTS
+      RegisterGlobal(FireResetHookKind.BeaverEffect, nameof(FireBeaverEffectApplier), () => FireBeaverEffectApplier.DebugClearFireNeedEffects());
+#endif
     }
 
     public FireResetRegistration RegisterGlobal(FireResetHookKind kind, string owner, Action reset) {
@@ -62,12 +68,16 @@ namespace Mods.Prometheus.Scripts {
 
     public FireResetRegistryResult ResetAll(string reason) {
       var globalHooks = _globalHooks.ToArray();
-      var entityHooks = _entityHooksByEntityId
-        .SelectMany(pair => pair.Value)
+      var entityHooks = CreateLoadedEntityHooks()
+        .Concat(_entityHooksByEntityId.SelectMany(pair => pair.Value))
         .ToArray();
       var hooks = globalHooks.Concat(entityHooks).ToArray();
 
-      var entityCount = _entityHooksByEntityId.Count;
+      var entityCount = entityHooks
+        .Where(hook => hook.EntityId != 0)
+        .Select(hook => hook.EntityId)
+        .Distinct()
+        .Count();
       FireTelemetry.Log($"event={FireTelemetryEvents.RuntimeResetRegistryStarted} reason={reason} globalHooks={globalHooks.Length} entityHooks={entityHooks.Length} entities={entityCount}");
 
       var failures = 0;
@@ -91,6 +101,48 @@ namespace Mods.Prometheus.Scripts {
 
     private FireResetHook CreateHook(FireResetHookKind kind, int entityId, string owner, Action reset) =>
       new(++_nextRegistrationId, kind, entityId, string.IsNullOrWhiteSpace(owner) ? "unknown" : owner, reset);
+
+    private IEnumerable<FireResetHook> CreateLoadedEntityHooks() {
+#if PROMETHEUS_TESTS
+      return Array.Empty<FireResetHook>();
+#else
+      foreach (var gameObject in TimberbornComponentCacheLookup.FindLoadedPrometheusFireEntityGameObjects()) {
+        var componentCache = gameObject.GetComponent<ComponentCache>();
+        if (componentCache is null) {
+          continue;
+        }
+
+        var entityId = gameObject.GetInstanceID();
+        if (componentCache.TryGetCachedComponent<FireExposureController>(out var fireExposureController)) {
+          yield return CreateHook(FireResetHookKind.SourceState, entityId, nameof(FireExposureController), fireExposureController.DebugResetFireExposureState);
+        }
+
+        if (componentCache.TryGetCachedComponent<FireDamageStateController>(out var fireDamageStateController)) {
+          yield return CreateHook(FireResetHookKind.DamageState, entityId, nameof(FireDamageStateController), fireDamageStateController.DebugResetDamageStateToHealthy);
+        }
+
+        if (componentCache.TryGetCachedComponent<FireDamageEffectApplier>(out var fireDamageEffectApplier)) {
+          yield return CreateHook(FireResetHookKind.DamageEffect, entityId, nameof(FireDamageEffectApplier), fireDamageEffectApplier.DebugRestoreHealthyState);
+        }
+
+        if (componentCache.TryGetCachedComponent<FireWorkplaceEffectApplier>(out var fireWorkplaceEffectApplier)) {
+          yield return CreateHook(FireResetHookKind.WorkplaceEffect, entityId, nameof(FireWorkplaceEffectApplier), fireWorkplaceEffectApplier.DebugResetFireEffects);
+        }
+
+        if (componentCache.TryGetCachedComponent<FireRecoveryController>(out var fireRecoveryController)) {
+          yield return CreateHook(FireResetHookKind.RecoveryState, entityId, nameof(FireRecoveryController), fireRecoveryController.DebugResetRecoveryState);
+        }
+
+        if (componentCache.TryGetCachedComponent<FireRecoveryEffectApplier>(out var fireRecoveryEffectApplier)) {
+          yield return CreateHook(FireResetHookKind.RecoveryEffect, entityId, nameof(FireRecoveryEffectApplier), fireRecoveryEffectApplier.DebugRestoreBaseRecoveryEffects);
+        }
+
+        if (componentCache.TryGetCachedComponent<FireVisualEffectApplier>(out var fireVisualEffectApplier)) {
+          yield return CreateHook(FireResetHookKind.VisualEffect, entityId, nameof(FireVisualEffectApplier), fireVisualEffectApplier.DebugResetVisualEffects);
+        }
+      }
+#endif
+    }
 
     private void UnregisterEntityHook(int entityId, FireResetHook hook) {
       if (!_entityHooksByEntityId.TryGetValue(entityId, out var hooks)) {
