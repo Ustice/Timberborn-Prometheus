@@ -15,6 +15,7 @@ LAUNCH_DELAY_SECONDS="${LAUNCH_DELAY_SECONDS:-15}"
 DEFAULT_TIMBERBORN_APP_ID="1062090"
 DEFAULT_PLAYER_LOG_PATH="$HOME/Library/Logs/Mechanistry/Timberborn/Player.log"
 DEFAULT_FIRE_LOG_PATH="$HOME/Library/Logs/Mechanistry/Timberborn/Fire.log"
+DEFAULT_LOCK_ROOT_DIR="$HOME/Library/Application Support/Timberborn/PrometheusQA/locks"
 BUILD_CONFIGURATION="${BUILD_CONFIGURATION:-Debug}"
 DEFAULT_BUILD_PROJECT_DIR="$ROOT_DIR"
 if [[ -d "$ROOT_DIR/../timberborn-modding" ]]; then
@@ -34,10 +35,18 @@ BACKUP_ROOT_DIR="$ROOT_DIR/.backups"
 BACKUP_DIR="$BACKUP_ROOT_DIR/$MOD_NAME"
 PLAYER_LOG_PATH="${TIMBERBORN_PLAYER_LOG_PATH:-$DEFAULT_PLAYER_LOG_PATH}"
 FIRE_LOG_PATH="${TIMBERBORN_FIRE_LOG_PATH:-$DEFAULT_FIRE_LOG_PATH}"
+BUILD_LOCK_ENABLED="${PROMETHEUS_BUILD_LOCK:-1}"
+BUILD_LOCK_ROOT_DIR="${PROMETHEUS_BUILD_LOCK_ROOT_DIR:-$DEFAULT_LOCK_ROOT_DIR}"
+BUILD_LOCK_DIR="$BUILD_LOCK_ROOT_DIR/build-qa.lock"
+BUILD_LOCK_TIMEOUT_SECONDS="${PROMETHEUS_BUILD_LOCK_TIMEOUT_SECONDS:-3600}"
+BUILD_LOCK_POLL_SECONDS="${PROMETHEUS_BUILD_LOCK_POLL_SECONDS:-5}"
+BUILD_LOCK_RELEASE_ON_EXIT=true
+ORIGINAL_COMMAND="$*"
 
 usage() {
   cat <<'USAGE'
 Usage: bash scripts/build.sh [--test] [--launch] [--qa]
+       bash scripts/build.sh --release-qa-lock
 
 Options:
   --test        Run the fast plain C# regression suite before build/deploy.
@@ -48,6 +57,9 @@ Options:
   --qa          Run tests, build/deploy, clear logs, and launch Timberborn.
                 Use Computer Use for startup dialogs and live QA navigation.
                 Implies --test and --launch.
+  --release-qa-lock
+                Release the persistent QA session lock after live QA evidence
+                capture is complete.
 
 Common combos:
   bash scripts/build.sh                  # build + deploy
@@ -72,7 +84,151 @@ QA model:
     in-game QA actions.
   - Launch workflows wait LAUNCH_DELAY_SECONDS (default: 15) after clearing
     logs before asking Steam to start Timberborn.
+
+Locking model:
+  - Build/deploy/launch workflows use a shared lock at:
+    $BUILD_LOCK_DIR
+  - A second agent waits until the active build/QA run exits.
+  - In --qa mode, the lock remains held after launch so another worker cannot
+    stop Timberborn or clear logs during live QA. Release it with:
+    bash scripts/build.sh --release-qa-lock
+  - Set PROMETHEUS_BUILD_LOCK=0 only for isolated local debugging.
 USAGE
+}
+
+current_git_branch() {
+  git -C "$ROOT_DIR" branch --show-current 2>/dev/null || echo "(unknown)"
+}
+
+lock_owner_pid() {
+  if [[ -f "$BUILD_LOCK_DIR/pid" ]]; then
+    tr -d '[:space:]' < "$BUILD_LOCK_DIR/pid" || true
+  fi
+}
+
+lock_owner_is_running() {
+  if [[ -f "$BUILD_LOCK_DIR/mode" ]] && grep -qx "qa-session" "$BUILD_LOCK_DIR/mode"; then
+    return 0
+  fi
+
+  local owner_pid
+  owner_pid="$(lock_owner_pid)"
+
+  [[ "$owner_pid" =~ ^[0-9]+$ ]] || return 1
+  kill -0 "$owner_pid" >/dev/null 2>&1
+}
+
+describe_lock_owner() {
+  if [[ -f "$BUILD_LOCK_DIR/owner" ]]; then
+    sed 's/^/[build]   /' "$BUILD_LOCK_DIR/owner"
+  else
+    echo "[build]   owner metadata unavailable"
+  fi
+}
+
+acquire_build_lock() {
+  if [[ "$BUILD_LOCK_ENABLED" == "0" ]]; then
+    echo "[build] Shared build/QA lock disabled (PROMETHEUS_BUILD_LOCK=0)."
+    return 0
+  fi
+
+  mkdir -p "$BUILD_LOCK_ROOT_DIR"
+
+  local start_epoch
+  start_epoch="$(date +%s)"
+
+  while true; do
+    if mkdir "$BUILD_LOCK_DIR" 2>/dev/null; then
+      {
+        echo "mode=build-run"
+        echo "pid=$$"
+        echo "started=$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+        echo "cwd=$ROOT_DIR"
+        echo "branch=$(current_git_branch)"
+        echo "command=bash scripts/build.sh $ORIGINAL_COMMAND"
+      } > "$BUILD_LOCK_DIR/owner"
+      echo "build-run" > "$BUILD_LOCK_DIR/mode"
+      echo "$$" > "$BUILD_LOCK_DIR/pid"
+      trap release_build_lock EXIT
+      echo "[build] Acquired shared build/QA lock: $BUILD_LOCK_DIR"
+      return 0
+    fi
+
+    if ! lock_owner_is_running; then
+      echo "[build] Removing stale build/QA lock: $BUILD_LOCK_DIR"
+      describe_lock_owner || true
+      rm -rf "$BUILD_LOCK_DIR"
+      continue
+    fi
+
+    local now_epoch
+    now_epoch="$(date +%s)"
+    local elapsed=$(( now_epoch - start_epoch ))
+    if (( elapsed >= BUILD_LOCK_TIMEOUT_SECONDS )); then
+      echo "[build] Timed out after ${BUILD_LOCK_TIMEOUT_SECONDS}s waiting for build/QA lock." >&2
+      describe_lock_owner >&2 || true
+      return 1
+    fi
+
+    echo "[build] Waiting for another build/QA run to finish..."
+    describe_lock_owner || true
+    sleep "$BUILD_LOCK_POLL_SECONDS"
+  done
+}
+
+release_build_lock() {
+  if [[ "$BUILD_LOCK_ENABLED" == "0" ]]; then
+    return 0
+  fi
+
+  if [[ "$BUILD_LOCK_RELEASE_ON_EXIT" != "true" ]]; then
+    return 0
+  fi
+
+  local owner_pid
+  owner_pid="$(lock_owner_pid)"
+  if [[ "$owner_pid" == "$$" ]]; then
+    rm -rf "$BUILD_LOCK_DIR"
+    echo "[build] Released shared build/QA lock."
+  fi
+}
+
+hold_qa_lock_after_launch() {
+  if [[ "$BUILD_LOCK_ENABLED" == "0" ]]; then
+    return 0
+  fi
+
+  {
+    echo "mode=qa-session"
+    echo "pid=$$"
+    echo "started=$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+    echo "cwd=$ROOT_DIR"
+    echo "branch=$(current_git_branch)"
+    echo "command=bash scripts/build.sh $ORIGINAL_COMMAND"
+    echo "release=bash scripts/build.sh --release-qa-lock"
+  } > "$BUILD_LOCK_DIR/owner"
+  echo "qa-session" > "$BUILD_LOCK_DIR/mode"
+  BUILD_LOCK_RELEASE_ON_EXIT=false
+
+  echo "[qa] Shared QA lock remains held for live evidence capture."
+  echo "[qa] Release it when QA is complete: bash scripts/build.sh --release-qa-lock"
+}
+
+release_qa_lock() {
+  if [[ ! -d "$BUILD_LOCK_DIR" ]]; then
+    echo "[build] No shared build/QA lock is currently held."
+    exit 0
+  fi
+
+  if [[ -f "$BUILD_LOCK_DIR/mode" ]] && grep -qx "qa-session" "$BUILD_LOCK_DIR/mode"; then
+    rm -rf "$BUILD_LOCK_DIR"
+    echo "[build] Released shared QA session lock."
+    exit 0
+  fi
+
+  echo "[build] Refusing to release active non-QA build lock:" >&2
+  describe_lock_owner >&2 || true
+  exit 1
 }
 
 run_tests_if_requested() {
@@ -617,6 +773,9 @@ while [[ $# -gt 0 ]]; do
       LAUNCH_AFTER_BUILD=true
       shift
       ;;
+    --release-qa-lock)
+      release_qa_lock
+      ;;
     -h|--help)
       usage
       exit 0
@@ -633,6 +792,8 @@ if [[ "$LAUNCH_AFTER_BUILD" == "true" ]]; then
   STOP_RUNNING_BEFORE_BUILD=true
   WAIT_FOR_BUILD=true
 fi
+
+acquire_build_lock
 
 run_tests_if_requested
 
@@ -695,6 +856,7 @@ if [[ "$LAUNCH_AFTER_BUILD" == "true" ]]; then
   sleep "$LAUNCH_DELAY_SECONDS"
   launch_timberborn
   if [[ "$QA_MODE" == "true" ]]; then
+    hold_qa_lock_after_launch
     echo "[qa] launched: use Computer Use for startup dialogs, menu loading, and in-game QA."
   fi
 fi

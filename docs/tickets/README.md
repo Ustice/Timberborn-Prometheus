@@ -69,12 +69,15 @@ State the user-facing or engineering outcome.
 - Review the diff before integration.
 - Integrate accepted work in dependency order.
 - Remove worktrees after their work is merged into `main`.
+- Use `scripts/build.sh` for build, deploy, launch, and QA flows so the shared build/QA lock serializes work across sibling worktrees.
 - Keep `docs/HANDOFF.md`, `docs/DESIGN.md`, and `docs/TEST_PLAN.md` current when verified behavior, durable design, or validation state changes.
 
 ## Verification Rules
 
 - For code, content, script, or behavior tickets, run `git diff --check` and `bash scripts/test.sh` before integration.
 - Run `bash scripts/build.sh --qa` when a ticket changes runtime behavior, live-game integration, deploy behavior, or explicitly requires QA.
+- Build/deploy/launch/QA runs are serialized by `scripts/build.sh` using a shared lock under `~/Library/Application Support/Timberborn/PrometheusQA/locks`. If another agent owns the lock, wait for the script instead of bypassing it.
+- `bash scripts/build.sh --qa` keeps the lock after launch so another worker cannot stop Timberborn or clear logs during live evidence capture. Release it with `bash scripts/build.sh --release-qa-lock` after QA is complete.
 - Documentation-only tickets do not need runtime verification steps. If `doc_only: true` and the diff only changes documentation, skip `bash scripts/test.sh`, `bash scripts/build.sh`, and `bash scripts/build.sh --qa`.
 - For documentation-only tickets, still verify that claims point to the right source of truth. Run `git diff --check` when practical.
 

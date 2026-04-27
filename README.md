@@ -12,6 +12,8 @@ This repository contains the standalone Prometheus Timberborn mod assets, local 
 
 Source of truth: run `bash scripts/build.sh --help` for current build/deploy behavior.
 
+`scripts/build.sh` uses a shared build/QA lock across worktrees so concurrent agents wait before deploying, clearing logs, stopping Timberborn, or launching QA. `--qa` keeps the lock after launch until QA is complete; release it with `bash scripts/build.sh --release-qa-lock`.
+
 ## Documentation
 
 | Need | Read |

@@ -30,6 +30,8 @@ Use these instructions for every Prometheus ticket worker unless the ticket says
 - Run `git diff --check`.
 - Run `bash scripts/test.sh` for code, content, script, or behavior changes.
 - Run `bash scripts/build.sh --qa` only when the ticket or board requires live QA.
+- Use `scripts/build.sh` for build/deploy/launch/QA work. It owns the shared lock that prevents two worktrees from deploying, clearing logs, stopping Timberborn, or launching QA at the same time.
+- After `bash scripts/build.sh --qa`, keep the lock while Computer Use or manual QA captures evidence. Run `bash scripts/build.sh --release-qa-lock` when QA is complete.
 - Skip runtime verification for documentation-only tickets marked `doc_only: true` when the diff only changes documentation.
 - Capture log or QA evidence when behavior, runtime integration, or live-game state changes.
 - Follow `AGENTS.md` Markdown style for documentation changes.

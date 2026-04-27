@@ -18,6 +18,8 @@ This is the authoritative runbook for active Prometheus validation.
 - [ ] Run `bash scripts/test.sh`.
 - [ ] Run `bash scripts/build.sh --launch` for in-game QA.
 - [ ] Prefer `bash scripts/build.sh --qa` when you want tests, deployment, cleared logs, and a fresh Timberborn launch before Computer Use navigation.
+- [ ] Let `scripts/build.sh` acquire the shared build/QA lock before deploy or launch work; do not bypass the script when another worktree is running build or QA.
+- [ ] After `bash scripts/build.sh --qa`, release the persistent QA lock with `bash scripts/build.sh --release-qa-lock` once live evidence capture is complete.
 - [ ] If Steam or Timberborn is slow after deployment, tune `LAUNCH_DELAY_SECONDS`; the default is 15 seconds.
 - [ ] Use normal menu loading for live QA; CLI `-settlementName "<settlement>" -saveName "<save without .timber>"` uses Timberborn's instant scene-load path and currently crashes after Prometheus startup.
 - [ ] Confirm Timberborn launches with Prometheus enabled.
