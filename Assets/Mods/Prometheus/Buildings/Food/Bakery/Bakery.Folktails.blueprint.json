@@ -11,10 +11,5 @@
     "SmokeSourceIntensity": 0.0,
     "SourceRadius": 1.0,
     "RequiresOperation": false
-  },
-  "ManufactorySpec": {
-    "ProductionRecipeIds#append": [
-      "BerryBun"
-    ]
   }
 }

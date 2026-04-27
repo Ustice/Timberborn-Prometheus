@@ -12,6 +12,7 @@ Phase 2 stabilization is running from the file board under `docs/stabilization/t
 
 | Date | Command / Evidence | Result | Notes |
 | --- | --- | --- | --- |
+| 2026-04-27 | Example food-chain cleanup: reference scan, JSON parse scan, `bash scripts/test.sh`, `bash scripts/build.sh` | Pass | Removed leftover example goods, need, recipes, icons, dedicated stove building registration/assets, localization rows, and bakery recipe append. Plain C# suite passed 89 tests and build/deploy completed. |
 | 2026-04-25 | `bash scripts/test.sh && bash scripts/build.sh --launch` | Pass | Removal pass launched Timberborn successfully. |
 | 2026-04-25 | Source inspection and build | Pass | Direct spread registry, spread ignition queue, dispatch scoring store, water context probe/store, legacy suppression applier/store, response-state labels, and floating `FIRE`/`DEAD` markers are out of active source. |
 | 2026-04-25 | Blueprint update | Pass | Blueprint components now use neutral `FireProfileSpec` data. |

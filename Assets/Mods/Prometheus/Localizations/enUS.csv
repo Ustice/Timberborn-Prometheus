@@ -1,11 +1,4 @@
 ID,Text,Comment
-Building.JamStove.DisplayName,Jam Stove,
-Building.JamStove.Description,Boils berries into jam for further processing.,
-Building.JamStove.FlavorDescription,"The pot had to be closed up after too many sweet-toothed beavers have been tempted by the delicious jam.",
-Good.BerryBun.DisplayName,Berry buns,
-Good.BerryBun.PluralDisplayName,Berry buns,
-Good.BerryJam.DisplayName,Berry jam,
-Good.BerryJam.PluralDisplayName,Berry jam,
 Good.FertileAsh.DisplayName,Fertile ash,
 Good.FertileAsh.PluralDisplayName,Fertile ash,
 Need.HeatStress.DisplayName,Heat stress,
