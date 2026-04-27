@@ -23,8 +23,10 @@ namespace Mods.Prometheus.Scripts {
     }
 
     public void Awake() {
-      _growable = GameObject.GetComponent("Growable");
-      if (_growable is null) {
+      if (!TimberbornComponentCacheLookup.TryGetCachedOrDirectComponentByTypeName(
+        GameObject,
+        TimberbornCompatibility.GrowableTypeName,
+        out _growable)) {
         return;
       }
 

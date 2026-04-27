@@ -99,8 +99,10 @@ namespace Mods.Prometheus.Scripts {
     }
 
     private void BindTargetComponents() {
-      var deteriorableComponent = GameObject.GetComponent("Deteriorable");
-      if (deteriorableComponent is not null) {
+      if (TimberbornComponentCacheLookup.TryGetCachedOrDirectComponentByTypeName(
+        GameObject,
+        TimberbornCompatibility.DeteriorableTypeName,
+        out var deteriorableComponent)) {
         _deteriorableComponent = deteriorableComponent;
         var type = deteriorableComponent.GetType();
         _setDeteriorationToMaximumMethod = TimberbornCompatibility.FindMethod(type, "SetDeteriorationToMaximum");
@@ -111,8 +113,10 @@ namespace Mods.Prometheus.Scripts {
           "Deteriorable.SetDeteriorationToMaximum/SetDeteriorationToZero");
       }
 
-      var growableComponent = GameObject.GetComponent("Growable");
-      if (growableComponent is not null) {
+      if (TimberbornComponentCacheLookup.TryGetCachedOrDirectComponentByTypeName(
+        GameObject,
+        TimberbornCompatibility.GrowableTypeName,
+        out var growableComponent)) {
         _growableComponent = growableComponent;
         var type = growableComponent.GetType();
         _pauseGrowingMethod = TimberbornCompatibility.FindMethod(type, "PauseGrowing");
@@ -124,8 +128,10 @@ namespace Mods.Prometheus.Scripts {
           "Growable.PauseGrowing/ResumeGrowing/Remove");
       }
 
-      var livingNaturalResourceComponent = GameObject.GetComponent("LivingNaturalResource");
-      if (livingNaturalResourceComponent is not null) {
+      if (TimberbornComponentCacheLookup.TryGetCachedOrDirectComponentByTypeName(
+        GameObject,
+        TimberbornCompatibility.LivingNaturalResourceTypeName,
+        out var livingNaturalResourceComponent)) {
         _livingNaturalResourceComponent = livingNaturalResourceComponent;
         var type = livingNaturalResourceComponent.GetType();
         _isDyingProperty = TimberbornCompatibility.FindProperty(type, "IsDying");

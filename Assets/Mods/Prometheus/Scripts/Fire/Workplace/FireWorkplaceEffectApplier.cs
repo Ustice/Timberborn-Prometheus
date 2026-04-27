@@ -83,15 +83,8 @@ namespace Mods.Prometheus.Scripts {
         return;
       }
 
-      var componentCache = GameObject.GetComponent<ComponentCache>();
-      if (componentCache is not null && componentCache.TryGetCachedComponent<Workplace>(out var cachedWorkplace)) {
-        _workplace = cachedWorkplace;
-        LogWorkplaceSpeedApiResolved();
-        return;
-      }
-
-      _workplace = GameObject.GetComponent<Workplace>();
-      if (_workplace is not null) {
+      if (TimberbornComponentCacheLookup.TryGetPrometheusFireComponent<Workplace>(GameObject, out var workplace)) {
+        _workplace = workplace;
         LogWorkplaceSpeedApiResolved();
       }
     }
@@ -240,16 +233,7 @@ namespace Mods.Prometheus.Scripts {
         return;
       }
 
-      foreach (var component in GameObject.GetComponents<Component>()) {
-        if (component is not Behaviour behaviour) {
-          continue;
-        }
-
-        var componentTypeName = component.GetType().Name;
-        if (!TimberbornCompatibility.IsWorkplaceSupportComponentName(componentTypeName)) {
-          continue;
-        }
-
+      foreach (var behaviour in TimberbornComponentCacheLookup.FindBehavioursByPolicy(GameObject, TimberbornCompatibility.IsWorkplaceSupportComponentName)) {
         if (!_workplaceSupportOriginalEnabledState.ContainsKey(behaviour)) {
           _workplaceSupportOriginalEnabledState[behaviour] = behaviour.enabled;
         }
@@ -299,16 +283,7 @@ namespace Mods.Prometheus.Scripts {
         return;
       }
 
-      foreach (var component in GameObject.GetComponents<Component>()) {
-        if (component is not Behaviour behaviour) {
-          continue;
-        }
-
-        var componentTypeName = component.GetType().Name;
-        if (!TimberbornCompatibility.IsOperationalComponentName(componentTypeName)) {
-          continue;
-        }
-
+      foreach (var behaviour in TimberbornComponentCacheLookup.FindBehavioursByPolicy(GameObject, TimberbornCompatibility.IsOperationalComponentName)) {
         if (!_operationalOriginalEnabledState.ContainsKey(behaviour)) {
           _operationalOriginalEnabledState[behaviour] = behaviour.enabled;
         }

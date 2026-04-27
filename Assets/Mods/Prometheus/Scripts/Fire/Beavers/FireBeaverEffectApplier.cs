@@ -141,13 +141,15 @@ namespace Mods.Prometheus.Scripts {
           continue;
         }
 
-        TrySetNeedPoints(needManagerTarget.NeedManager, "HeatStress", 0f);
-        TrySetNeedPoints(needManagerTarget.NeedManager, "Injury", 0f);
-        clearedCount++;
+        var clearedHeatStress = TrySetNeedPoints(needManagerTarget.NeedManager, "HeatStress", 0f);
+        var clearedInjury = TrySetNeedPoints(needManagerTarget.NeedManager, "Injury", 0f);
+        if (clearedHeatStress || clearedInjury) {
+          clearedCount++;
+        }
       }
 
       _nextEffectTimeByNeedManager.Clear();
-      FireTelemetry.Log($"event={FireTelemetryEvents.DebugClearBeaverFireEffects} count={clearedCount}");
+      FireTelemetry.Log($"event={FireTelemetryEvents.DebugClearBeaverFireEffects} count={clearedCount} resetApiBound={_needSetPointsMethod is not null}");
       return clearedCount;
     }
 
@@ -283,23 +285,23 @@ namespace Mods.Prometheus.Scripts {
       TryApplyNeedDelta(needManager, "HeatStress", needDeltas.HeatStressDelta);
     }
 
-    private static void TrySetNeedPoints(object needManager, string needId, float points) {
+    private static bool TrySetNeedPoints(object needManager, string needId, float points) {
       if (_needSetPointsMethod is null) {
-        TryApplyNeedDelta(needManager, needId, 10f);
-        return;
+        return false;
       }
 
       try {
         var need = TryGetNeed(needManager, needId);
         if (need is null) {
-          return;
+          return false;
         }
 
         _needSetPointsMethod.Invoke(need, new object[] { points });
+        return true;
       } catch (TargetInvocationException) {
-        // Intentionally ignored: some need managers may reject a need id for current worker type.
+        return false;
       } catch (ArgumentException) {
-        // Intentionally ignored: fallback for unexpected signature drift.
+        return false;
       }
     }
 

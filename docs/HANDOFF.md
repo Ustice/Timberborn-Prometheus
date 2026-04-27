@@ -49,6 +49,7 @@ Phase 2 stabilization is now running from the file board under `docs/stabilizati
 | 2026-04-27 | P2S-009: `git diff --check` + `bash scripts/test.sh` + `bash scripts/build.sh --qa` + Computer Use reset QA | Pass | Reset registry is integrated. The QA save loaded through Computer Use with `Load time: 12000ms`; `Reset Fire State` reported 989 entities and logs recorded `runtime_reset_registry_started`, `runtime_reset_registry_completed failures=0`, and `debug_reset_fire_exposure result=success`. |
 | 2026-04-27 | P2S-013: `git diff --check` + `bash scripts/test.sh` + `bash scripts/build.sh --qa` + Computer Use startup | Pass | Configured `FireProfileSpec` source fields now inject heat, embers, and smoke into the grid with `ConfiguredSource:<entityId>` attribution and conservative `RequiresOperation` gating. Plain C# suite is now 60 passing tests. Computer Use reached the main menu; startup logs showed Prometheus loaded with no scanned Prometheus errors. No live `grid_source_*` rows appeared during menu startup because the currently authored deployed profiles do not emit sources before a save is loaded. |
 | 2026-04-27 | P2S-013 integration on `main`: `git diff --check` + `bash scripts/test.sh` + `bash scripts/build.sh --qa` + Computer Use startup | Pass | Configured source injection is integrated with P2S-014 environment sampling, P2S-015 runtime projection, and P2S-016 visual catalog changes. Plain C# suite is now 69 passing tests. Computer Use reached the main menu; startup logs showed Prometheus loaded and `environment=deferred:terrain/block/water/soil_runtime_probe` with no scanned Prometheus errors. |
+| 2026-04-27 | P2S-017 candidate reconciled with P2S-018: `git diff --check` + `bash scripts/test.sh` + prior `bash scripts/build.sh --qa` and Computer Use startup evidence | Pass | Effect appliers now route direct/cached component assumptions through the integration facade, reset registry entity discovery uses the same facade lookup, and the beaver clear path no-ops when the reset setter API is missing instead of applying a compensating mutation. After merging P2S-018, the plain C# suite is 74 passing tests. Prior P2S-017 Computer Use startup evidence still applies because the reconciliation only carried `main` forward and updated docs; startup logs showed Prometheus loaded and the compatibility summary with no scanned Prometheus exceptions. |
 
 ## Durable Context
 
@@ -81,7 +82,7 @@ Source of truth: current UI labels and telemetry event names should be checked i
 
 ## Next Exact Action
 
-Continue Wave D with P2S-017 and P2S-018. Use `bash scripts/build.sh --qa`, then Computer Use for startup dialogs, save loading, and in-game evidence when a ticket requires live QA.
+After P2S-017 integration, continue Wave E with P2S-019. P2S-018 aftermath eligibility is already integrated on `main`. Use `bash scripts/build.sh --qa`, then Computer Use for startup dialogs, save loading, and in-game evidence when a ticket requires live QA.
 
 ## Resume Checklist
 
