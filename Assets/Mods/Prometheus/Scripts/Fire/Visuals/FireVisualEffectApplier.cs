@@ -389,7 +389,6 @@ namespace Mods.Prometheus.Scripts {
       private static readonly Dictionary<NativeParticleEffectKind, GameObject> SourcesByKind = new();
       private static readonly HashSet<NativeParticleEffectKind> LoggedResolvedKinds = new();
       private static readonly HashSet<NativeParticleEffectKind> LoggedUnavailableKinds = new();
-      private static bool _searched;
 
       public static ParticleEffectGroup TryCreateEffect(
         NativeParticleEffectKind kind,
@@ -422,122 +421,26 @@ namespace Mods.Prometheus.Scripts {
       }
 
       private static GameObject FindSource(NativeParticleEffectKind kind) {
-        EnsureSearched();
-        return SourcesByKind.TryGetValue(kind, out var source) ? source : null;
-      }
-
-      private static void EnsureSearched() {
-        if (_searched) {
-          return;
+        if (SourcesByKind.TryGetValue(kind, out var source)) {
+          return source;
         }
 
-        _searched = true;
-        var resourceParticlePrefabs = Resources.LoadAll<GameObject>(string.Empty)
-          .Where(IsNativeCandidate)
-          .Where(gameObject => gameObject.GetComponentsInChildren<ParticleSystem>(true).Length > 0)
-          .ToArray();
-        var loadedParticleObjects = Resources.FindObjectsOfTypeAll<ParticleSystem>()
-          .Where(IsNativeCandidate)
-          .Select(particleSystem => particleSystem.gameObject)
-          .ToArray();
-        var particleObjects = resourceParticlePrefabs
-          .Concat(loadedParticleObjects)
-          .GroupBy(gameObject => gameObject.GetInstanceID())
-          .Select(group => group.First())
-          .ToArray();
-
-        foreach (var kind in new[] {
-                   NativeParticleEffectKind.Embers,
-                   NativeParticleEffectKind.Smoke,
-                   NativeParticleEffectKind.Fire,
-                   NativeParticleEffectKind.Steam,
-                 }) {
-          var source = particleObjects
-            .Select(gameObject => new NativeParticleCandidate(gameObject, ScoreParticleObject(kind, gameObject)))
-            .Where(candidate => candidate.Score > 0)
-            .OrderByDescending(candidate => candidate.Score)
-            .FirstOrDefault();
-
-          if (source.SourceRoot != null) {
-            SourcesByKind[kind] = source.SourceRoot;
-          }
-        }
-      }
-
-      private static bool IsNativeCandidate(GameObject gameObject) {
-        if (gameObject == null) {
-          return false;
+        source = FireNativeParticleSourceCatalog.TryGetRecommendedSource(ToVisualEffectKind(kind));
+        if (source != null) {
+          SourcesByKind[kind] = source;
         }
 
-        var hierarchyName = GetHierarchyName(gameObject.transform);
-        return !hierarchyName.Contains("Prometheus")
-               && !hierarchyName.Contains("Preview")
-               && !hierarchyName.Contains("UnityEngine");
+        return source;
       }
 
-      private static bool IsNativeCandidate(ParticleSystem particleSystem) {
-        return particleSystem != null && IsNativeCandidate(particleSystem.gameObject);
-      }
-
-      private static int ScoreParticleObject(NativeParticleEffectKind kind, GameObject gameObject) {
-        var particleSystems = gameObject.GetComponentsInChildren<ParticleSystem>(true);
-        var names = particleSystems
-          .Select(particleSystem => GetHierarchyName(particleSystem.transform))
-          .Concat(new[] { GetHierarchyName(gameObject.transform) });
-        var materialNames = particleSystems
-          .Select(particleSystem => particleSystem.GetComponent<ParticleSystemRenderer>())
-          .Where(renderer => renderer != null && renderer.sharedMaterial != null)
-          .Select(renderer => renderer.sharedMaterial.name);
-        var searchable = string.Join(" ", names.Concat(materialNames)).ToLowerInvariant();
-        var main = particleSystems.Length == 0 ? default : particleSystems[0].main;
-
+      private static FireVisualEffectKind ToVisualEffectKind(NativeParticleEffectKind kind) {
         return kind switch {
-          NativeParticleEffectKind.Embers => Score(searchable, "sparks_trail", 120, "common_trail_sparks", 110, "spark", 80, "firework", 35),
-          NativeParticleEffectKind.Smoke => Score(searchable, "smeltersmoke", 130, "bakerysmoke", 120, "smoke", 100, "exhaust", 35) - Score(searchable, "explosion", 55, "steam", 35),
-          NativeParticleEffectKind.Fire => Score(searchable, "campfirefire", 140, "brazierfire", 130, "fire", 100, "flame", 95) - Score(searchable, "firework", 70, "spark", 25),
-          NativeParticleEffectKind.Steam => Score(searchable, "steamenginesmoke", 130, "geothermal", 95, "steam", 90, "smoke_soft", 45) + (main.startColor.color.a < 0.65f ? 5 : 0),
-          _ => 0,
+          NativeParticleEffectKind.Embers => FireVisualEffectKind.Sparks,
+          NativeParticleEffectKind.Smoke => FireVisualEffectKind.Smoke,
+          NativeParticleEffectKind.Fire => FireVisualEffectKind.Fire,
+          NativeParticleEffectKind.Steam => FireVisualEffectKind.Steam,
+          _ => FireVisualEffectKind.Smoke,
         };
-      }
-
-      private static int Score(string text, string firstKeyword, int firstScore, string secondKeyword, int secondScore, string thirdKeyword, int thirdScore, string fourthKeyword = "", int fourthScore = 0) {
-        return Score(text, firstKeyword, firstScore)
-               + Score(text, secondKeyword, secondScore)
-               + Score(text, thirdKeyword, thirdScore)
-               + Score(text, fourthKeyword, fourthScore);
-      }
-
-      private static int Score(string text, string firstKeyword, int firstScore, string secondKeyword, int secondScore) {
-        return Score(text, firstKeyword, firstScore)
-               + Score(text, secondKeyword, secondScore);
-      }
-
-      private static int Score(string text, string keyword, int score) {
-        return !string.IsNullOrEmpty(keyword) && text.Contains(keyword) ? score : 0;
-      }
-
-      private static string GetHierarchyName(Transform transform) {
-        var names = new List<string>();
-        var current = transform;
-        while (current != null) {
-          names.Add(current.name);
-          current = current.parent;
-        }
-
-        names.Reverse();
-        return string.Join("/", names);
-      }
-
-    }
-
-    private readonly struct NativeParticleCandidate {
-
-      public GameObject SourceRoot { get; }
-      public int Score { get; }
-
-      public NativeParticleCandidate(GameObject sourceRoot, int score) {
-        SourceRoot = sourceRoot;
-        Score = score;
       }
 
     }

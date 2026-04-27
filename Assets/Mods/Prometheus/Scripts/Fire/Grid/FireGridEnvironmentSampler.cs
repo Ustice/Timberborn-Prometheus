@@ -55,6 +55,60 @@ namespace Mods.Prometheus.Scripts {
 
   }
 
+  internal readonly struct FireGridWorldEnvironmentSample {
+
+    public static FireGridWorldEnvironmentSample Unavailable { get; } = new(
+      false,
+      0,
+      false,
+      false,
+      false,
+      false,
+      0f,
+      false,
+      0f,
+      false,
+      FireGridExposedFaces.All);
+
+    public bool TerrainTopSurfaceAvailable { get; }
+    public int TerrainTopSurfaceY { get; }
+    public bool BlockOccupancyAvailable { get; }
+    public bool HasBlockOccupancy { get; }
+    public bool HasTopBlockOccupancy { get; }
+    public bool WaterDepthAvailable { get; }
+    public float WaterDepth { get; }
+    public bool SoilMoistureAvailable { get; }
+    public float SoilMoisture { get; }
+    public bool ExposedFaceMaskAvailable { get; }
+    public int ExposedFaceMask { get; }
+
+    public FireGridWorldEnvironmentSample(
+      bool terrainTopSurfaceAvailable,
+      int terrainTopSurfaceY,
+      bool blockOccupancyAvailable,
+      bool hasBlockOccupancy,
+      bool hasTopBlockOccupancy,
+      bool waterDepthAvailable,
+      float waterDepth,
+      bool soilMoistureAvailable,
+      float soilMoisture,
+      bool exposedFaceMaskAvailable,
+      int exposedFaceMask) {
+      TerrainTopSurfaceAvailable = terrainTopSurfaceAvailable;
+      TerrainTopSurfaceY = terrainTopSurfaceY;
+      BlockOccupancyAvailable = blockOccupancyAvailable;
+      HasBlockOccupancy = hasBlockOccupancy;
+      HasTopBlockOccupancy = hasTopBlockOccupancy;
+      WaterDepthAvailable = waterDepthAvailable;
+      WaterDepth = Mathf.Max(0f, waterDepth);
+      SoilMoistureAvailable = soilMoistureAvailable;
+      SoilMoisture = Mathf.Clamp01(soilMoisture);
+      ExposedFaceMaskAvailable = exposedFaceMaskAvailable;
+      ExposedFaceMask = exposedFaceMask & FireGridExposedFaces.All;
+    }
+
+  }
+
   internal static class FireGridEnvironmentSampler {
 
     public static FireGridEnvironmentSample FromProfile(
@@ -91,6 +145,51 @@ namespace Mods.Prometheus.Scripts {
 
     public static FireGridEnvironmentSample CreateDefaultWorldSample() =>
       FireGridEnvironmentSample.OpenAir;
+
+    public static FireGridEnvironmentSample FromWorldSample(
+      FireGridCoordinate coordinate,
+      FireGridWorldEnvironmentSample worldSample) {
+      var structureKind = FireGridStructureKind.Air;
+      var fuel = 0f;
+      var moisture = worldSample.SoilMoistureAvailable ? worldSample.SoilMoisture : 0f;
+      var barrier = 0f;
+      var oxygenAvailability = 1f;
+      var waterDepth = worldSample.WaterDepthAvailable ? worldSample.WaterDepth : 0f;
+      var exposedFaceMask = worldSample.ExposedFaceMaskAvailable
+        ? worldSample.ExposedFaceMask
+        : FireGridExposedFaces.All;
+
+      if (waterDepth > FireGridPropagationPolicy.WaterSuppressionDepth) {
+        return new FireGridEnvironmentSample(
+          FireGridStructureKind.Water,
+          fuel,
+          1f,
+          barrier,
+          oxygenAvailability,
+          waterDepth,
+          exposedFaceMask);
+      }
+
+      if (worldSample.TerrainTopSurfaceAvailable && coordinate.Y <= worldSample.TerrainTopSurfaceY) {
+        structureKind = FireGridStructureKind.Terrain;
+        if (coordinate.Y < worldSample.TerrainTopSurfaceY) {
+          barrier = 1f;
+          oxygenAvailability = 0f;
+          exposedFaceMask = FireGridExposedFaces.None;
+        }
+      } else if (worldSample.BlockOccupancyAvailable && worldSample.HasBlockOccupancy) {
+        structureKind = FireGridStructureKind.Building;
+      }
+
+      return new FireGridEnvironmentSample(
+        structureKind,
+        fuel,
+        moisture,
+        barrier,
+        oxygenAvailability,
+        waterDepth,
+        exposedFaceMask);
+    }
 
     public static FireGridEnvironmentSample FromTerrainColumn(
       FireGridCoordinate coordinate,

@@ -537,5 +537,66 @@ namespace Prometheus.Tests
             TestSupport.Equal(FireGridStructureKind.Air, aboveTop.StructureKind);
         }
 
+        [Fact]
+        public void FireGridEnvironmentSampler_UnavailableWorldSampleStaysOpenAir_Test()
+        {
+            var sample = FireGridEnvironmentSampler.FromWorldSample(
+              new FireGridCoordinate(2, 3, 4),
+              FireGridWorldEnvironmentSample.Unavailable);
+
+            TestSupport.Equal(FireGridStructureKind.Air, sample.StructureKind);
+            TestSupport.NearlyEqual(0f, sample.Fuel);
+            TestSupport.NearlyEqual(0f, sample.Moisture);
+            TestSupport.NearlyEqual(0f, sample.WaterDepth);
+            TestSupport.Equal(FireGridExposedFaces.All, sample.ExposedFaceMask);
+        }
+
+        [Fact]
+        public void FireGridEnvironmentSampler_NormalizesVerifiedWorldInputs_Test()
+        {
+            var sample = FireGridEnvironmentSampler.FromWorldSample(
+              new FireGridCoordinate(2, 8, 4),
+              new FireGridWorldEnvironmentSample(
+                true,
+                8,
+                true,
+                true,
+                true,
+                true,
+                0.02f,
+                true,
+                0.6f,
+                true,
+                FireGridExposedFaces.PositiveY | FireGridExposedFaces.PositiveX));
+
+            TestSupport.Equal(FireGridStructureKind.Terrain, sample.StructureKind);
+            TestSupport.NearlyEqual(0.6f, sample.Moisture);
+            TestSupport.NearlyEqual(0.02f, sample.WaterDepth);
+            TestSupport.Equal(FireGridExposedFaces.PositiveY | FireGridExposedFaces.PositiveX, sample.ExposedFaceMask);
+        }
+
+        [Fact]
+        public void FireGridEnvironmentSampler_WaterDepthCreatesWaterWorldSample_Test()
+        {
+            var sample = FireGridEnvironmentSampler.FromWorldSample(
+              new FireGridCoordinate(2, 8, 4),
+              new FireGridWorldEnvironmentSample(
+                false,
+                0,
+                false,
+                false,
+                false,
+                true,
+                FireGridPropagationPolicy.WaterSuppressionDepth + 0.01f,
+                false,
+                0f,
+                false,
+                FireGridExposedFaces.All));
+
+            TestSupport.Equal(FireGridStructureKind.Water, sample.StructureKind);
+            TestSupport.NearlyEqual(1f, sample.Moisture);
+            TestSupport.True(sample.WaterDepth > FireGridPropagationPolicy.WaterSuppressionDepth);
+        }
+
     }
 }

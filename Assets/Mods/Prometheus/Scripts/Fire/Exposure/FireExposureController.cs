@@ -17,6 +17,7 @@ namespace Mods.Prometheus.Scripts {
     private FireExposureRuntimeState _fireExposureRuntimeState;
     private FireGridRuntimeState _fireGridRuntimeState;
     private FireGridSimulationCoordinator _fireGridSimulationCoordinator;
+    private TimberbornEnvironmentAdapter _timberbornEnvironmentAdapter;
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
     private FireRuntimeProjectionRuntimeState _fireRuntimeProjectionRuntimeState;
     private FireProfile _fireProfile;
@@ -41,11 +42,13 @@ namespace Mods.Prometheus.Scripts {
       FireExposureRuntimeState fireExposureRuntimeState,
       FireGridRuntimeState fireGridRuntimeState,
       FireGridSimulationCoordinator fireGridSimulationCoordinator,
+      TimberbornEnvironmentAdapter timberbornEnvironmentAdapter,
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
       FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState) {
       _fireExposureRuntimeState = fireExposureRuntimeState;
       _fireGridRuntimeState = fireGridRuntimeState;
       _fireGridSimulationCoordinator = fireGridSimulationCoordinator;
+      _timberbornEnvironmentAdapter = timberbornEnvironmentAdapter;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
       _fireRuntimeProjectionRuntimeState = fireRuntimeProjectionRuntimeState;
     }
@@ -65,7 +68,7 @@ namespace Mods.Prometheus.Scripts {
       var entityId = GameObject.GetInstanceID();
       var footprint = GetGridFootprint();
       var coordinate = footprint.PrimaryCoordinate;
-      SetEnvironment(footprint, CreateEnvironment());
+      SetEnvironment(footprint);
 
       if (_isBurnedOut) {
         _fireGridRuntimeState.ClearCell(coordinate);
@@ -165,13 +168,14 @@ namespace Mods.Prometheus.Scripts {
         _isIgnited ? _ignitionSourceAttribution.ToTelemetryToken() : sample.SourceAttribution.ToTelemetryToken());
     }
 
-    private void SetEnvironment(FireGridFootprint footprint, FireCellEnvironment environment) {
+    private void SetEnvironment(FireGridFootprint footprint) {
       for (var i = 0; i < footprint.Coordinates.Count; i++) {
-        _fireGridRuntimeState.SetEnvironment(footprint.Coordinates[i], environment);
+        var coordinate = footprint.Coordinates[i];
+        _fireGridRuntimeState.SetEnvironment(coordinate, CreateEnvironment(coordinate));
       }
     }
 
-    private FireCellEnvironment CreateEnvironment() {
+    private FireCellEnvironment CreateEnvironment(FireGridCoordinate coordinate) {
       var profileSample = _fireProfile == null
         ? new FireGridEnvironmentSample(FireGridStructureKind.Unknown, 1f, 0f, 0f, 1f, 0f, FireGridExposedFaces.All)
         : FireGridEnvironmentSampler.FromProfile(
@@ -179,7 +183,9 @@ namespace Mods.Prometheus.Scripts {
           _fireProfile.Fuel,
           _fireProfile.MoistureResistance,
           _fireProfile.BarrierResistance);
-      var worldSample = FireGridEnvironmentSampler.CreateDefaultWorldSample();
+      var worldSample = _timberbornEnvironmentAdapter == null
+        ? FireGridEnvironmentSampler.CreateDefaultWorldSample()
+        : _timberbornEnvironmentAdapter.Sample(coordinate);
       return FireGridEnvironmentSampler.Merge(profileSample, worldSample).ToEnvironment();
     }
 

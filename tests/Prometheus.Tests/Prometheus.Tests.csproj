@@ -40,6 +40,7 @@
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Recovery/FireRecoveryRuntimeState.cs" Link="Source/Fire/Recovery/FireRecoveryRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Exposure/FireExposureRuntimeState.cs" Link="Source/Fire/Exposure/FireExposureRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Visuals/FireVisualEffectAuthoring.cs" Link="Source/Fire/Visuals/FireVisualEffectAuthoring.cs" />
+    <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Visuals/FireNativeParticleSourceCatalog.cs" Link="Source/Fire/Visuals/FireNativeParticleSourceCatalog.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Visuals/FireVisualEffectPreviewRuntimeState.cs" Link="Source/Fire/Visuals/FireVisualEffectPreviewRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Visuals/FireVisualEffectRules.cs" Link="Source/Fire/Visuals/FireVisualEffectRules.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Workplace/FireWorkplaceRules.cs" Link="Source/Fire/Workplace/FireWorkplaceRules.cs" />

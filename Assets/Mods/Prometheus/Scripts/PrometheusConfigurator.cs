@@ -31,6 +31,7 @@ namespace Mods.Prometheus.Scripts {
       Bind<FireTuningRuntimeState>().AsSingleton();
       Bind<FireGridRuntimeState>().AsSingleton();
       Bind<FireGridSimulationCoordinator>().AsSingleton();
+      Bind<TimberbornEnvironmentAdapter>().AsSingleton();
       Bind<FireExposureRuntimeState>().AsSingleton();
       Bind<FireImpactRuntimeState>().AsSingleton();
       Bind<FireDamageStateRuntimeState>().AsSingleton();

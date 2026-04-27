@@ -1,6 +1,6 @@
 # P2S-016 Unify Particle Catalog
 
-Status: todo
+Status: done
 
 Agent level: Low
 
@@ -35,4 +35,3 @@ Use one native particle catalog and scoring path for preview and runtime.
 ## Integration Notes
 
 Keep this isolated from visual projection changes.
-
