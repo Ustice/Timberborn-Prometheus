@@ -1,6 +1,6 @@
 # P2S-027 Closeout Validation Docs
 
-Status: todo
+Status: in-progress
 
 Agent level: Low
 
@@ -41,4 +41,6 @@ Close the stabilization sprint with verified evidence and current docs.
 
 ## Integration Notes
 
-This ticket moves the sprint from implemented to verified.
+Closeout validation on 2026-04-27 passed `git diff --check`, `bash scripts/test.sh`, `bash scripts/build.sh --qa`, and post-QA log inspection. `Player.log` showed Prometheus v0.2 loaded and initialized; `Fire.log` recorded the compatibility summary; no scanned Prometheus exceptions were present.
+
+P2S-025 remains outside this sprint. Do not claim live farmhouse amendment proof until a fresh loadable farmhouse/crop/ash fixture captures ash consumption, `fertile_ash_farmhouse_amendment_applied`, and faster amended crop growth than a nearby control.
