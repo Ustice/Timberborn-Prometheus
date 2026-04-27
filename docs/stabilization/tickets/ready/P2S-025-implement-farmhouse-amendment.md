@@ -1,6 +1,6 @@
 # P2S-025 Implement Farmhouse Amendment
 
-Status: todo
+Status: ready
 
 Agent level: High
 
