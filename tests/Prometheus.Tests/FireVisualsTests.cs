@@ -117,5 +117,14 @@ namespace Prometheus.Tests
             TestSupport.NearlyEqual(0.4f, sparks.NoiseStrength);
         }
 
+        [Fact]
+        public void FireNativeParticleSourceCatalog_ScoresRuntimePreferredSources_Test()
+        {
+            TestSupport.True(FireNativeParticleSourceCatalog.ScoreSearchableText(FireVisualEffectKind.Sparks, "Root/Sparks_Trail") > FireNativeParticleSourceCatalog.ScoreSearchableText(FireVisualEffectKind.Sparks, "Root/Common_Trail_Sparks"));
+            TestSupport.True(FireNativeParticleSourceCatalog.ScoreSearchableText(FireVisualEffectKind.Smoke, "Root/SmelterSmoke") > FireNativeParticleSourceCatalog.ScoreSearchableText(FireVisualEffectKind.Smoke, "Root/BakerySmoke"));
+            TestSupport.True(FireNativeParticleSourceCatalog.ScoreSearchableText(FireVisualEffectKind.Fire, "Root/CampfireFire") > FireNativeParticleSourceCatalog.ScoreSearchableText(FireVisualEffectKind.Fire, "Root/BrazierFire"));
+            TestSupport.True(FireNativeParticleSourceCatalog.ScoreSearchableText(FireVisualEffectKind.Steam, "Root/SteamEngineSmoke") > FireNativeParticleSourceCatalog.ScoreSearchableText(FireVisualEffectKind.Steam, "Root/Smoke", firstParticleAlphaIsSoft: true));
+        }
+
     }
 }
