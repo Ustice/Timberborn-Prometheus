@@ -1,6 +1,6 @@
 # P2S-015 Define Runtime Projection
 
-Status: todo
+Status: done
 
 Agent level: Medium
 
@@ -35,4 +35,3 @@ Define one projection from grid and entity state for downstream effects.
 ## Integration Notes
 
 Medium review required because this sets the contract for visuals, effects, and renewal.
-

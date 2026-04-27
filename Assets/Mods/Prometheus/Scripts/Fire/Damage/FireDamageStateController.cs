@@ -11,9 +11,8 @@ namespace Mods.Prometheus.Scripts {
 
     private const float UpdateIntervalInSeconds = 1f;
 
-    private FireImpactRuntimeState _fireImpactRuntimeState;
-    private FireExposureRuntimeState _fireExposureRuntimeState;
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
+    private FireRuntimeProjectionRuntimeState _fireRuntimeProjectionRuntimeState;
     private FireTuningRuntimeState _fireTuningRuntimeState;
     private float _timeSinceLastUpdate;
     private FireDamageCategory _category;
@@ -23,13 +22,11 @@ namespace Mods.Prometheus.Scripts {
 
     [Inject]
     public void InjectDependencies(
-      FireImpactRuntimeState fireImpactRuntimeState,
-      FireExposureRuntimeState fireExposureRuntimeState,
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
+      FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState,
       FireTuningRuntimeState fireTuningRuntimeState) {
-      _fireImpactRuntimeState = fireImpactRuntimeState;
-      _fireExposureRuntimeState = fireExposureRuntimeState;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
+      _fireRuntimeProjectionRuntimeState = fireRuntimeProjectionRuntimeState;
       _fireTuningRuntimeState = fireTuningRuntimeState;
     }
 
@@ -43,22 +40,23 @@ namespace Mods.Prometheus.Scripts {
       }
 
       var entityId = GameObject.GetInstanceID();
+      _fireRuntimeProjectionRuntimeState.TryGetSnapshot(entityId, out var projection);
       if (_category == FireDamageCategory.Tree
-          && _fireExposureRuntimeState.TryGetSnapshot(entityId, out var currentExposureSnapshot)
-          && currentExposureSnapshot.FuelConsumed >= 0.25f) {
+          && projection.HasExposure
+          && projection.Exposure.FuelConsumed >= 0.25f) {
         _severity = 1f;
         _tickProgress = 1f;
-        _fireDamageStateRuntimeState.SetSnapshot(
-          entityId,
-          new FireDamageStateSnapshot(_category, FireDamageState.Dead, _severity, _tickProgress, _damageTicksApplied));
+        var deadTreeSnapshot = new FireDamageStateSnapshot(_category, FireDamageState.Dead, _severity, _tickProgress, _damageTicksApplied);
+        _fireDamageStateRuntimeState.SetSnapshot(entityId, deadTreeSnapshot);
+        _fireRuntimeProjectionRuntimeState.SetDamageState(entityId, deadTreeSnapshot);
         return;
       }
 
-      if (!_fireImpactRuntimeState.TryGetSnapshot(entityId, out var impactSnapshot)) {
+      if (!_fireRuntimeProjectionRuntimeState.TryGetSnapshot(entityId, out projection) || !projection.HasImpact) {
         return;
       }
 
-      var pressure = GetRelevantPressure(impactSnapshot);
+      var pressure = FireRuntimeProjectionRules.GetDamagePressure(projection, _category);
       var tickRate = GetTickRate(_category) * _fireTuningRuntimeState.Current.DamageTickMultiplier;
       var tickSeverityDelta = GetTickSeverityDelta(_category) * _fireTuningRuntimeState.Current.DamageTickMultiplier;
 
@@ -86,6 +84,7 @@ namespace Mods.Prometheus.Scripts {
       var state = FireDamageStateRules.DetermineState(_severity);
       var snapshot = new FireDamageStateSnapshot(_category, state, _severity, _tickProgress, _damageTicksApplied);
       _fireDamageStateRuntimeState.SetSnapshot(entityId, snapshot);
+      _fireRuntimeProjectionRuntimeState.SetDamageState(entityId, snapshot);
     }
 
     internal void DebugResetDamageStateToHealthy() {
@@ -94,6 +93,9 @@ namespace Mods.Prometheus.Scripts {
       _tickProgress = 0f;
       _damageTicksApplied = 0;
       _fireDamageStateRuntimeState.SetSnapshot(
+        entityId,
+        new FireDamageStateSnapshot(_category, FireDamageState.Healthy, 0f, 0f, 0));
+      _fireRuntimeProjectionRuntimeState.SetDamageState(
         entityId,
         new FireDamageStateSnapshot(_category, FireDamageState.Healthy, 0f, 0f, 0));
     }
@@ -113,15 +115,6 @@ namespace Mods.Prometheus.Scripts {
         FireDamageCategory.Tree => 0.11f,
         FireDamageCategory.Building => 0.08f,
         _ => 0.07f,
-      };
-    }
-
-    private float GetRelevantPressure(FireImpactSnapshot impactSnapshot) {
-      return _category switch {
-        FireDamageCategory.Crop => impactSnapshot.CropDamagePressure,
-        FireDamageCategory.Tree => impactSnapshot.TreeDamagePressure,
-        FireDamageCategory.Building => impactSnapshot.BuildingDamagePressure,
-        _ => impactSnapshot.BuildingDamagePressure,
       };
     }
 

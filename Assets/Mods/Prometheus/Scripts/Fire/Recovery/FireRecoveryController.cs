@@ -11,6 +11,7 @@ namespace Mods.Prometheus.Scripts {
 
     private FireExposureRuntimeState _fireExposureRuntimeState;
     private FireRecoveryRuntimeState _fireRecoveryRuntimeState;
+    private FireRuntimeProjectionRuntimeState _fireRuntimeProjectionRuntimeState;
 
     private float _timeSinceLastUpdate;
     private bool _sawBurnPhase;
@@ -20,9 +21,11 @@ namespace Mods.Prometheus.Scripts {
     [Inject]
     public void InjectDependencies(
       FireExposureRuntimeState fireExposureRuntimeState,
-      FireRecoveryRuntimeState fireRecoveryRuntimeState) {
+      FireRecoveryRuntimeState fireRecoveryRuntimeState,
+      FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState) {
       _fireExposureRuntimeState = fireExposureRuntimeState;
       _fireRecoveryRuntimeState = fireRecoveryRuntimeState;
+      _fireRuntimeProjectionRuntimeState = fireRuntimeProjectionRuntimeState;
     }
 
     public void Update() {
@@ -35,6 +38,7 @@ namespace Mods.Prometheus.Scripts {
         return;
       }
 
+      _fireRuntimeProjectionRuntimeState.SetExposure(entityId, exposureSnapshot);
       if (exposureSnapshot.Burning) {
         _sawBurnPhase = true;
         _peakIntensityDuringBurn = Mathf.Max(_peakIntensityDuringBurn, exposureSnapshot.Intensity);
@@ -64,6 +68,7 @@ namespace Mods.Prometheus.Scripts {
         _recoveryHoursRemaining);
 
       _fireRecoveryRuntimeState.SetSnapshot(entityId, recoverySnapshot);
+      _fireRuntimeProjectionRuntimeState.SetRecovery(entityId, recoverySnapshot);
     }
 
     internal void DebugResetRecoveryState() {
@@ -71,6 +76,7 @@ namespace Mods.Prometheus.Scripts {
       _peakIntensityDuringBurn = 0f;
       _recoveryHoursRemaining = 0f;
       _fireRecoveryRuntimeState.RemoveSnapshot(GameObject.GetInstanceID());
+      _fireRuntimeProjectionRuntimeState.SetRecovery(GameObject.GetInstanceID(), FireRuntimeProjectionRules.DefaultRecovery);
     }
 
   }

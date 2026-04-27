@@ -99,6 +99,12 @@ namespace Mods.Prometheus.Scripts {
   internal static class FireVisualEffectRules {
 
     internal static FireVisualEffectIntensity ComputeIntensity(
+      FireRuntimeProjectionSnapshot projection,
+      FireVisualEffectTuning tuning) {
+      return ComputeIntensity(projection.VisualExposure, projection.VisualDamageState, tuning);
+    }
+
+    internal static FireVisualEffectIntensity ComputeIntensity(
       FireExposureSnapshot exposure,
       FireDamageStateSnapshot damageState,
       FireVisualEffectTuning tuning) {

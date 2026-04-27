@@ -18,6 +18,7 @@ namespace Mods.Prometheus.Scripts {
     Cache,
     Focus,
     Operation,
+    Environment,
   }
 
   internal readonly struct TimberbornCompatibilityProbeResult {
@@ -257,6 +258,7 @@ namespace Mods.Prometheus.Scripts {
         { TimberbornCompatibilityArea.Cache, new TimberbornCompatibilityProbeResult(TimberbornCompatibilityProbeStatus.Deferred, "ComponentCache _components/AllComponents runtime probe") },
         { TimberbornCompatibilityArea.Focus, new TimberbornCompatibilityProbeResult(TimberbornCompatibilityProbeStatus.Resolved, "EntitySelectionService.SelectAndFocusOn") },
         { TimberbornCompatibilityArea.Operation, new TimberbornCompatibilityProbeResult(TimberbornCompatibilityProbeStatus.Resolved, "type-name operation classifier") },
+        { TimberbornCompatibilityArea.Environment, new TimberbornCompatibilityProbeResult(TimberbornCompatibilityProbeStatus.Deferred, "terrain/block/water/soil runtime probe") },
       };
 
     private static bool TryBindNeedMethods(Type needType, out MethodInfo needAddPointsMethod, out MethodInfo needSetPointsMethod) {
@@ -266,7 +268,7 @@ namespace Mods.Prometheus.Scripts {
     }
 
     private static string CreateSummaryMessage() =>
-      $"event=timberborn_compatibility_summary damage={FormatProbe(TimberbornCompatibilityArea.Damage)} recovery={FormatProbe(TimberbornCompatibilityArea.Recovery)} beaver={FormatProbe(TimberbornCompatibilityArea.Beaver)} workplace={FormatProbe(TimberbornCompatibilityArea.Workplace)} cache={FormatProbe(TimberbornCompatibilityArea.Cache)} focus={FormatProbe(TimberbornCompatibilityArea.Focus)} operation={FormatProbe(TimberbornCompatibilityArea.Operation)}";
+      $"event=timberborn_compatibility_summary damage={FormatProbe(TimberbornCompatibilityArea.Damage)} recovery={FormatProbe(TimberbornCompatibilityArea.Recovery)} beaver={FormatProbe(TimberbornCompatibilityArea.Beaver)} workplace={FormatProbe(TimberbornCompatibilityArea.Workplace)} cache={FormatProbe(TimberbornCompatibilityArea.Cache)} focus={FormatProbe(TimberbornCompatibilityArea.Focus)} operation={FormatProbe(TimberbornCompatibilityArea.Operation)} environment={FormatProbe(TimberbornCompatibilityArea.Environment)}";
 
     private static string FormatProbe(TimberbornCompatibilityArea area) {
       var result = ProbeResults[area];

@@ -9,7 +9,7 @@ namespace Mods.Prometheus.Scripts {
 
     private const float UpdateIntervalInSeconds = 1f;
 
-    private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
+    private FireRuntimeProjectionRuntimeState _fireRuntimeProjectionRuntimeState;
     private float _timeSinceLastUpdate;
     private FireDamageState _lastAppliedState;
     private bool _initialized;
@@ -28,8 +28,8 @@ namespace Mods.Prometheus.Scripts {
     private PropertyInfo _isDeadProperty;
 
     [Inject]
-    public void InjectDependencies(FireDamageStateRuntimeState fireDamageStateRuntimeState) {
-      _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
+    public void InjectDependencies(FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState) {
+      _fireRuntimeProjectionRuntimeState = fireRuntimeProjectionRuntimeState;
     }
 
     public void Awake() {
@@ -48,10 +48,11 @@ namespace Mods.Prometheus.Scripts {
       }
 
       var entityId = GameObject.GetInstanceID();
-      if (!_fireDamageStateRuntimeState.TryGetSnapshot(entityId, out var snapshot)) {
+      if (!_fireRuntimeProjectionRuntimeState.TryGetSnapshot(entityId, out var projection) || !projection.HasDamageState) {
         return;
       }
 
+      var snapshot = projection.DamageState;
       if (snapshot.State == _lastAppliedState) {
         return;
       }
