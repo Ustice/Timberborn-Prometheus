@@ -13,8 +13,8 @@ These are archived Phase 2 stabilization instructions. Use [../tickets/WORKER_IN
 
 - Read `AGENTS.md`.
 - Read `docs/INDEX.md`.
-- Read `docs/STABILIZATION_SPRINT.md`.
-- Read `docs/stabilization/README.md`.
+- Read `docs/ARCHIVE/stabilization-sprint-2026-04/STABILIZATION_SPRINT.md`.
+- Read `docs/ARCHIVE/stabilization-sprint-2026-04/BOARD_PROCESS.md`.
 - Read your assigned ticket file.
 - Read `docs/ARCHITECTURE.md` when it exists.
 - Read `docs/HANDOFF.md`, `docs/DESIGN.md`, and `docs/TEST_PLAN.md` when your ticket changes verified behavior, architecture, or validation state.

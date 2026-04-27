@@ -2,7 +2,7 @@
 
 Last analyzed: 2026-04-26
 
-Status: closed and archived. Active ticket tracking now lives in [tickets/README.md](tickets/README.md), and the closed sprint ticket board lives in [ARCHIVE/stabilization-sprint-2026-04/](ARCHIVE/stabilization-sprint-2026-04/).
+Status: closed and archived. Active ticket tracking now lives in [../../tickets/README.md](../../tickets/README.md), and the closed sprint ticket board lives in this archive directory.
 
 ## Purpose
 

@@ -25,6 +25,8 @@ Source of truth: run `bash scripts/build.sh --help` for current build/deploy beh
 | Durable design and roadmap | [docs/DESIGN.md](docs/DESIGN.md) |
 | Validation runbook | [docs/TEST_PLAN.md](docs/TEST_PLAN.md) |
 
+Older sprint plans and retired process docs live under [docs/ARCHIVE/](docs/ARCHIVE/). If a historical link points at a missing doc, check the matching archive directory first.
+
 ## Current Focus
 
 Prometheus is in a 3D grid fire rewrite. Phase 2 stabilization is closed for the integrated scope, and active work now tracks through the permanent file board in [docs/tickets/README.md](docs/tickets/README.md). The current validation focus is the field-first resource model: heat/ember/smoke transfer, stochastic entity ignition, moisture loss, fuel depletion, charred remnants, and Fertile Ash recovery reset evidence.

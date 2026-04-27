@@ -1,6 +1,6 @@
 # Prometheus Architecture Map
 
-This document is the durable boundary map for the stabilization sprint. It describes ownership and contracts; the sprint narrative, sequence, and risk burn-down remain in [STABILIZATION_SPRINT.md](STABILIZATION_SPRINT.md).
+This document is the durable boundary map for the Phase 2 stabilization work. It describes ownership and contracts; the archived sprint narrative, sequence, and risk burn-down remain in [ARCHIVE/stabilization-sprint-2026-04/STABILIZATION_SPRINT.md](ARCHIVE/stabilization-sprint-2026-04/STABILIZATION_SPRINT.md).
 
 Source of truth: exact class names, telemetry names, file layout, and current implementation details live in `Assets/Mods/Prometheus/Scripts`, `tests/Prometheus.Tests`, and the active logs.
 
@@ -116,7 +116,7 @@ Phase 3 may consume grid/entity aftermath facts, but it must not reimplement fir
 
 | Question | Source |
 | --- | --- |
-| What is the sprint sequence and why? | [STABILIZATION_SPRINT.md](STABILIZATION_SPRINT.md) |
+| What was the Phase 2 sprint sequence and why? | [ARCHIVE/stabilization-sprint-2026-04/STABILIZATION_SPRINT.md](ARCHIVE/stabilization-sprint-2026-04/STABILIZATION_SPRINT.md) |
 | What is currently verified in-game? | [HANDOFF.md](HANDOFF.md) |
 | What must be validated next? | [TEST_PLAN.md](TEST_PLAN.md) |
 | What are the durable product/design commitments? | [DESIGN.md](DESIGN.md) |

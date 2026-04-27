@@ -8,6 +8,9 @@ Active ticket tracking moved to [../../tickets/README.md](../../tickets/README.m
 
 - `tickets/` is the archived file board with completed, blocked, and empty status directories preserved as of sprint closeout.
 - `BACKLOG.md` is the archived sprint backlog.
+- `STABILIZATION_SPRINT.md` is the archived sprint narrative and risk burn-down plan.
+- `BOARD_PROCESS.md` is the archived sprint board process note that used to live under `docs/stabilization/`.
+- `WORKER_INSTRUCTIONS.md` is the archived stabilization worker handoff.
 
 ## Closeout Notes
 
