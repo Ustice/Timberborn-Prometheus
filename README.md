@@ -23,7 +23,7 @@ Source of truth: run `bash scripts/build.sh --help` for current build/deploy beh
 
 ## Current Focus
 
-Prometheus is in a 3D grid fire rewrite. The old entity-neighbor spread and responder-first runtime model has been removed from active code, and the current validation focus is the field-first resource model: heat/ember/smoke transfer, stochastic entity ignition, moisture loss, fuel depletion, and charred remnants.
+Prometheus is in a 3D grid fire rewrite. The old entity-neighbor spread and responder-first runtime model has been removed from active code, and the current validation focus is the field-first resource model: heat/ember/smoke transfer, stochastic entity ignition, moisture loss, fuel depletion, charred remnants, and Fertile Ash recovery reset evidence.
 
 Use [docs/HANDOFF.md](docs/HANDOFF.md) for the latest verified result, blocker list, and resume checklist.
 

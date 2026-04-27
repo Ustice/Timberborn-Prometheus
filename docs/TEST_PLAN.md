@@ -78,7 +78,7 @@ Use this section as the next validation gate once the sparse grid lands.
 - [x] Confirm collected `FertileAsh` enters normal storage that accepts the good.
 - [x] Confirm field amendments reduce eligible crop `Growable` growth time in dependency-light control-vs-amended rules.
 - [x] Confirm trees and bushes are excluded from the field-amendment growth rule.
-- [ ] Confirm `Reset Fire State` clears stale ash runtime state without deleting unrelated Timberborn entities unsafely.
+- [x] Confirm `Reset Fire State` clears stale ash runtime state without deleting unrelated Timberborn entities unsafely.
 - [x] Scan `Player.log` and `Fire.log` for Prometheus and recovered-good exceptions.
 
 ## Visual Authoring QA
@@ -134,6 +134,7 @@ Use [VALIDATION/explosion-policy.md](VALIDATION/explosion-policy.md) when explos
 | 2026-04-27 | Fertile Ash recovered-good wrapper | Recovery | Live Pass | `git diff --check`, `bash scripts/test.sh`, `bash scripts/build.sh --qa`, `Fire.log`, Computer Use | Native ash gatherable template was not confirmed; wrapper queues `FertileAsh` through Timberborn recovered-good stacks after good-registration validation. Live QA captured `fertile_ash_recovered_good_stack_queued`, `fertile_ash_spawn_queued`, visible Rubble with `Fertile ash 1`, and District Center storage with `Fertile ash 7`. |
 | 2026-04-27 | Fertile Ash field amendment crop growth | Recovery | Dependency-Light Pass | `git diff --check`, `bash scripts/test.sh`, `bash scripts/build.sh --qa`, `Player.log`, `Fire.log` | Eligible crop growables receive a 10% growth-speed buff from active field amendments; trees and bushes are excluded. Startup logs showed Prometheus loaded with no scanned Prometheus errors. Live farmhouse/farmer application remains owned by P2S-024/P2S-025. |
 | 2026-04-27 | Fertile Ash recovered-good spawn and storage | Recovery | Live Pass | `git diff --check`, `bash scripts/test.sh`, `bash scripts/build.sh --qa`, `Fire.log`, Computer Use | Valid charred Pine aftermath queued native recovered-good stacks at `49,3,7` and `23,4,11`; Computer Use confirmed visible Rubble with `Fertile ash 1`, and District Center storage showed `Fertile ash 7` after beaver pickup. Logs had one de-duplicated soil-moisture sample warning and no scanned recovered-good exception. |
+| 2026-04-27 | Fertile Ash reset telemetry | Recovery | Live Pass | `git diff --check`, `bash scripts/test.sh`, `bash scripts/build.sh --qa`, `Player.log`, `Fire.log`, Computer Use | Ash recovered-good queue telemetry clears through `Reset Fire State` while leaving Timberborn-owned recovered-good entities alone. Live reset logged `fertile_ash_reset_state queuedStacks=0 queuedAmount=0 source=none sourceKind=none damageCategory=none nativeStacksDestroyed=0 reason=native_recovered_good_stack_owned_by_timberborn`, followed by `runtime_reset_registry_completed failures=0`. |
 | YYYY-MM-DD |  |  | Pass/Fail |  |  |
 
 ## Session Closeout

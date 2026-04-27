@@ -33,5 +33,26 @@ namespace Prometheus.Tests
             TestSupport.Equal(FertileAshRecoveredGoodStackRules.GoodMissingReason, reason);
         }
 
+        [Fact]
+        public void TelemetryState_ClearForReset_RemovesQueuedAshEvidence_Test()
+        {
+            var state = new FertileAshRecoveredGoodStackTelemetryState();
+
+            state.RecordQueuedStack(
+                3,
+                new FertileAshSpawnTelemetryContext("BurnedOut", "vegetation", "tree", 42));
+
+            var snapshot = state.ClearForReset();
+
+            TestSupport.Equal(1, snapshot.QueuedStackCount);
+            TestSupport.Equal(3, snapshot.QueuedAshAmount);
+            TestSupport.Equal("BurnedOut", snapshot.LastSourceAttribution);
+            TestSupport.Equal("vegetation", snapshot.LastSourceKind);
+            TestSupport.Equal("tree", snapshot.LastDamageCategory);
+            TestSupport.Equal(0, state.QueuedStackCount);
+            TestSupport.Equal(0, state.QueuedAshAmount);
+            TestSupport.Equal("none", state.LastSourceAttribution);
+        }
+
     }
 }

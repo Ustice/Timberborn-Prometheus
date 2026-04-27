@@ -44,6 +44,7 @@ namespace Mods.Prometheus.Scripts {
     public const string FertileAshSpawnFailed = "fertile_ash_spawn_failed";
     public const string FertileAshRecoveredGoodStackQueued = "fertile_ash_recovered_good_stack_queued";
     public const string FertileAshRecoveredGoodStackFailed = "fertile_ash_recovered_good_stack_failed";
+    public const string FertileAshResetState = "fertile_ash_reset_state";
     public const string VisualPreviewApply = "visual_preview_apply";
     public const string VisualPreviewClear = "visual_preview_clear";
     public const string VisualTuningJson = "visual_tuning_json";
@@ -97,6 +98,7 @@ namespace Mods.Prometheus.Scripts {
       FertileAshSpawnFailed,
       FertileAshRecoveredGoodStackQueued,
       FertileAshRecoveredGoodStackFailed,
+      FertileAshResetState,
       VisualPreviewApply,
       VisualPreviewClear,
       VisualTuningJson,

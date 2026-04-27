@@ -93,9 +93,10 @@ namespace Prometheus.Tests
             var damage = new FireDamageStateRuntimeState();
             var projection = new FireRuntimeProjectionRuntimeState();
             var recovery = new FireRecoveryRuntimeState();
+            var ashTelemetry = new FertileAshRecoveredGoodStackTelemetryState();
             var fieldAmendments = new FireFieldAmendmentRuntimeState();
             var previews = new FireVisualEffectPreviewRuntimeState();
-            var registry = new FireResetRegistry(grid, exposure, impact, damage, projection, recovery, fieldAmendments, previews);
+            var registry = new FireResetRegistry(grid, exposure, impact, damage, projection, recovery, ashTelemetry, fieldAmendments, previews);
             var entityHookCount = 0;
 
             registry.RegisterGlobal(FireResetHookKind.BeaverEffect, "test-beaver", () => { });
@@ -105,6 +106,9 @@ namespace Prometheus.Tests
             damage.SetSnapshot(42, new FireDamageStateSnapshot(FireDamageCategory.Building, FireDamageState.Burning, 0.7f, 0.2f, 3));
             projection.SetImpact(42, new FireImpactSnapshot(0.1f, 0.2f, 0.3f, 0.4f, 0.5f));
             recovery.SetSnapshot(42, new FireRecoverySnapshot(true, 0.12f, 0.1f, 0.05f, 4f));
+            ashTelemetry.RecordQueuedStack(
+                2,
+                new FertileAshSpawnTelemetryContext("BurnedOut", "vegetation", "tree", 42));
             fieldAmendments.SetAmendment(new FireGridCoordinate(1, 0, 2), 12f, 3);
 
             var result = registry.ResetAll("test");
@@ -119,6 +123,8 @@ namespace Prometheus.Tests
             TestSupport.Equal(0, damage.SnapshotCount);
             TestSupport.Equal(0, projection.SnapshotCount);
             TestSupport.Equal(0, recovery.SnapshotCount);
+            TestSupport.Equal(0, ashTelemetry.QueuedStackCount);
+            TestSupport.Equal(0, ashTelemetry.QueuedAshAmount);
             TestSupport.Equal(0, fieldAmendments.ActiveAmendmentCount);
         }
 
@@ -132,6 +138,7 @@ namespace Prometheus.Tests
                 new FireDamageStateRuntimeState(),
                 new FireRuntimeProjectionRuntimeState(),
                 new FireRecoveryRuntimeState(),
+                new FertileAshRecoveredGoodStackTelemetryState(),
                 new FireFieldAmendmentRuntimeState(),
                 new FireVisualEffectPreviewRuntimeState());
             var entityHookCount = 0;
@@ -155,6 +162,7 @@ namespace Prometheus.Tests
                 new FireDamageStateRuntimeState(),
                 new FireRuntimeProjectionRuntimeState(),
                 new FireRecoveryRuntimeState(),
+                new FertileAshRecoveredGoodStackTelemetryState(),
                 new FireFieldAmendmentRuntimeState(),
                 new FireVisualEffectPreviewRuntimeState());
             var successfulEntityHookCount = 0;

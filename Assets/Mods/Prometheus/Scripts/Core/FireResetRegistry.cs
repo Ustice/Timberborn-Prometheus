@@ -34,6 +34,7 @@ namespace Mods.Prometheus.Scripts {
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
       FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState,
       FireRecoveryRuntimeState fireRecoveryRuntimeState,
+      FertileAshRecoveredGoodStackTelemetryState fertileAshRecoveredGoodStackTelemetryState,
       FireFieldAmendmentRuntimeState fireFieldAmendmentRuntimeState,
       FireVisualEffectPreviewRuntimeState fireVisualEffectPreviewRuntimeState) {
       RegisterGlobal(FireResetHookKind.GridState, nameof(FireGridRuntimeState), fireGridRuntimeState.Clear);
@@ -42,6 +43,7 @@ namespace Mods.Prometheus.Scripts {
       RegisterGlobal(FireResetHookKind.DamageState, nameof(FireDamageStateRuntimeState), fireDamageStateRuntimeState.ClearSnapshots);
       RegisterGlobal(FireResetHookKind.DamageState, nameof(FireRuntimeProjectionRuntimeState), fireRuntimeProjectionRuntimeState.ClearSnapshots);
       RegisterGlobal(FireResetHookKind.AshState, nameof(FireRecoveryRuntimeState), fireRecoveryRuntimeState.ClearSnapshots);
+      RegisterGlobal(FireResetHookKind.AshState, nameof(FertileAshRecoveredGoodStackTelemetryState), () => ResetFertileAshTelemetryState(fertileAshRecoveredGoodStackTelemetryState));
       RegisterGlobal(FireResetHookKind.AshState, nameof(FireFieldAmendmentRuntimeState), fireFieldAmendmentRuntimeState.ClearAmendments);
       RegisterGlobal(FireResetHookKind.PreviewState, nameof(FireVisualEffectPreviewRuntimeState), fireVisualEffectPreviewRuntimeState.ClearAllPreviews);
 #if !PROMETHEUS_TESTS
@@ -105,6 +107,11 @@ namespace Mods.Prometheus.Scripts {
 
     private FireResetHook CreateHook(FireResetHookKind kind, int entityId, string owner, Action reset) =>
       new(++_nextRegistrationId, kind, entityId, string.IsNullOrWhiteSpace(owner) ? "unknown" : owner, reset);
+
+    private static void ResetFertileAshTelemetryState(FertileAshRecoveredGoodStackTelemetryState telemetryState) {
+      var snapshot = telemetryState.ClearForReset();
+      FireTelemetry.Log($"event={FireTelemetryEvents.FertileAshResetState} queuedStacks={snapshot.QueuedStackCount} queuedAmount={snapshot.QueuedAshAmount} source={snapshot.LastSourceAttribution} sourceKind={snapshot.LastSourceKind} damageCategory={snapshot.LastDamageCategory} nativeStacksDestroyed=0 reason=native_recovered_good_stack_owned_by_timberborn");
+    }
 
     private IEnumerable<FireResetHook> CreateLoadedEntityHooks() {
 #if PROMETHEUS_TESTS

@@ -120,14 +120,20 @@ namespace Mods.Prometheus.Scripts {
         return;
       }
 
-      if (_fertileAshRecoveredGoodStackSpawner.TryQueueFertileAsh(coordinates, decision.Amount, out var queueReason)) {
+      var telemetryContext = new FertileAshSpawnTelemetryContext(
+        exposureSnapshot.DominantSource,
+        eligibility.SourceKind.ToString().ToLowerInvariant(),
+        damageState.Category.ToString().ToLowerInvariant(),
+        entityId);
+
+      if (_fertileAshRecoveredGoodStackSpawner.TryQueueFertileAsh(coordinates, decision.Amount, telemetryContext, out var queueReason)) {
         FireTelemetry.Log(
-          $"event={FireTelemetryEvents.FertileAshSpawnQueued} entity={GameObject.name} id={entityId} amount={decision.Amount} reason={decision.Reason} sourceKind={eligibility.SourceKind.ToString().ToLowerInvariant()} coordinates={coordinates.x},{coordinates.y},{coordinates.z}");
+          $"event={FireTelemetryEvents.FertileAshSpawnQueued} entity={GameObject.name} id={entityId} amount={decision.Amount} reason={decision.Reason} source={telemetryContext.SourceAttribution} sourceKind={telemetryContext.SourceKind} damageCategory={telemetryContext.DamageCategory} coordinates={coordinates.x},{coordinates.y},{coordinates.z}");
         return;
       }
 
       FireTelemetry.LogWarning(
-        $"event={FireTelemetryEvents.FertileAshSpawnFailed} entity={GameObject.name} id={entityId} amount={decision.Amount} reason={queueReason} sourceKind={eligibility.SourceKind.ToString().ToLowerInvariant()} coordinates={coordinates.x},{coordinates.y},{coordinates.z}");
+        $"event={FireTelemetryEvents.FertileAshSpawnFailed} entity={GameObject.name} id={entityId} amount={decision.Amount} reason={queueReason} source={telemetryContext.SourceAttribution} sourceKind={telemetryContext.SourceKind} damageCategory={telemetryContext.DamageCategory} coordinates={coordinates.x},{coordinates.y},{coordinates.z}");
     }
 
     private FireGridStructureKind GetStructureKind(FireDamageCategory damageCategory) {
