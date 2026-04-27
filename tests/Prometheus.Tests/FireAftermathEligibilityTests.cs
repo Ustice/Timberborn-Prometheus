@@ -98,5 +98,41 @@ namespace Prometheus.Tests
             TestSupport.Equal("top_surface_adapter_pending", result.Reason);
         }
 
+        [Fact]
+        public void FertileAshSpawnPolicy_QueuesAmountsForEligibleSources_Test()
+        {
+            var treeDecision = FertileAshSpawnPolicy.Evaluate(
+              new FireAftermathEligibilityResult(
+                FireAftermathEligibilityStatus.Eligible,
+                FireAftermathSourceKind.CharredTree,
+                "charred_tree"));
+            var buildingDecision = FertileAshSpawnPolicy.Evaluate(
+              new FireAftermathEligibilityResult(
+                FireAftermathEligibilityStatus.Eligible,
+                FireAftermathSourceKind.CharredBuilding,
+                "charred_building"));
+
+            TestSupport.True(treeDecision.ShouldQueue);
+            TestSupport.Equal(FertileAshSpawnPolicy.CharredTreeAmount, treeDecision.Amount);
+            TestSupport.Equal("charred_tree", treeDecision.Reason);
+            TestSupport.True(buildingDecision.ShouldQueue);
+            TestSupport.Equal(FertileAshSpawnPolicy.CharredBuildingAmount, buildingDecision.Amount);
+            TestSupport.Equal("charred_building", buildingDecision.Reason);
+        }
+
+        [Fact]
+        public void FertileAshSpawnPolicy_DoesNotQueueIneligibleSources_Test()
+        {
+            var decision = FertileAshSpawnPolicy.Evaluate(
+              new FireAftermathEligibilityResult(
+                FireAftermathEligibilityStatus.Ineligible,
+                FireAftermathSourceKind.ExcludedObject,
+                "excluded_source"));
+
+            TestSupport.False(decision.ShouldQueue);
+            TestSupport.Equal(0, decision.Amount);
+            TestSupport.Equal("excluded_source", decision.Reason);
+        }
+
     }
 }

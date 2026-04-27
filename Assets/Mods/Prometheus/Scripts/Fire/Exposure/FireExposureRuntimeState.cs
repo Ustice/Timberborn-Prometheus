@@ -39,6 +39,11 @@ namespace Mods.Prometheus.Scripts {
     public const string RecoveryExpired = "recovery_expired";
     public const string FieldAmendmentGrowthBuffApplied = "field_amendment_growth_buff_applied";
     public const string FieldAmendmentGrowthBuffRestored = "field_amendment_growth_buff_restored";
+    public const string FertileAshSpawnQueued = "fertile_ash_spawn_queued";
+    public const string FertileAshSpawnSkipped = "fertile_ash_spawn_skipped";
+    public const string FertileAshSpawnFailed = "fertile_ash_spawn_failed";
+    public const string FertileAshRecoveredGoodStackQueued = "fertile_ash_recovered_good_stack_queued";
+    public const string FertileAshRecoveredGoodStackFailed = "fertile_ash_recovered_good_stack_failed";
     public const string VisualPreviewApply = "visual_preview_apply";
     public const string VisualPreviewClear = "visual_preview_clear";
     public const string VisualTuningJson = "visual_tuning_json";
@@ -87,6 +92,11 @@ namespace Mods.Prometheus.Scripts {
       RecoveryExpired,
       FieldAmendmentGrowthBuffApplied,
       FieldAmendmentGrowthBuffRestored,
+      FertileAshSpawnQueued,
+      FertileAshSpawnSkipped,
+      FertileAshSpawnFailed,
+      FertileAshRecoveredGoodStackQueued,
+      FertileAshRecoveredGoodStackFailed,
       VisualPreviewApply,
       VisualPreviewClear,
       VisualTuningJson,

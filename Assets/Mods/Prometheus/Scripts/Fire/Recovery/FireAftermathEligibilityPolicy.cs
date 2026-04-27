@@ -60,6 +60,20 @@ namespace Mods.Prometheus.Scripts {
 
   }
 
+  internal readonly struct FertileAshSpawnDecision {
+
+    public bool ShouldQueue { get; }
+    public int Amount { get; }
+    public string Reason { get; }
+
+    public FertileAshSpawnDecision(bool shouldQueue, int amount, string reason) {
+      ShouldQueue = shouldQueue;
+      Amount = amount;
+      Reason = string.IsNullOrWhiteSpace(reason) ? "unspecified" : reason;
+    }
+
+  }
+
   internal static class FireAftermathEligibilityPolicy {
 
     internal static FireAftermathEligibilityResult Evaluate(FireAftermathEligibilityCandidate candidate) {
@@ -102,6 +116,29 @@ namespace Mods.Prometheus.Scripts {
       FireAftermathSourceKind sourceKind,
       string reason) =>
       new(FireAftermathEligibilityStatus.Ineligible, sourceKind, reason);
+
+  }
+
+  internal static class FertileAshSpawnPolicy {
+
+    internal const int CharredTreeAmount = 1;
+    internal const int CharredBuildingAmount = 4;
+
+    internal static FertileAshSpawnDecision Evaluate(FireAftermathEligibilityResult eligibility) {
+      if (!eligibility.CanProduceFertileAsh) {
+        return new FertileAshSpawnDecision(false, 0, eligibility.Reason);
+      }
+
+      var amount = eligibility.SourceKind switch {
+        FireAftermathSourceKind.CharredTree => CharredTreeAmount,
+        FireAftermathSourceKind.CharredBuilding => CharredBuildingAmount,
+        _ => 0,
+      };
+
+      return amount > 0
+        ? new FertileAshSpawnDecision(true, amount, eligibility.Reason)
+        : new FertileAshSpawnDecision(false, 0, "missing_spawn_amount");
+    }
 
   }
 }
