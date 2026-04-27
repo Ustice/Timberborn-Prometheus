@@ -39,6 +39,7 @@
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Impact/FireImpactRuntimeState.cs" Link="Source/Fire/Impact/FireImpactRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Projection/FireRuntimeProjectionRuntimeState.cs" Link="Source/Fire/Projection/FireRuntimeProjectionRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Recovery/FireAftermathEligibilityPolicy.cs" Link="Source/Fire/Recovery/FireAftermathEligibilityPolicy.cs" />
+    <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Recovery/FertileAshRecoveredGoodStackSpawner.cs" Link="Source/Fire/Recovery/FertileAshRecoveredGoodStackSpawner.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Recovery/FireFieldAmendmentRuntimeState.cs" Link="Source/Fire/Recovery/FireFieldAmendmentRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Recovery/FireRecoveryRuntimeState.cs" Link="Source/Fire/Recovery/FireRecoveryRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Exposure/FireConfiguredSourceInjector.cs" Link="Source/Fire/Exposure/FireConfiguredSourceInjector.cs" />
