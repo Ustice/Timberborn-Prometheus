@@ -72,6 +72,8 @@ namespace Mods.Prometheus.Scripts {
     internal const string NeedManagerTypeName = "NeedManager";
     internal const string DeteriorableTypeName = "Deteriorable";
     internal const string GrowableTypeName = "Growable";
+    internal const string CropTypeName = "Crop";
+    internal const string BushTypeName = "Bush";
     internal const string LivingNaturalResourceTypeName = "LivingNaturalResource";
     internal const string TreeComponentTypeName = "TreeComponent";
 
@@ -98,6 +100,12 @@ namespace Mods.Prometheus.Scripts {
 
     internal static bool IsGrowableComponentName(string componentTypeName) =>
       string.Equals(componentTypeName, GrowableTypeName, StringComparison.Ordinal);
+
+    internal static bool IsCropComponentName(string componentTypeName) =>
+      string.Equals(componentTypeName, CropTypeName, StringComparison.Ordinal);
+
+    internal static bool IsBushComponentName(string componentTypeName) =>
+      string.Equals(componentTypeName, BushTypeName, StringComparison.Ordinal);
 
     internal static bool IsDeteriorableComponentName(string componentTypeName) =>
       string.Equals(componentTypeName, DeteriorableTypeName, StringComparison.Ordinal);

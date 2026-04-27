@@ -126,9 +126,7 @@ compile_if_possible() {
 }
 
 sync_prometheus_compile_items() {
-  prune_non_current_prometheus_compile_items
-  add_missing_prometheus_compile_items
-  prune_stale_prometheus_compile_items
+  rewrite_prometheus_compile_items
   prune_stale_external_mod_references
   add_missing_external_mod_references
 }
@@ -144,6 +142,31 @@ prometheus_compile_items() {
 remove_prometheus_compile_item() {
   local include_path="$1"
   perl -0pi -e "s#\\s*<Compile Include=\"\\Q$include_path\\E\" />##g" "$PROJECT_CSPROJ"
+}
+
+rewrite_prometheus_compile_items() {
+  local compile_items_file
+  compile_items_file="$(mktemp)"
+
+  local source_file
+  while IFS= read -r source_file; do
+    local relative_source
+    relative_source="$(relative_to_build_project "$source_file")"
+    printf '    <Compile Include="%s" />\n' "$relative_source" >>"$compile_items_file"
+  done < <(find "$SRC_MOD_DIR/Scripts" -type f -name '*.cs' | sort)
+
+  PROMETHEUS_COMPILE_ITEMS_FILE="$compile_items_file" perl -0pi -e '
+    my $compile_items_file = $ENV{"PROMETHEUS_COMPILE_ITEMS_FILE"};
+    open(my $items_handle, "<", $compile_items_file) or die "Cannot read compile items: $!";
+    local $/;
+    my $compile_items = <$items_handle>;
+    close($items_handle);
+
+    s#\s*<ItemGroup>\s*(?:<Compile Include="[^"]*Assets/Mods/Prometheus/Scripts/[^"]*\.cs" />\s*)+</ItemGroup>##sg;
+    s#(\s*<ItemGroup>\s*<None Include="Assets/Mods/Prometheus/Scripts/Timberborn\.ModExamples\.Prometheus\.asmdef" />\s*</ItemGroup>)#\n  <ItemGroup>\n$compile_items  </ItemGroup>\n$1#s;
+  ' "$PROJECT_CSPROJ"
+
+  rm -f "$compile_items_file"
 }
 
 prune_non_current_prometheus_compile_items() {

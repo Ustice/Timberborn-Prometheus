@@ -37,6 +37,8 @@ namespace Mods.Prometheus.Scripts {
     public const string BeaverEffectApiResolved = "beaver_effect_api_resolved";
     public const string RecoveryStarted = "recovery_started";
     public const string RecoveryExpired = "recovery_expired";
+    public const string FieldAmendmentGrowthBuffApplied = "field_amendment_growth_buff_applied";
+    public const string FieldAmendmentGrowthBuffRestored = "field_amendment_growth_buff_restored";
     public const string VisualPreviewApply = "visual_preview_apply";
     public const string VisualPreviewClear = "visual_preview_clear";
     public const string VisualTuningJson = "visual_tuning_json";
@@ -83,6 +85,8 @@ namespace Mods.Prometheus.Scripts {
       BeaverEffectApiResolved,
       RecoveryStarted,
       RecoveryExpired,
+      FieldAmendmentGrowthBuffApplied,
+      FieldAmendmentGrowthBuffRestored,
       VisualPreviewApply,
       VisualPreviewClear,
       VisualTuningJson,

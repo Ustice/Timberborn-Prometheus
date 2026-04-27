@@ -1,6 +1,7 @@
 using System.Reflection;
 using Bindito.Core;
 using Timberborn.BaseComponentSystem;
+using UnityEngine;
 
 namespace Mods.Prometheus.Scripts {
   internal class FireRecoveryEffectApplier : BaseComponent,
@@ -9,20 +10,29 @@ namespace Mods.Prometheus.Scripts {
 
     private const float UpdateIntervalInSeconds = 1f;
 
-    private FireRuntimeProjectionRuntimeState _fireRuntimeProjectionRuntimeState;
+    private FireFieldAmendmentRuntimeState _fireFieldAmendmentRuntimeState;
 
     private float _timeSinceLastUpdate;
     private object _growable;
     private PropertyInfo _growthTimeInDaysProperty;
     private float _baseGrowthTimeInDays;
+    private FireGridCoordinate _primaryCoordinate;
+    private FireGridCoordinate _groundCoordinate;
+    private bool _eligibleCropGrowable;
     private bool _hasModifiedGrowthTime;
 
     [Inject]
-    public void InjectDependencies(FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState) {
-      _fireRuntimeProjectionRuntimeState = fireRuntimeProjectionRuntimeState;
+    public void InjectDependencies(FireFieldAmendmentRuntimeState fireFieldAmendmentRuntimeState) {
+      _fireFieldAmendmentRuntimeState = fireFieldAmendmentRuntimeState;
     }
 
     public void Awake() {
+      _eligibleCropGrowable = FireFieldAmendmentGrowthRules.IsEligibleCropGrowable(
+        TimberbornComponentCacheLookup.EnumerateGameObjectAndCachedComponentTypeNames(GameObject));
+      if (!_eligibleCropGrowable) {
+        return;
+      }
+
       if (!TimberbornComponentCacheLookup.TryGetCachedOrDirectComponentByTypeName(
         GameObject,
         TimberbornCompatibility.GrowableTypeName,
@@ -41,10 +51,13 @@ namespace Mods.Prometheus.Scripts {
 
       TimberbornCompatibility.RecordProbe(TimberbornCompatibilityArea.Recovery, true, "Growable.GrowthTimeInDays read/write");
       _baseGrowthTimeInDays = (float)_growthTimeInDaysProperty.GetValue(_growable);
+      var footprint = FireGridFootprintSampler.FromWorldPosition(GameObject.transform.position);
+      _primaryCoordinate = footprint.PrimaryCoordinate;
+      _groundCoordinate = new FireGridCoordinate(_primaryCoordinate.X, _primaryCoordinate.Y - 1, _primaryCoordinate.Z);
     }
 
     public void Update() {
-      if (_growable is null || _growthTimeInDaysProperty is null) {
+      if (!_eligibleCropGrowable || _growable is null || _growthTimeInDaysProperty is null) {
         return;
       }
 
@@ -52,21 +65,21 @@ namespace Mods.Prometheus.Scripts {
         return;
       }
 
-      var entityId = GameObject.GetInstanceID();
-      if (!_fireRuntimeProjectionRuntimeState.TryGetSnapshot(entityId, out var projection) || !projection.HasRecovery) {
+      if (!TryGetActiveAmendment(out var amendment)) {
         RestoreBaseGrowthTimeIfNeeded();
         return;
       }
 
-      var recoverySnapshot = projection.Recovery;
-      if (!recoverySnapshot.FertileAshAvailable || recoverySnapshot.GrowthSpeedBonus <= 0f) {
-        RestoreBaseGrowthTimeIfNeeded();
-        return;
+      if (!_hasModifiedGrowthTime) {
+        _baseGrowthTimeInDays = (float)_growthTimeInDaysProperty.GetValue(_growable);
       }
 
-      var growthSpeedMultiplier = 1f + recoverySnapshot.GrowthSpeedBonus;
-      var boostedGrowthTime = _baseGrowthTimeInDays / growthSpeedMultiplier;
+      var boostedGrowthTime = FireFieldAmendmentGrowthRules.ComputeBoostedGrowthTimeInDays(_baseGrowthTimeInDays);
       _growthTimeInDaysProperty.SetValue(_growable, boostedGrowthTime);
+      if (!_hasModifiedGrowthTime) {
+        FireTelemetry.Log($"event={FireTelemetryEvents.FieldAmendmentGrowthBuffApplied} entity={GameObject.name} id={GameObject.GetInstanceID()} coordinate={amendment.Coordinate} baseGrowthTimeDays={_baseGrowthTimeInDays:0.###} boostedGrowthTimeDays={boostedGrowthTime:0.###} remainingHours={amendment.RemainingHours:0.###} charges={amendment.RemainingCharges}");
+      }
+
       _hasModifiedGrowthTime = true;
     }
 
@@ -81,6 +94,15 @@ namespace Mods.Prometheus.Scripts {
 
       _growthTimeInDaysProperty.SetValue(_growable, _baseGrowthTimeInDays);
       _hasModifiedGrowthTime = false;
+      FireTelemetry.Log($"event={FireTelemetryEvents.FieldAmendmentGrowthBuffRestored} entity={GameObject.name} id={GameObject.GetInstanceID()} baseGrowthTimeDays={_baseGrowthTimeInDays:0.###}");
+    }
+
+    private bool TryGetActiveAmendment(out FireFieldAmendmentSnapshot amendment) {
+      if (_fireFieldAmendmentRuntimeState.TryGetAmendment(_primaryCoordinate, out amendment) && amendment.IsActive) {
+        return true;
+      }
+
+      return _fireFieldAmendmentRuntimeState.TryGetAmendment(_groundCoordinate, out amendment) && amendment.IsActive;
     }
 
   }
