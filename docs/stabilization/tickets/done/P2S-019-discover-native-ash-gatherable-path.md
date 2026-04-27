@@ -1,6 +1,6 @@
 # P2S-019 Discover Native Ash Gatherable Path
 
-Status: integration
+Status: done
 
 Agent level: High
 
