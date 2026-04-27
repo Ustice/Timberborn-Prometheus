@@ -39,11 +39,11 @@ namespace Mods.Prometheus.Scripts {
     }
 
     public void Awake() {
-      EnsureResetRegistration();
       _category = DetectCategory();
     }
 
     public void Update() {
+      EnsureResetRegistration();
       if (!TickGate.ShouldRun(ref _timeSinceLastUpdate, UpdateIntervalInSeconds)) {
         return;
       }

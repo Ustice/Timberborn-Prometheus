@@ -28,7 +28,6 @@ namespace Mods.Prometheus.Scripts {
     }
 
     public void Awake() {
-      EnsureResetRegistration();
       _growable = GameObject.GetComponent("Growable");
       if (_growable is null) {
         return;
@@ -48,6 +47,7 @@ namespace Mods.Prometheus.Scripts {
     }
 
     public void Update() {
+      EnsureResetRegistration();
       if (_growable is null || _growthTimeInDaysProperty is null) {
         return;
       }

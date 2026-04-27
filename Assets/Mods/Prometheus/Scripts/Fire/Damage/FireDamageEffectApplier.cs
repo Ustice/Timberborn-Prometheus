@@ -39,13 +39,13 @@ namespace Mods.Prometheus.Scripts {
     }
 
     public void Awake() {
-      EnsureResetRegistration();
       BindTargetComponents();
       _lastAppliedState = FireDamageState.Healthy;
       _initialized = true;
     }
 
     public void Update() {
+      EnsureResetRegistration();
       if (!_initialized) {
         return;
       }

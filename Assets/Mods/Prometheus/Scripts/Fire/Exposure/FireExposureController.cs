@@ -49,13 +49,13 @@ namespace Mods.Prometheus.Scripts {
     }
 
     public void Awake() {
-      EnsureResetRegistration();
       _fireProfile = GetComponent<FireProfile>();
       _remainingFuel = MaxFuel;
       _remainingMoisture = MaxMoisture;
     }
 
     public void Update() {
+      EnsureResetRegistration();
       _fireExposureRuntimeState.TickIgnitionBlock(Time.deltaTime);
       if (!TickGate.ShouldRun(ref _timeSinceLastUpdate, UpdateIntervalInSeconds)) {
         return;
