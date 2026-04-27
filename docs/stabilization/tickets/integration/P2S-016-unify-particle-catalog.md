@@ -1,6 +1,6 @@
 # P2S-016 Unify Particle Catalog
 
-Status: in-progress
+Status: integration
 
 Agent level: Low
 
