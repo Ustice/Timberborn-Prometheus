@@ -1,6 +1,6 @@
 # P2S-018 Add Aftermath Eligibility
 
-Status: todo
+Status: in-progress
 
 Agent level: Low
 
@@ -35,4 +35,3 @@ Define which burned things can produce Fertile Ash.
 ## Integration Notes
 
 This ticket is the policy gate before native ash spawning.
-

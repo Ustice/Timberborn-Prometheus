@@ -1,6 +1,6 @@
 # P2S-017 Revalidate Effects Through Facade
 
-Status: todo
+Status: in-progress
 
 Agent level: Medium
 
@@ -37,4 +37,3 @@ Route effect assumptions through the integration facade and reset registry.
 ## Integration Notes
 
 Do not integrate without live QA because effect mutation is difficult to prove with dependency-light tests only.
-
