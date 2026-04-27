@@ -1,6 +1,6 @@
 # P2S-020 Spawn Native Fertile Ash
 
-Status: blocked
+Status: in-progress
 
 Agent level: High
 
@@ -46,3 +46,8 @@ Do not integrate if ash is only a debug/internal counter.
 - No fresh `fertile_ash_*` telemetry was present in `Player.log` or `Fire.log` from the current QA run.
 - The ticket cannot be integrated until visible Fertile Ash recovered-good stack spawn, builder collection, and normal storage flow are proven in-game.
 - Smallest next action: reassign or resume P2S-020 from `/Users/jasonkleinberg/repos/Timberborn-Prometheus-P2S-020`, inspect the uncommitted partial edits, finish or replace them, run `git diff --check`, `bash scripts/test.sh`, and live QA showing visible stack collection/storage with clean logs.
+
+2026-04-27 reassignment:
+
+- Reopened for a replacement worker to recover or replace the partial implementation.
+- Prior blocker still applies until live collection/storage proof exists.
