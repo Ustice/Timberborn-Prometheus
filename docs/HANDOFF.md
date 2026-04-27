@@ -6,7 +6,7 @@ Last updated: 2026-04-27
 
 Prometheus is moving into the 3D grid fire rewrite. The old entity-neighbor spread and responder-first runtime model has been removed from active source so the new sparse chunked cellular system can land without legacy behavior mixed in.
 
-Phase 2 stabilization is now running from the file board under `docs/stabilization/tickets/`. Wave A, Wave B, Wave C, Wave D, P2S-019, and P2S-022 are integrated and done, including P2S-009 reset-registry live QA, P2S-013 configured-source startup QA, P2S-017 effect-facade startup QA, the native recovered-good wrapper for Fertile Ash, and dependency-light field amendment state. P2S-023 is implemented in its worker branch with dependency-light crop growth rules and startup QA evidence.
+Phase 2 stabilization is now running from the file board under `docs/stabilization/tickets/`. Wave A, Wave B, Wave C, Wave D, P2S-019, P2S-022, and P2S-023 are integrated and done, including P2S-009 reset-registry live QA, P2S-013 configured-source startup QA, P2S-017 effect-facade startup QA, the native recovered-good wrapper for Fertile Ash, dependency-light field amendment state, and the crop growth buff for active amendments.
 
 ## Verified Since Last Checkpoint
 
@@ -52,7 +52,7 @@ Phase 2 stabilization is now running from the file board under `docs/stabilizati
 | 2026-04-27 | P2S-017 integration on `main`: `git diff --check` + `bash scripts/test.sh` + `bash scripts/build.sh --qa` + Computer Use startup | Pass | Effect appliers now route direct/cached component assumptions through the integration facade, reset registry entity discovery uses the same facade lookup, and the beaver clear path no-ops when the reset setter API is missing instead of applying a compensating mutation. Plain C# suite is 74 passing tests. Computer Use reached the main menu; startup logs showed Prometheus loaded and the compatibility summary with no scanned Prometheus exceptions. |
 | 2026-04-27 | P2S-022 integration on `main`: `git diff --check` + `bash scripts/test.sh` | Pass | Added Fertile Ash field amendment runtime state keyed by fire-grid coordinate with duration, charges, consume, expiry, reset, and debug count. Plain C# suite is now 78 passing tests. |
 | 2026-04-27 | P2S-019 integration on `main`: `git diff --check` + `bash scripts/test.sh` + `bash scripts/build.sh` | Pass | Native gatherable discovery found no authored ash natural-resource template, so the safe wrapper uses Timberborn recovered-good stacks and validates `IGoodService.HasGood("FertileAsh")` before queueing. Plain C# suite is now 81 passing tests. Live collection proof remains for P2S-020/P2S-021. |
-| 2026-04-27 | P2S-023 worker branch: `git diff --check` + `bash scripts/test.sh` + `bash scripts/build.sh --qa` + startup log scan | Pass | Fertile Ash field amendments now reduce eligible crop `Growable.GrowthTimeInDays` by 10%, exclude trees and bushes through component classification, tick amendment expiry from a runtime singleton, and restore base growth time on expiry/reset. Plain C# suite is now 83 passing tests. Startup logs showed Prometheus loaded with no scanned Prometheus errors. |
+| 2026-04-27 | P2S-023 integration on `main`: `git diff --check` + `bash scripts/test.sh` + `bash scripts/build.sh --qa` + Computer Use save load + startup log scan | Pass | Fertile Ash field amendments now reduce eligible crop `Growable.GrowthTimeInDays` by 10%, exclude trees and bushes through component classification, tick amendment expiry from a runtime singleton, and restore base growth time on expiry/reset. Plain C# suite is now 83 passing tests. Computer Use loaded `Prometheus QA - 2026-04-26 23h01m, Day 3-2.autosave`; logs showed `Load time: 11999ms` with Prometheus loaded and no scanned Prometheus errors. |
 
 ## Durable Context
 
@@ -87,7 +87,7 @@ Source of truth: current UI labels and telemetry event names should be checked i
 
 ## Next Exact Action
 
-Continue Wave E with P2S-020 integration/QA and orchestrator verification of P2S-023. P2S-020 owns the live Fertile Ash spawn/collection/storage proof; P2S-024/P2S-025 own farmhouse/farmer application after the recovered-good path is proven.
+Continue Wave E with P2S-020 integration/QA. P2S-020 owns the live Fertile Ash spawn/collection/storage proof; P2S-024/P2S-025 own farmhouse/farmer application after the recovered-good path is proven.
 
 ## Resume Checklist
 
