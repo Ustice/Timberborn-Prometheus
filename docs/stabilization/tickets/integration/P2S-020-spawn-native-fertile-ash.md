@@ -1,6 +1,6 @@
 # P2S-020 Spawn Native Fertile Ash
 
-Status: verify
+Status: integration
 
 Agent level: High
 
