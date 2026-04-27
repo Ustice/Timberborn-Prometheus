@@ -10,8 +10,7 @@ namespace Mods.Prometheus.Scripts {
 
     private const float UpdateIntervalInSeconds = 1f;
 
-    private FireImpactRuntimeState _fireImpactRuntimeState;
-    private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
+    private FireRuntimeProjectionRuntimeState _fireRuntimeProjectionRuntimeState;
     private float _timeSinceLastUpdate;
     private Workplace _workplace;
     private readonly List<Behaviour> _workplaceSupportBehaviours = new();
@@ -29,11 +28,8 @@ namespace Mods.Prometheus.Scripts {
     private int _lastLoggedIndoorExposedWorkerCount = -1;
 
     [Inject]
-    public void InjectDependencies(
-      FireImpactRuntimeState fireImpactRuntimeState,
-      FireDamageStateRuntimeState fireDamageStateRuntimeState) {
-      _fireImpactRuntimeState = fireImpactRuntimeState;
-      _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
+    public void InjectDependencies(FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState) {
+      _fireRuntimeProjectionRuntimeState = fireRuntimeProjectionRuntimeState;
     }
 
     public void Update() {
@@ -46,32 +42,16 @@ namespace Mods.Prometheus.Scripts {
       EnsureOperationalBehavioursBound();
 
       var entityId = GameObject.GetInstanceID();
-      if (!_fireImpactRuntimeState.TryGetSnapshot(entityId, out var impactSnapshot)) {
+      if (!_fireRuntimeProjectionRuntimeState.TryGetSnapshot(entityId, out var projection) || !projection.HasImpact) {
         RestoreWorkerSpeedPenalties();
         RestoreWorkplaceSupport();
         RestoreOperationalBehaviours();
         return;
       }
 
-      var productivityPenalty = Mathf.Clamp01(impactSnapshot.BuildingDamagePressure * 0.75f);
-      var baseWorkingSpeedMultiplier = Mathf.Clamp(1f - productivityPenalty, 0.2f, 1f);
-
-      var stateWorkingSpeedMultiplier = 1f;
-      var buildingDead = false;
       var isWorkplaceEntity = _workplace is not null;
-      if (_fireDamageStateRuntimeState.TryGetSnapshot(entityId, out var damageState)
-          && (damageState.Category == FireDamageCategory.Building || isWorkplaceEntity)) {
-        buildingDead = damageState.State == FireDamageState.Dead && isWorkplaceEntity;
-        stateWorkingSpeedMultiplier = damageState.State switch {
-          FireDamageState.Healthy => 1f,
-          FireDamageState.Scorched => Mathf.Clamp(1f - (damageState.Severity * 0.55f), 0.45f, 0.95f),
-          FireDamageState.Burning => Mathf.Clamp(1f - (damageState.Severity * 0.9f), 0.1f, 0.55f),
-          FireDamageState.Dead => 0f,
-          _ => 1f,
-        };
-      }
-
-      var workingSpeedMultiplier = Mathf.Min(baseWorkingSpeedMultiplier, stateWorkingSpeedMultiplier);
+      var buildingDead = FireRuntimeProjectionRules.ShouldDisableWorkplaceOperations(projection, isWorkplaceEntity);
+      var workingSpeedMultiplier = FireRuntimeProjectionRules.ComputeWorkplaceSpeedMultiplier(projection, isWorkplaceEntity);
 
       if (buildingDead) {
         DisableWorkplaceSupport();
@@ -82,7 +62,7 @@ namespace Mods.Prometheus.Scripts {
       }
 
       ApplyWorkerSpeedPenalty(workingSpeedMultiplier);
-      ApplyAssignedWorkerIndoorExposure(impactSnapshot);
+      ApplyAssignedWorkerIndoorExposure(projection);
     }
 
     internal void DebugResetFireEffects() {
@@ -163,7 +143,7 @@ namespace Mods.Prometheus.Scripts {
       LogWorkerPenaltyState(assignedWorkerCount, penaltyDelta, appliedCount);
     }
 
-    private void ApplyAssignedWorkerIndoorExposure(FireImpactSnapshot impactSnapshot) {
+    private void ApplyAssignedWorkerIndoorExposure(FireRuntimeProjectionSnapshot projection) {
       if (_workplace is null) {
         return;
       }
@@ -174,7 +154,7 @@ namespace Mods.Prometheus.Scripts {
           continue;
         }
 
-        if (FireBeaverEffectApplier.TryApplyIndoorExposure(worker.GameObject.transform, impactSnapshot)) {
+        if (FireBeaverEffectApplier.TryApplyIndoorExposure(worker.GameObject.transform, projection)) {
           exposedWorkerCount++;
         }
       }

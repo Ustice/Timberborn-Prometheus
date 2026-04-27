@@ -17,8 +17,7 @@ namespace Mods.Prometheus.Scripts {
     private static readonly Color DesiccatedTintColor = new(0.45f, 0.30f, 0.14f, 1f);
     private static readonly Color CharTintColor = new(0.10f, 0.09f, 0.08f, 1f);
 
-    private FireExposureRuntimeState _fireExposureRuntimeState;
-    private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
+    private FireRuntimeProjectionRuntimeState _fireRuntimeProjectionRuntimeState;
     private FireVisualEffectRuntimeState _fireVisualEffectRuntimeState;
 
     private readonly List<RendererPropertyBlockState> _rendererStates = new();
@@ -33,11 +32,9 @@ namespace Mods.Prometheus.Scripts {
 
     [Inject]
     public void InjectDependencies(
-      FireExposureRuntimeState fireExposureRuntimeState,
-      FireDamageStateRuntimeState fireDamageStateRuntimeState,
+      FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState,
       FireVisualEffectRuntimeState fireVisualEffectRuntimeState) {
-      _fireExposureRuntimeState = fireExposureRuntimeState;
-      _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
+      _fireRuntimeProjectionRuntimeState = fireRuntimeProjectionRuntimeState;
       _fireVisualEffectRuntimeState = fireVisualEffectRuntimeState;
     }
 
@@ -53,14 +50,11 @@ namespace Mods.Prometheus.Scripts {
       }
 
       var entityId = GameObject.GetInstanceID();
-      var exposure = _fireExposureRuntimeState.TryGetSnapshot(entityId, out var exposureSnapshot)
-        ? exposureSnapshot
-        : FireExposureRules.CreateTerminalDeadBuildingSnapshot();
-      var damageState = _fireDamageStateRuntimeState.TryGetSnapshot(entityId, out var damageSnapshot)
-        ? damageSnapshot
-        : new FireDamageStateSnapshot(FireDamageCategory.Unknown, FireDamageState.Healthy, 0f, 0f, 0);
+      var projection = _fireRuntimeProjectionRuntimeState.TryGetSnapshot(entityId, out var projectionSnapshot)
+        ? projectionSnapshot
+        : FireRuntimeProjectionRules.EmptyProjection;
 
-      var intensity = FireVisualEffectRules.ComputeIntensity(exposure, damageState, _fireVisualEffectRuntimeState.CurrentTuning);
+      var intensity = FireVisualEffectRules.ComputeIntensity(projection, _fireVisualEffectRuntimeState.CurrentTuning);
       var tuning = _fireVisualEffectRuntimeState.CurrentTuning;
       _emberEffect.ApplyTuning(tuning, _effectBaseHeight);
       _smokeEffect.ApplyTuning(tuning, _effectBaseHeight);

@@ -38,6 +38,7 @@ namespace Mods.Prometheus.Scripts {
     private readonly FireExposureRuntimeState _fireExposureRuntimeState;
     private readonly FireImpactRuntimeState _fireImpactRuntimeState;
     private readonly FireDamageStateRuntimeState _fireDamageStateRuntimeState;
+    private readonly FireRuntimeProjectionRuntimeState _fireRuntimeProjectionRuntimeState;
     private readonly FireRecoveryRuntimeState _fireRecoveryRuntimeState;
     private readonly PrometheusDebugPanel _prometheusDebugPanel;
 
@@ -50,6 +51,7 @@ namespace Mods.Prometheus.Scripts {
     private int _baselineExposureSnapshotCount;
     private int _baselineImpactSnapshotCount;
     private int _baselineDamageSnapshotCount;
+    private int _baselineProjectionSnapshotCount;
     private int _baselineRecoverySnapshotCount;
     private int _baselinePendingForcedIgnitionCount;
 
@@ -58,12 +60,14 @@ namespace Mods.Prometheus.Scripts {
       FireExposureRuntimeState fireExposureRuntimeState,
       FireImpactRuntimeState fireImpactRuntimeState,
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
+      FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState,
       FireRecoveryRuntimeState fireRecoveryRuntimeState,
       PrometheusDebugPanel prometheusDebugPanel) {
       _fireTuningRuntimeState = fireTuningRuntimeState;
       _fireExposureRuntimeState = fireExposureRuntimeState;
       _fireImpactRuntimeState = fireImpactRuntimeState;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
+      _fireRuntimeProjectionRuntimeState = fireRuntimeProjectionRuntimeState;
       _fireRecoveryRuntimeState = fireRecoveryRuntimeState;
       _prometheusDebugPanel = prometheusDebugPanel;
     }
@@ -133,9 +137,32 @@ namespace Mods.Prometheus.Scripts {
       AppendRuntimeCountLine(stringBuilder, "Exposure snapshots", _fireExposureRuntimeState.SnapshotCount, _baselineExposureSnapshotCount);
       AppendRuntimeCountLine(stringBuilder, "Impact snapshots", _fireImpactRuntimeState.SnapshotCount, _baselineImpactSnapshotCount);
       AppendRuntimeCountLine(stringBuilder, "Damage snapshots", _fireDamageStateRuntimeState.SnapshotCount, _baselineDamageSnapshotCount);
+      AppendRuntimeCountLine(stringBuilder, "Projection snapshots", _fireRuntimeProjectionRuntimeState.SnapshotCount, _baselineProjectionSnapshotCount);
       AppendRuntimeCountLine(stringBuilder, "Recovery snapshots", _fireRecoveryRuntimeState.SnapshotCount, _baselineRecoverySnapshotCount);
       AppendRuntimeCountLine(stringBuilder, "Pending forced ignitions", _fireExposureRuntimeState.PendingForcedIgnitionCount, _baselinePendingForcedIgnitionCount);
       stringBuilder.AppendLine();
+
+      if (_fireRuntimeProjectionRuntimeState.TryGetSnapshot(_selectedEntityId, out var projection)) {
+        AppendSnapshotSection(stringBuilder, "Runtime projection", projection, static (builder, snapshot) => {
+          builder.AppendLine($"- Has exposure: {snapshot.HasExposure}");
+          builder.AppendLine($"- Has impact: {snapshot.HasImpact}");
+          builder.AppendLine($"- Has damage state: {snapshot.HasDamageState}");
+          builder.AppendLine($"- Has recovery: {snapshot.HasRecovery}");
+          builder.AppendLine($"- Visual burning: {snapshot.VisualExposure.Burning}");
+          builder.AppendLine($"- Visual intensity: {snapshot.VisualExposure.Intensity:0.000}");
+          builder.AppendLine($"- Visual smoke: {snapshot.VisualExposure.Smoke:0.000}");
+          builder.AppendLine($"- Visual damage state: {snapshot.VisualDamageState.State}");
+          builder.AppendLine($"- Damage pressure: crop={snapshot.Impact.CropDamagePressure:0.000} tree={snapshot.Impact.TreeDamagePressure:0.000} building={snapshot.Impact.BuildingDamagePressure:0.000}");
+          builder.AppendLine($"- Beaver pressure: dehydration={snapshot.Impact.DehydrationPressure:0.000} injury={snapshot.Impact.InjuryPressure:0.000}");
+          builder.AppendLine($"- Recovery active: {snapshot.Recovery.FertileAshAvailable}");
+        });
+      } else {
+        AppendWarmupSnapshotUnavailableSection(
+          stringBuilder,
+          "Runtime projection",
+          _selectedEntityHasExposureController,
+          "- Snapshot unavailable (projection producer not attached)");
+      }
 
       if (_fireExposureRuntimeState.TryGetSnapshot(_selectedEntityId, out var exposure)) {
         AppendSnapshotSection(stringBuilder, "Exposure", exposure, static (builder, snapshot) => {
@@ -207,6 +234,7 @@ namespace Mods.Prometheus.Scripts {
       _baselineExposureSnapshotCount = _fireExposureRuntimeState.SnapshotCount;
       _baselineImpactSnapshotCount = _fireImpactRuntimeState.SnapshotCount;
       _baselineDamageSnapshotCount = _fireDamageStateRuntimeState.SnapshotCount;
+      _baselineProjectionSnapshotCount = _fireRuntimeProjectionRuntimeState.SnapshotCount;
       _baselineRecoverySnapshotCount = _fireRecoveryRuntimeState.SnapshotCount;
       _baselinePendingForcedIgnitionCount = _fireExposureRuntimeState.PendingForcedIgnitionCount;
     }

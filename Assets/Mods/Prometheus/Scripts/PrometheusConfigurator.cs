@@ -34,6 +34,7 @@ namespace Mods.Prometheus.Scripts {
       Bind<FireExposureRuntimeState>().AsSingleton();
       Bind<FireImpactRuntimeState>().AsSingleton();
       Bind<FireDamageStateRuntimeState>().AsSingleton();
+      Bind<FireRuntimeProjectionRuntimeState>().AsSingleton();
       Bind<FireRecoveryRuntimeState>().AsSingleton();
       Bind<FireVisualEffectRuntimeState>().AsSingleton();
       Bind<FireVisualEffectPreviewRuntimeState>().AsSingleton();
@@ -120,6 +121,7 @@ namespace Mods.Prometheus.Scripts {
     private FireGridRuntimeState _fireGridRuntimeState;
     private FireImpactRuntimeState _fireImpactRuntimeState;
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
+    private FireRuntimeProjectionRuntimeState _fireRuntimeProjectionRuntimeState;
     private FireRecoveryRuntimeState _fireRecoveryRuntimeState;
 
     [Inject]
@@ -128,11 +130,13 @@ namespace Mods.Prometheus.Scripts {
       FireGridRuntimeState fireGridRuntimeState,
       FireImpactRuntimeState fireImpactRuntimeState,
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
+      FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState,
       FireRecoveryRuntimeState fireRecoveryRuntimeState) {
       _fireExposureRuntimeState = fireExposureRuntimeState;
       _fireGridRuntimeState = fireGridRuntimeState;
       _fireImpactRuntimeState = fireImpactRuntimeState;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
+      _fireRuntimeProjectionRuntimeState = fireRuntimeProjectionRuntimeState;
       _fireRecoveryRuntimeState = fireRecoveryRuntimeState;
     }
 
@@ -141,6 +145,7 @@ namespace Mods.Prometheus.Scripts {
           || _fireGridRuntimeState == null
           || _fireImpactRuntimeState == null
           || _fireDamageStateRuntimeState == null
+          || _fireRuntimeProjectionRuntimeState == null
           || _fireRecoveryRuntimeState == null) {
         return;
       }
@@ -149,6 +154,7 @@ namespace Mods.Prometheus.Scripts {
       _fireExposureRuntimeState.RemoveSnapshot(entityId);
       _fireImpactRuntimeState.RemoveSnapshot(entityId);
       _fireDamageStateRuntimeState.RemoveSnapshot(entityId);
+      _fireRuntimeProjectionRuntimeState.RemoveSnapshot(entityId);
       _fireRecoveryRuntimeState.RemoveSnapshot(entityId);
 
       FireTelemetry.Log($"event={FireTelemetryEvents.EntityDestroyCleanup} entity={GameObject.name} id={entityId}");

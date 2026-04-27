@@ -18,6 +18,7 @@ namespace Mods.Prometheus.Scripts {
     private FireGridRuntimeState _fireGridRuntimeState;
     private FireGridSimulationCoordinator _fireGridSimulationCoordinator;
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
+    private FireRuntimeProjectionRuntimeState _fireRuntimeProjectionRuntimeState;
     private FireProfile _fireProfile;
     private float _remainingFuel = -1f;
     private float _remainingMoisture = -1f;
@@ -40,11 +41,13 @@ namespace Mods.Prometheus.Scripts {
       FireExposureRuntimeState fireExposureRuntimeState,
       FireGridRuntimeState fireGridRuntimeState,
       FireGridSimulationCoordinator fireGridSimulationCoordinator,
-      FireDamageStateRuntimeState fireDamageStateRuntimeState) {
+      FireDamageStateRuntimeState fireDamageStateRuntimeState,
+      FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState) {
       _fireExposureRuntimeState = fireExposureRuntimeState;
       _fireGridRuntimeState = fireGridRuntimeState;
       _fireGridSimulationCoordinator = fireGridSimulationCoordinator;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
+      _fireRuntimeProjectionRuntimeState = fireRuntimeProjectionRuntimeState;
     }
 
     public void Awake() {
@@ -99,6 +102,7 @@ namespace Mods.Prometheus.Scripts {
       var hadActiveFire = _fireExposureRuntimeState.TryGetSnapshot(entityId, out var snapshot)
                           && (snapshot.Burning || snapshot.Intensity > 0f);
       _fireExposureRuntimeState.SetSnapshot(entityId, FireExposureRules.CreateColdSnapshot("DebugExtinguish"));
+      _fireRuntimeProjectionRuntimeState.SetExposure(entityId, FireExposureRules.CreateColdSnapshot("DebugExtinguish"));
       _fireGridRuntimeState.ClearCell(GetGridCoordinate());
       _isIgnited = false;
       _wasBurning = false;
@@ -108,6 +112,7 @@ namespace Mods.Prometheus.Scripts {
 
     internal void DebugResetFireExposureState() {
       _fireExposureRuntimeState.RemoveSnapshot(GameObject.GetInstanceID());
+      _fireRuntimeProjectionRuntimeState.RemoveSnapshot(GameObject.GetInstanceID());
       _fireGridRuntimeState.ClearCell(GetGridCoordinate());
       _remainingFuel = MaxFuel;
       _remainingMoisture = MaxMoisture;
@@ -293,6 +298,7 @@ namespace Mods.Prometheus.Scripts {
 
     private void PublishSnapshot(int entityId, FireExposureSnapshot snapshot) {
       _fireExposureRuntimeState.SetSnapshot(entityId, snapshot);
+      _fireRuntimeProjectionRuntimeState.SetExposure(entityId, snapshot);
       if (snapshot.Burning && !_wasBurning) {
         FireTelemetry.Log($"event={FireTelemetryEvents.Ignited} entity={GameObject.name} id={entityId} source={snapshot.DominantSource}");
       } else if (!snapshot.Burning && _wasBurning) {

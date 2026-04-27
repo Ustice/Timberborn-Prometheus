@@ -32,12 +32,14 @@ namespace Mods.Prometheus.Scripts {
       FireExposureRuntimeState fireExposureRuntimeState,
       FireImpactRuntimeState fireImpactRuntimeState,
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
+      FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState,
       FireRecoveryRuntimeState fireRecoveryRuntimeState,
       FireVisualEffectPreviewRuntimeState fireVisualEffectPreviewRuntimeState) {
       RegisterGlobal(FireResetHookKind.GridState, nameof(FireGridRuntimeState), fireGridRuntimeState.Clear);
       RegisterGlobal(FireResetHookKind.SourceState, nameof(FireExposureRuntimeState), fireExposureRuntimeState.ClearSnapshotsAndIgnitionRequests);
       RegisterGlobal(FireResetHookKind.DamageState, nameof(FireImpactRuntimeState), fireImpactRuntimeState.ClearSnapshots);
       RegisterGlobal(FireResetHookKind.DamageState, nameof(FireDamageStateRuntimeState), fireDamageStateRuntimeState.ClearSnapshots);
+      RegisterGlobal(FireResetHookKind.DamageState, nameof(FireRuntimeProjectionRuntimeState), fireRuntimeProjectionRuntimeState.ClearSnapshots);
       RegisterGlobal(FireResetHookKind.AshState, nameof(FireRecoveryRuntimeState), fireRecoveryRuntimeState.ClearSnapshots);
       RegisterGlobal(FireResetHookKind.PreviewState, nameof(FireVisualEffectPreviewRuntimeState), fireVisualEffectPreviewRuntimeState.ClearAllPreviews);
 #if !PROMETHEUS_TESTS

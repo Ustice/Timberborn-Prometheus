@@ -9,7 +9,7 @@ namespace Mods.Prometheus.Scripts {
 
     private const float UpdateIntervalInSeconds = 1f;
 
-    private FireRecoveryRuntimeState _fireRecoveryRuntimeState;
+    private FireRuntimeProjectionRuntimeState _fireRuntimeProjectionRuntimeState;
 
     private float _timeSinceLastUpdate;
     private object _growable;
@@ -18,8 +18,8 @@ namespace Mods.Prometheus.Scripts {
     private bool _hasModifiedGrowthTime;
 
     [Inject]
-    public void InjectDependencies(FireRecoveryRuntimeState fireRecoveryRuntimeState) {
-      _fireRecoveryRuntimeState = fireRecoveryRuntimeState;
+    public void InjectDependencies(FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState) {
+      _fireRuntimeProjectionRuntimeState = fireRuntimeProjectionRuntimeState;
     }
 
     public void Awake() {
@@ -51,11 +51,12 @@ namespace Mods.Prometheus.Scripts {
       }
 
       var entityId = GameObject.GetInstanceID();
-      if (!_fireRecoveryRuntimeState.TryGetSnapshot(entityId, out var recoverySnapshot)) {
+      if (!_fireRuntimeProjectionRuntimeState.TryGetSnapshot(entityId, out var projection) || !projection.HasRecovery) {
         RestoreBaseGrowthTimeIfNeeded();
         return;
       }
 
+      var recoverySnapshot = projection.Recovery;
       if (!recoverySnapshot.FertileAshAvailable || recoverySnapshot.GrowthSpeedBonus <= 0f) {
         RestoreBaseGrowthTimeIfNeeded();
         return;
