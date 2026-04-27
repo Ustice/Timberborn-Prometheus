@@ -91,9 +91,10 @@ namespace Prometheus.Tests
             var exposure = new FireExposureRuntimeState();
             var impact = new FireImpactRuntimeState();
             var damage = new FireDamageStateRuntimeState();
+            var projection = new FireRuntimeProjectionRuntimeState();
             var recovery = new FireRecoveryRuntimeState();
             var previews = new FireVisualEffectPreviewRuntimeState();
-            var registry = new FireResetRegistry(grid, exposure, impact, damage, recovery, previews);
+            var registry = new FireResetRegistry(grid, exposure, impact, damage, projection, recovery, previews);
             var entityHookCount = 0;
 
             registry.RegisterGlobal(FireResetHookKind.BeaverEffect, "test-beaver", () => { });
@@ -101,6 +102,7 @@ namespace Prometheus.Tests
             exposure.RequestForcedIgnition(42);
             impact.SetSnapshot(42, new FireImpactSnapshot(0.1f, 0.2f, 0.3f, 0.4f, 0.5f));
             damage.SetSnapshot(42, new FireDamageStateSnapshot(FireDamageCategory.Building, FireDamageState.Burning, 0.7f, 0.2f, 3));
+            projection.SetImpact(42, new FireImpactSnapshot(0.1f, 0.2f, 0.3f, 0.4f, 0.5f));
             recovery.SetSnapshot(42, new FireRecoverySnapshot(true, 0.12f, 0.1f, 0.05f, 4f));
 
             var result = registry.ResetAll("test");
@@ -113,6 +115,7 @@ namespace Prometheus.Tests
             TestSupport.Equal(0, exposure.PendingForcedIgnitionCount);
             TestSupport.Equal(0, impact.SnapshotCount);
             TestSupport.Equal(0, damage.SnapshotCount);
+            TestSupport.Equal(0, projection.SnapshotCount);
             TestSupport.Equal(0, recovery.SnapshotCount);
         }
 
@@ -124,6 +127,7 @@ namespace Prometheus.Tests
                 new FireExposureRuntimeState(),
                 new FireImpactRuntimeState(),
                 new FireDamageStateRuntimeState(),
+                new FireRuntimeProjectionRuntimeState(),
                 new FireRecoveryRuntimeState(),
                 new FireVisualEffectPreviewRuntimeState());
             var entityHookCount = 0;
@@ -145,6 +149,7 @@ namespace Prometheus.Tests
                 new FireExposureRuntimeState(),
                 new FireImpactRuntimeState(),
                 new FireDamageStateRuntimeState(),
+                new FireRuntimeProjectionRuntimeState(),
                 new FireRecoveryRuntimeState(),
                 new FireVisualEffectPreviewRuntimeState());
             var successfulEntityHookCount = 0;

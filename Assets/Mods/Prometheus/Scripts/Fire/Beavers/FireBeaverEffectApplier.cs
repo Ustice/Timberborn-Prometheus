@@ -14,7 +14,7 @@ namespace Mods.Prometheus.Scripts {
     private const float NeedManagerRefreshIntervalInSeconds = 5f;
     private const float TargetEffectCooldownInSeconds = 1f;
 
-    private FireImpactRuntimeState _fireImpactRuntimeState;
+    private FireRuntimeProjectionRuntimeState _fireRuntimeProjectionRuntimeState;
     private QuickNotificationService _quickNotificationService;
 
     private static bool _loggedMissingNeedManagerApi;
@@ -33,9 +33,9 @@ namespace Mods.Prometheus.Scripts {
 
     [Inject]
     public void InjectDependencies(
-      FireImpactRuntimeState fireImpactRuntimeState,
+      FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState,
       QuickNotificationService quickNotificationService) {
-      _fireImpactRuntimeState = fireImpactRuntimeState;
+      _fireRuntimeProjectionRuntimeState = fireRuntimeProjectionRuntimeState;
       _quickNotificationService = quickNotificationService;
     }
 
@@ -49,7 +49,7 @@ namespace Mods.Prometheus.Scripts {
         _lastNeedManagerRefreshTime = Time.time;
       }
 
-      if (!_fireImpactRuntimeState.TryGetSnapshot(GameObject.GetInstanceID(), out var impactSnapshot)) {
+      if (!_fireRuntimeProjectionRuntimeState.TryGetSnapshot(GameObject.GetInstanceID(), out var projection) || !projection.HasImpact) {
         return;
       }
 
@@ -57,7 +57,7 @@ namespace Mods.Prometheus.Scripts {
         return;
       }
 
-      var fullExposureNeedDeltas = FireBeaverExposureRules.ComputeProximityNeedDeltas(impactSnapshot, 0f);
+      var fullExposureNeedDeltas = FireBeaverExposureRules.ComputeProximityNeedDeltas(projection, 0f);
       if (!fullExposureNeedDeltas.HasEffect) {
         return;
       }
@@ -90,11 +90,11 @@ namespace Mods.Prometheus.Scripts {
 
         ApplyNeedDeltas(
           needManagerTarget.NeedManager,
-          FireBeaverExposureRules.ComputeProximityNeedDeltas(impactSnapshot, distance));
+          FireBeaverExposureRules.ComputeProximityNeedDeltas(projection, distance));
       }
     }
 
-    internal static bool TryApplyIndoorExposure(Transform targetTransform, FireImpactSnapshot impactSnapshot) {
+    internal static bool TryApplyIndoorExposure(Transform targetTransform, FireRuntimeProjectionSnapshot projection) {
       if (targetTransform == null) {
         return false;
       }
@@ -107,7 +107,7 @@ namespace Mods.Prometheus.Scripts {
         return false;
       }
 
-      var needDeltas = FireBeaverExposureRules.ComputeIndoorNeedDeltas(impactSnapshot);
+      var needDeltas = FireBeaverExposureRules.ComputeIndoorNeedDeltas(projection);
       if (!needDeltas.HasEffect) {
         return false;
       }

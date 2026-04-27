@@ -51,8 +51,20 @@ namespace Mods.Prometheus.Scripts {
       return ComputeNeedDeltas(impactSnapshot, ComputeProximityMultiplier(distance, EffectRadius));
     }
 
+    internal static FireBeaverNeedDeltas ComputeProximityNeedDeltas(FireRuntimeProjectionSnapshot projection, float distance) {
+      return projection.HasImpact
+        ? ComputeProximityNeedDeltas(projection.Impact, distance)
+        : new FireBeaverNeedDeltas(0f, 0f);
+    }
+
     internal static FireBeaverNeedDeltas ComputeIndoorNeedDeltas(FireImpactSnapshot impactSnapshot) {
       return ComputeNeedDeltas(impactSnapshot, IndoorExposureMultiplier);
+    }
+
+    internal static FireBeaverNeedDeltas ComputeIndoorNeedDeltas(FireRuntimeProjectionSnapshot projection) {
+      return projection.HasImpact
+        ? ComputeIndoorNeedDeltas(projection.Impact)
+        : new FireBeaverNeedDeltas(0f, 0f);
     }
 
     internal static float ComputeProximityMultiplier(float distance, float radius) {
