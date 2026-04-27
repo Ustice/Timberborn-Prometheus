@@ -44,7 +44,7 @@ Source of truth: exact runtime types and telemetry names live in source, especia
 | Dampening | Water/moisture dampen pressure; any future containment mechanics stay behind core spread coherence. |
 | Recovery | Fertile Ash is the only core post-fire resource unless future playtesting proves another loop is needed. |
 
-Current recovery integration uses Timberborn recovered-good stacks as the safe native collection path for Fertile Ash. Native gatherable natural-resource spawning remains unchosen because no authored ash natural-resource template has been confirmed. Valid burned-out trees and buildings can queue `FertileAsh` recovered-good stacks after aftermath eligibility passes; Timberborn then handles visible stacks, beaver pickup, and normal District Center storage.
+Current recovery integration uses Timberborn recovered-good stacks as the safe native collection path for Fertile Ash. Native gatherable natural-resource spawning remains unchosen because no authored ash natural-resource template has been confirmed. Valid burned-out trees and buildings can queue `FertileAsh` recovered-good stacks after aftermath eligibility passes; Timberborn then handles visible stacks, beaver pickup, and normal District Center storage. Prometheus reset clears its own ash queue telemetry and field-amendment state, but it does not destroy Timberborn-owned recovered-good entities.
 
 ## Durable Decisions
 
@@ -112,6 +112,7 @@ In-game QA instructions and tester results use Markdown exchange files under `~/
 | 2026-04-27 | Phase 2 Recovery | Chose recovered-good stacks as the narrow native wrapper for visible Fertile Ash collection and added field amendment state for future crop buffs | Dependency-Light Pass |
 | 2026-04-27 | Phase 2 Recovery | Applied active Fertile Ash field amendments as a 10% crop growable speed buff while excluding trees and bushes | Dependency-Light Pass |
 | 2026-04-27 | Phase 2 Recovery | Queued Fertile Ash from valid charred aftermath through native recovered-good stacks and proved District Center storage after beaver pickup | Live Pass |
+| 2026-04-27 | Phase 2 Recovery | Added source-attributed Fertile Ash queue telemetry and reset evidence without deleting Timberborn-owned recovered-good stacks | Live Pass |
 | 2026-04-25 | Phase 2 Visuals | Replaced the old Visual Tuning sliders with an effect authoring inspector, selected-entity temporary preview, native source picker/search, and JSON/log target context export | In Validation |
 | 2026-04-24 | Phase 2 UX | Migrated debug navigation to required TimberUi and ModdableToolGroups dependencies with native-style controls and bottom-bar submenu entries | In Validation |
 | 2026-04-24 | Phase 2 Content | Pruned old bucket-kit, firefighting-foam, fire-control-gear, fireworks-crate, and festival-risk scaffolding; renamed ash fertilizer content to Fertile Ash | Done |

@@ -40,6 +40,7 @@ namespace Mods.Prometheus.Scripts {
     private readonly FireDamageStateRuntimeState _fireDamageStateRuntimeState;
     private readonly FireRuntimeProjectionRuntimeState _fireRuntimeProjectionRuntimeState;
     private readonly FireRecoveryRuntimeState _fireRecoveryRuntimeState;
+    private readonly FertileAshRecoveredGoodStackTelemetryState _fertileAshRecoveredGoodStackTelemetryState;
     private readonly FireFieldAmendmentRuntimeState _fireFieldAmendmentRuntimeState;
     private readonly PrometheusDebugPanel _prometheusDebugPanel;
 
@@ -64,6 +65,7 @@ namespace Mods.Prometheus.Scripts {
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
       FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState,
       FireRecoveryRuntimeState fireRecoveryRuntimeState,
+      FertileAshRecoveredGoodStackTelemetryState fertileAshRecoveredGoodStackTelemetryState,
       FireFieldAmendmentRuntimeState fireFieldAmendmentRuntimeState,
       PrometheusDebugPanel prometheusDebugPanel) {
       _fireTuningRuntimeState = fireTuningRuntimeState;
@@ -72,6 +74,7 @@ namespace Mods.Prometheus.Scripts {
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
       _fireRuntimeProjectionRuntimeState = fireRuntimeProjectionRuntimeState;
       _fireRecoveryRuntimeState = fireRecoveryRuntimeState;
+      _fertileAshRecoveredGoodStackTelemetryState = fertileAshRecoveredGoodStackTelemetryState;
       _fireFieldAmendmentRuntimeState = fireFieldAmendmentRuntimeState;
       _prometheusDebugPanel = prometheusDebugPanel;
     }
@@ -143,6 +146,9 @@ namespace Mods.Prometheus.Scripts {
       AppendRuntimeCountLine(stringBuilder, "Damage snapshots", _fireDamageStateRuntimeState.SnapshotCount, _baselineDamageSnapshotCount);
       AppendRuntimeCountLine(stringBuilder, "Projection snapshots", _fireRuntimeProjectionRuntimeState.SnapshotCount, _baselineProjectionSnapshotCount);
       AppendRuntimeCountLine(stringBuilder, "Recovery snapshots", _fireRecoveryRuntimeState.SnapshotCount, _baselineRecoverySnapshotCount);
+      stringBuilder.AppendLine($"- Fertile ash queued stacks: {_fertileAshRecoveredGoodStackTelemetryState.QueuedStackCount}");
+      stringBuilder.AppendLine($"- Fertile ash queued amount: {_fertileAshRecoveredGoodStackTelemetryState.QueuedAshAmount}");
+      stringBuilder.AppendLine($"- Fertile ash last source: {_fertileAshRecoveredGoodStackTelemetryState.LastSourceAttribution}");
       AppendRuntimeCountLine(stringBuilder, "Field amendments", _fireFieldAmendmentRuntimeState.ActiveAmendmentCount, _baselineFieldAmendmentCount);
       AppendRuntimeCountLine(stringBuilder, "Pending forced ignitions", _fireExposureRuntimeState.PendingForcedIgnitionCount, _baselinePendingForcedIgnitionCount);
       stringBuilder.AppendLine();
