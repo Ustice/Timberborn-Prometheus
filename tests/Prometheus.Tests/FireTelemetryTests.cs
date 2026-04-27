@@ -19,6 +19,8 @@ namespace Prometheus.Tests
             TestSupport.True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.RuntimeResetHookFailed) >= 0);
             TestSupport.True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.WorkplaceIndoorExposure) >= 0);
             TestSupport.True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.GridIgnitionSeeded) >= 0);
+            TestSupport.True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.GridSourceInjected) >= 0);
+            TestSupport.True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.GridSourceSuppressed) >= 0);
         }
 
     }
