@@ -110,6 +110,7 @@ In-game QA instructions and tester results use Markdown exchange files under `~/
 | 2026-04-26 | Phase 2 | Moved ignition/fuel lifecycle out of neighbor transfer and into entity-owned stochastic field sampling with moisture evaporation, fuel depletion, tree death, and burned-out char | Partial Live Pass |
 | 2026-04-27 | Phase 2 | Wired configured `FireProfileSpec` heat, ember, and smoke sources into attributed grid injection with conservative operation-state gating | Dependency-Light Pass |
 | 2026-04-27 | Phase 2 Recovery | Chose recovered-good stacks as the narrow native wrapper for visible Fertile Ash collection and added field amendment state for future crop buffs | Dependency-Light Pass |
+| 2026-04-27 | Phase 2 Recovery | Applied active Fertile Ash field amendments as a 10% crop growable speed buff while excluding trees and bushes | Dependency-Light Pass |
 | 2026-04-25 | Phase 2 Visuals | Replaced the old Visual Tuning sliders with an effect authoring inspector, selected-entity temporary preview, native source picker/search, and JSON/log target context export | In Validation |
 | 2026-04-24 | Phase 2 UX | Migrated debug navigation to required TimberUi and ModdableToolGroups dependencies with native-style controls and bottom-bar submenu entries | In Validation |
 | 2026-04-24 | Phase 2 Content | Pruned old bucket-kit, firefighting-foam, fire-control-gear, fireworks-crate, and festival-risk scaffolding; renamed ash fertilizer content to Fertile Ash | Done |

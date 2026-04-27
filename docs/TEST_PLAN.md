@@ -76,6 +76,8 @@ Use this section as the next validation gate once the sparse grid lands.
 - [ ] Confirm the visible recovered-good stack appears at valid coordinates.
 - [ ] Confirm builders can collect the stack.
 - [ ] Confirm collected `FertileAsh` enters normal storage that accepts the good.
+- [x] Confirm field amendments reduce eligible crop `Growable` growth time in dependency-light control-vs-amended rules.
+- [x] Confirm trees and bushes are excluded from the field-amendment growth rule.
 - [ ] Confirm `Reset Fire State` clears stale ash runtime state without deleting unrelated Timberborn entities unsafely.
 - [ ] Scan `Player.log` and `Fire.log` for Prometheus and recovered-good exceptions.
 
@@ -130,6 +132,7 @@ Use [VALIDATION/explosion-policy.md](VALIDATION/explosion-policy.md) when explos
 | 2026-04-27 | Configured source dependency-light propagation | High-risk source | Pass | `bash scripts/test.sh` | Source fields produce attributed grid pressure, respect `RequiresOperation`, and can create nonzero stochastic ignition probability through grid propagation. Live menu startup had no emitting source rows because deployed authored profiles are zero-source at startup. |
 | 2026-04-27 | Effect facade and reset registry startup | Workplace, beaver, damage, recovery | Pass | `bash scripts/test.sh`, `bash scripts/build.sh --qa`, `Player.log`, `Fire.log` | Effect appliers resolve direct/cached Timberborn components through the integration facade; reset registry discovery uses the same facade lookup. Computer Use reached the main menu and startup logs showed Prometheus loaded with no scanned Prometheus exceptions. |
 | 2026-04-27 | Fertile Ash recovered-good wrapper | Recovery | Dependency-Light Pass | `git diff --check`, `bash scripts/test.sh`, `bash scripts/build.sh` | Native ash gatherable template was not confirmed; wrapper queues `FertileAsh` through Timberborn recovered-good stacks after good-registration validation. Live collection/storage proof remains open. |
+| 2026-04-27 | Fertile Ash field amendment crop growth | Recovery | Dependency-Light Pass | `git diff --check`, `bash scripts/test.sh`, `bash scripts/build.sh --qa`, `Player.log`, `Fire.log` | Eligible crop growables receive a 10% growth-speed buff from active field amendments; trees and bushes are excluded. Startup logs showed Prometheus loaded with no scanned Prometheus errors. Live farmhouse/farmer application remains owned by P2S-024/P2S-025. |
 | YYYY-MM-DD |  |  | Pass/Fail |  |  |
 
 ## Session Closeout

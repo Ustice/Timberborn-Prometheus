@@ -178,6 +178,15 @@ namespace Mods.Prometheus.Scripts {
       }
     }
 
+    internal static IEnumerable<string> EnumerateGameObjectAndCachedComponentTypeNames(GameObject gameObject) {
+      foreach (var component in EnumerateGameObjectAndCachedComponents(gameObject)) {
+        var typeName = component?.GetType().Name;
+        if (!string.IsNullOrWhiteSpace(typeName)) {
+          yield return typeName;
+        }
+      }
+    }
+
     internal static bool TryGetCachedComponents(Component componentCache, out IEnumerable cachedComponents) {
       if (!IsComponentCache(componentCache)) {
         cachedComponents = null;
