@@ -1,6 +1,6 @@
 # P2S-015 Define Runtime Projection
 
-Status: integration
+Status: done
 
 Agent level: Medium
 
