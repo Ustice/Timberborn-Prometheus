@@ -46,6 +46,32 @@ namespace Prometheus.Tests
         }
 
         [Fact]
+        public void RuntimeProjection_SetExposurePreservesOtherSlices_Test()
+        {
+            var state = new FireRuntimeProjectionRuntimeState();
+            var entityId = 31;
+            var impact = new FireImpactSnapshot(0.1f, 0.2f, 0.3f, 0.4f, 0.5f);
+            var damage = new FireDamageStateSnapshot(FireDamageCategory.Building, FireDamageState.Burning, 0.65f, 0.2f, 2);
+            var recovery = new FireRecoverySnapshot(true, 0.12f, 0.1f, 0.05f, 4f);
+
+            state.SetImpact(entityId, impact);
+            state.SetDamageState(entityId, damage);
+            state.SetRecovery(entityId, recovery);
+            state.SetExposure(entityId, FireExposureRules.CreateColdSnapshot("DebugResetFireExposure"));
+
+            TestSupport.True(state.TryGetSnapshot(entityId, out var projection));
+            TestSupport.True(projection.HasExposure);
+            TestSupport.True(projection.HasImpact);
+            TestSupport.True(projection.HasDamageState);
+            TestSupport.True(projection.HasRecovery);
+            TestSupport.False(projection.Exposure.Burning);
+            TestSupport.Equal("DebugResetFireExposure", projection.Exposure.DominantSource);
+            TestSupport.NearlyEqual(impact.BuildingDamagePressure, projection.Impact.BuildingDamagePressure);
+            TestSupport.Equal(damage.State, projection.DamageState.State);
+            TestSupport.True(projection.Recovery.FertileAshAvailable);
+        }
+
+        [Fact]
         public void RuntimeProjection_WorkplaceRulesUseDamageStateAndImpactTogether_Test()
         {
             var projection = FireRuntimeProjectionRules.EmptyProjection

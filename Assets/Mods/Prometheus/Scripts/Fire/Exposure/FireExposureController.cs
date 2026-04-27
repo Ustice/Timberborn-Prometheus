@@ -111,8 +111,9 @@ namespace Mods.Prometheus.Scripts {
     }
 
     internal void DebugResetFireExposureState() {
-      _fireExposureRuntimeState.RemoveSnapshot(GameObject.GetInstanceID());
-      _fireRuntimeProjectionRuntimeState.RemoveSnapshot(GameObject.GetInstanceID());
+      var entityId = GameObject.GetInstanceID();
+      _fireExposureRuntimeState.RemoveSnapshot(entityId);
+      _fireRuntimeProjectionRuntimeState.SetExposure(entityId, FireExposureRules.CreateColdSnapshot("DebugResetFireExposure"));
       _fireGridRuntimeState.ClearCell(GetGridCoordinate());
       _remainingFuel = MaxFuel;
       _remainingMoisture = MaxMoisture;
