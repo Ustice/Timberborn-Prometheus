@@ -12,6 +12,7 @@ Phase 2 stabilization closeout is complete for the integrated scope. P2S-001 thr
 
 | Date | Command / Evidence | Result | Notes |
 | --- | --- | --- | --- |
+| 2026-04-27 | `git diff --check` | Pass | Rewrote [ARCHITECTURE.md](ARCHITECTURE.md) as a durable target-system architecture instead of a stabilization-sprint map. Runtime verification skipped because this was documentation-only. |
 | 2026-04-27 | `git diff --check` | Pass | Cleaned top-level `docs/` by moving the closed stabilization sprint plan and sprint process notes into [ARCHIVE/stabilization-sprint-2026-04/](ARCHIVE/stabilization-sprint-2026-04/), updating active links, and adding a README note to check `docs/ARCHIVE/` for retired docs. Runtime verification skipped because this was documentation-only. |
 | 2026-04-27 | `git diff --check` | Pass | Added [ORCHESTRATION.md](ORCHESTRATION.md) as the durable kickoff/runbook for future multi-agent orchestration runs and linked it from README, INDEX, and the ticket board. Runtime verification skipped because this was documentation-only. |
 | 2026-04-27 | Timberborn stop, `bash -n scripts/build.sh`, `bash scripts/build.sh --help`, synthetic shared-lock wait/release tests, `git diff --check`, `bash scripts/test.sh` | Pass | Added shared build/QA locking to `scripts/build.sh`. Normal build runs release the lock on exit; `--qa` keeps a persistent QA-session lock until `bash scripts/build.sh --release-qa-lock` is run. Plain C# suite stayed at 89 passing tests. |

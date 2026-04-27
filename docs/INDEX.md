@@ -10,7 +10,7 @@ Read these in order when starting work.
 | Orchestration runs | [ORCHESTRATION.md](ORCHESTRATION.md) | Durable kickoff prompts and multi-agent run loop |
 | Validation runbook | [TEST_PLAN.md](TEST_PLAN.md) | Smoke checks, QA matrices, and evidence templates |
 | Product/design decisions | [DESIGN.md](DESIGN.md) | Durable mechanics, roadmap, and architecture choices |
-| Architecture map | [ARCHITECTURE.md](ARCHITECTURE.md) | Durable module ownership, data flow, reset boundaries, and Phase 3 renewal boundaries |
+| Architecture | [ARCHITECTURE.md](ARCHITECTURE.md) | Durable system boundaries, data flow, reset contracts, and integration boundaries |
 | Ticket board | [tickets/README.md](tickets/README.md) | Permanent file-based ticket board for multi-agent execution |
 | Stable repo conventions | [PROJECT_MEMORY.md](PROJECT_MEMORY.md) | Long-lived boundaries and source-of-truth pointers |
 
@@ -36,6 +36,6 @@ Read these in order when starting work.
 - `ORCHESTRATION.md` owns the durable multi-agent kickoff and run loop.
 - `TEST_PLAN.md` is the only active validation runbook.
 - `DESIGN.md` is the durable product and architecture record.
-- `ARCHITECTURE.md` is the durable module boundary and data-flow map.
+- `ARCHITECTURE.md` is the durable system architecture and boundary contract.
 - `tickets/` is the active file-based ticket board.
 - `ARCHIVE/` keeps long chronological history out of startup docs.

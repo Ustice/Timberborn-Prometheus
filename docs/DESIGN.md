@@ -115,6 +115,7 @@ In-game QA instructions and tester results use Markdown exchange files under `~/
 | 2026-04-27 | Phase 2 Recovery | Added source-attributed Fertile Ash queue telemetry and reset evidence without deleting Timberborn-owned recovered-good stacks | Live Pass |
 | 2026-04-27 | Phase 2 Closeout | Closed the integrated stabilization scope with tests, `--qa` launch, clean Prometheus startup logs, and P2S-025 farmhouse amendment explicitly deferred for fresh live fixture evidence | Done |
 | 2026-04-27 | Process | Archived the sprint-specific ticket board and moved active tracking to permanent `docs/tickets/` with a documentation-only verification exception | Done |
+| 2026-04-27 | Docs | Reframed `ARCHITECTURE.md` as durable system architecture instead of stabilization-sprint work planning | Done |
 | 2026-04-25 | Phase 2 Visuals | Replaced the old Visual Tuning sliders with an effect authoring inspector, selected-entity temporary preview, native source picker/search, and JSON/log target context export | In Validation |
 | 2026-04-24 | Phase 2 UX | Migrated debug navigation to required TimberUi and ModdableToolGroups dependencies with native-style controls and bottom-bar submenu entries | In Validation |
 | 2026-04-24 | Phase 2 Content | Pruned old bucket-kit, firefighting-foam, fire-control-gear, fireworks-crate, and festival-risk scaffolding; renamed ash fertilizer content to Fertile Ash | Done |
