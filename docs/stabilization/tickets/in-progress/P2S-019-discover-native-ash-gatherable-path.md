@@ -1,6 +1,6 @@
 # P2S-019 Discover Native Ash Gatherable Path
 
-Status: todo
+Status: in-progress
 
 Agent level: High
 
@@ -37,4 +37,3 @@ Find and wrap the safest Timberborn-native path for visible collectable Fertile 
 ## Integration Notes
 
 High agent recommended. This is an API discovery ticket and must not guess.
-

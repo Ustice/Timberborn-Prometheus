@@ -1,6 +1,6 @@
 # P2S-022 Add Field Amendment State
 
-Status: todo
+Status: in-progress
 
 Agent level: Low
 
@@ -36,4 +36,3 @@ Add state for Fertile Ash amendments on crop or planting tiles.
 ## Integration Notes
 
 This ticket should not consume ash yet. It only creates the field-state contract.
-
