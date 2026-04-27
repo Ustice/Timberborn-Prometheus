@@ -13,6 +13,7 @@ namespace Mods.Prometheus.Scripts {
     private const float BurningHeatFloor = 0.65f;
     private const float BurningEmberFloor = 0.35f;
     private const float BurningSmokeFloor = 0.25f;
+    private const float ConfiguredSourceTelemetryIntervalInSeconds = 5f;
 
     private FireExposureRuntimeState _fireExposureRuntimeState;
     private FireGridRuntimeState _fireGridRuntimeState;
@@ -31,10 +32,12 @@ namespace Mods.Prometheus.Scripts {
     private float _lastBurningTelemetrySmoke = -1f;
     private float _lastBurningTelemetryFuel = -1f;
     private float _lastBurningTelemetryMoisture = -1f;
+    private float _lastConfiguredSourceTelemetryTime = -999f;
     private int _ignitionRollTick;
     private bool _isIgnited;
     private bool _isBurnedOut;
     private bool _wasBurning;
+    private bool _loggedConfiguredSourceOperationUnknown;
     private FireSourceAttribution _ignitionSourceAttribution = FireSourceAttribution.Unknown;
 
     [Inject]
@@ -87,6 +90,8 @@ namespace Mods.Prometheus.Scripts {
         return;
       }
 
+      InjectConfiguredSource(entityId, footprint);
+
       if (_fireExposureRuntimeState.ConsumeForcedIgnitionRequest(entityId)) {
         TryIgnite(FireSourceAttribution.DebugIgnition(entityId.ToString()));
         FireTelemetry.Log($"event={FireTelemetryEvents.GridIgnitionSeeded} entity={GameObject.name} id={entityId}");
@@ -109,6 +114,7 @@ namespace Mods.Prometheus.Scripts {
       _fireGridRuntimeState.ClearCell(GetGridCoordinate());
       _isIgnited = false;
       _wasBurning = false;
+      _loggedConfiguredSourceOperationUnknown = false;
       _ignitionSourceAttribution = FireSourceAttribution.Unknown;
       return hadActiveFire;
     }
@@ -124,6 +130,7 @@ namespace Mods.Prometheus.Scripts {
       _isIgnited = false;
       _isBurnedOut = false;
       _wasBurning = false;
+      _loggedConfiguredSourceOperationUnknown = false;
       _ignitionSourceAttribution = FireSourceAttribution.Unknown;
     }
 
@@ -246,6 +253,83 @@ namespace Mods.Prometheus.Scripts {
     private float IgnitionThreshold => _fireProfile == null ? 0.45f : _fireProfile.IgnitionThreshold;
 
     private float OxygenDemand => _fireProfile == null ? 0.35f : _fireProfile.OxygenDemand;
+
+    private void InjectConfiguredSource(int entityId, FireGridFootprint footprint) {
+      var spec = CreateConfiguredSourceSpec();
+      if (!spec.HasSource) {
+        return;
+      }
+
+      var operationState = spec.RequiresOperation
+        ? TimberbornOperationStateAdapter.Evaluate(GameObject)
+        : new TimberbornOperationStateSnapshot(TimberbornOperationState.Active, 0, 0, 0, "not required");
+      if (!FireConfiguredSourceInjector.ShouldInject(spec, operationState.State)) {
+        LogConfiguredSourceSuppressed(entityId, spec, operationState);
+        return;
+      }
+
+      var injections = FireConfiguredSourceInjector.CreateInjections(
+        footprint,
+        spec,
+        entityId.ToString());
+      for (var i = 0; i < injections.Count; i++) {
+        _fireGridRuntimeState.Inject(injections[i]);
+      }
+
+      LogConfiguredSourceInjected(entityId, spec, operationState, injections.Count);
+    }
+
+    private FireConfiguredSourceSpec CreateConfiguredSourceSpec() {
+      if (_fireProfile == null) {
+        return new FireConfiguredSourceSpec(0f, 0f, 0f, 0f, false);
+      }
+
+      return new FireConfiguredSourceSpec(
+        _fireProfile.HeatSourceIntensity,
+        _fireProfile.EmberSourceIntensity,
+        _fireProfile.SmokeSourceIntensity,
+        _fireProfile.SourceRadius,
+        _fireProfile.RequiresOperation);
+    }
+
+    private void LogConfiguredSourceInjected(
+      int entityId,
+      FireConfiguredSourceSpec spec,
+      TimberbornOperationStateSnapshot operationState,
+      int injectionCount) {
+      if (Time.realtimeSinceStartup - _lastConfiguredSourceTelemetryTime < ConfiguredSourceTelemetryIntervalInSeconds) {
+        return;
+      }
+
+      _lastConfiguredSourceTelemetryTime = Time.realtimeSinceStartup;
+      FireTelemetry.Log($"event={FireTelemetryEvents.GridSourceInjected} entity={GameObject.name} id={entityId} source={FireSourceAttribution.ConfiguredSource(entityId.ToString()).ToTelemetryToken()} heat={spec.HeatSourceIntensity:0.000} ember={spec.EmberSourceIntensity:0.000} smoke={spec.SmokeSourceIntensity:0.000} radius={spec.SourceRadius:0.000} cells={injectionCount} requiresOperation={spec.RequiresOperation} operation={operationState.State.ToString().ToLowerInvariant()} components={operationState.ComponentCount}");
+    }
+
+    private void LogConfiguredSourceSuppressed(
+      int entityId,
+      FireConfiguredSourceSpec spec,
+      TimberbornOperationStateSnapshot operationState) {
+      if (operationState.State == TimberbornOperationState.Unknown) {
+        if (_loggedConfiguredSourceOperationUnknown) {
+          return;
+        }
+
+        _loggedConfiguredSourceOperationUnknown = true;
+        TimberbornCompatibility.RecordProbe(
+          TimberbornCompatibilityArea.Operation,
+          false,
+          operationState.Detail);
+        FireTelemetry.LogWarning($"event={FireTelemetryEvents.GridSourceSuppressed} entity={GameObject.name} id={entityId} source={FireSourceAttribution.ConfiguredSource(entityId.ToString()).ToTelemetryToken()} reason=operation_unknown heat={spec.HeatSourceIntensity:0.000} ember={spec.EmberSourceIntensity:0.000} smoke={spec.SmokeSourceIntensity:0.000} radius={spec.SourceRadius:0.000} components={operationState.ComponentCount} unknownComponents={operationState.UnknownComponentCount} detail=\"{FireResetRegistry.EscapeToken(operationState.Detail)}\"");
+        return;
+      }
+
+      if (Time.realtimeSinceStartup - _lastConfiguredSourceTelemetryTime < ConfiguredSourceTelemetryIntervalInSeconds) {
+        return;
+      }
+
+      _lastConfiguredSourceTelemetryTime = Time.realtimeSinceStartup;
+      FireTelemetry.Log($"event={FireTelemetryEvents.GridSourceSuppressed} entity={GameObject.name} id={entityId} source={FireSourceAttribution.ConfiguredSource(entityId.ToString()).ToTelemetryToken()} reason=operation_inactive heat={spec.HeatSourceIntensity:0.000} ember={spec.EmberSourceIntensity:0.000} smoke={spec.SmokeSourceIntensity:0.000} radius={spec.SourceRadius:0.000} components={operationState.ComponentCount} enabledComponents={operationState.EnabledComponentCount}");
+    }
 
     private void EvaporateMoisture(FireGridSample sample) {
       if (_remainingMoisture <= 0f) {

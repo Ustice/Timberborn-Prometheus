@@ -7,7 +7,7 @@ This repository contains the standalone Prometheus Timberborn mod assets, local 
 - `bash scripts/build.sh` - compile and deploy.
 - `bash scripts/build.sh --test` - run fast tests, then compile and deploy.
 - `bash scripts/build.sh --launch` - compile, deploy, clear Timberborn logs, and launch the game for QA.
-- `bash scripts/build.sh --qa` - run tests, launch Timberborn, try the normal menu continue flow with `cliclick`, and wait for Prometheus startup readiness.
+- `bash scripts/build.sh --qa` - run tests, deploy, clear logs, launch Timberborn, and hand startup/menu QA to Computer Use.
 - `bash scripts/test.sh` - run the fast plain C# regression suite.
 
 Source of truth: run `bash scripts/build.sh --help` for current build/deploy behavior.

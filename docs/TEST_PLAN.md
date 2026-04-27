@@ -64,6 +64,7 @@ Use this section as the next validation gate once the sparse grid lands.
 | Scenario | Expected Result | Evidence |
 | --- | --- | --- |
 | Debug ignition writes grid state | Selected target creates an active grid fire snapshot | Panel screenshot + `Fire.log` |
+| Configured source writes grid state | `FireProfileSpec` heat/ember/smoke source fields create attributed grid pressure without direct nearest-target ignition | Passing plain C# test + `grid_source_injected` live log when an emitting source is loaded |
 | Cooling/decay update | Active cell intensity decreases deterministically | Test output + log sample |
 | 27-direction neighbor pass | Fire pressure can evaluate adjacent cells in 3D | Passing plain C# test |
 | Reset clears grid | `Reset Fire State` clears active grid, preview, damage, recovery, workplace, beaver, visual, and ash state | Panel screenshot + `runtime_reset_registry_completed failures=0` log sample |
@@ -117,6 +118,7 @@ Use [VALIDATION/explosion-policy.md](VALIDATION/explosion-policy.md) when explos
 | Date | Scenario | Command / Profile | Result | Evidence Path | Notes |
 | --- | --- | --- | --- | --- | --- |
 | 2026-04-26 | Forced Pine ignition resource lifecycle | Standard | Partial Pass | `/tmp/prometheus-throttled-ignite-24s.png` + `Fire.log` | Moisture reached zero, fuel crossed 0.25 death threshold, fuel reached burnout, and throttled telemetry emitted 16 burn rows with no scanned Player.log errors. |
+| 2026-04-27 | Configured source dependency-light propagation | High-risk source | Pass | `bash scripts/test.sh` | Source fields produce attributed grid pressure, respect `RequiresOperation`, and can create nonzero stochastic ignition probability through grid propagation. Live menu startup had no emitting source rows because deployed authored profiles are zero-source at startup. |
 | YYYY-MM-DD |  |  | Pass/Fail |  |  |
 
 ## Session Closeout

@@ -44,6 +44,7 @@ namespace Mods.Prometheus.Scripts {
     public const string NativeVisualEffectUnavailable = "native_visual_effect_unavailable";
     public const string GridIgnitionSeeded = "grid_ignition_seeded";
     public const string GridSourceInjected = "grid_source_injected";
+    public const string GridSourceSuppressed = "grid_source_suppressed";
     public const string GridBurstInjected = "grid_burst_injected";
     public const string TimberbornCompatibilitySummary = "timberborn_compatibility_summary";
     public const string TimberbornCompatibilityProbe = "timberborn_compatibility_probe";
@@ -89,6 +90,7 @@ namespace Mods.Prometheus.Scripts {
       NativeVisualEffectUnavailable,
       GridIgnitionSeeded,
       GridSourceInjected,
+      GridSourceSuppressed,
       GridBurstInjected,
       TimberbornCompatibilitySummary,
       TimberbornCompatibilityProbe,

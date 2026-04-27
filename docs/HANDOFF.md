@@ -6,7 +6,7 @@ Last updated: 2026-04-27
 
 Prometheus is moving into the 3D grid fire rewrite. The old entity-neighbor spread and responder-first runtime model has been removed from active source so the new sparse chunked cellular system can land without legacy behavior mixed in.
 
-Phase 2 stabilization is now running from the file board under `docs/stabilization/tickets/`. Wave A, Wave B, and Wave C tickets through P2S-012 are integrated and done, including P2S-009 reset-registry live QA.
+Phase 2 stabilization is now running from the file board under `docs/stabilization/tickets/`. Wave A, Wave B, and Wave C tickets through P2S-012 are integrated and done, including P2S-009 reset-registry live QA. Current `main` also has P2S-014, P2S-015, and P2S-016 integrated.
 
 ## Verified Since Last Checkpoint
 
@@ -47,6 +47,8 @@ Phase 2 stabilization is now running from the file board under `docs/stabilizati
 | 2026-04-26 | `bash scripts/test.sh` + `bash scripts/build.sh --launch` + manual Continue path | Pass | Fixed the current `main` QA-save load lock by removing the global grid `IUpdatableSingleton` and stepping the shared grid coordinator from awakened fire-profiled entities instead. Manual `Return`, `Return`, `Continue`, `Yes` loaded `Prometheus QA - 2026-04-26 18h52m, Day 3-2.autosave` into the settlement; `Player.log` showed `Load time: 11776ms` plus native visual resolution logs and no Prometheus exception. |
 | 2026-04-27 | `bash -n scripts/build.sh` + `bash scripts/build.sh --help` | Pass | Removed the old QA readiness wait and `cliclick` menu automation from `scripts/build.sh`. `--qa` now runs tests, deploys, clears logs, launches Timberborn, and exits for Computer Use navigation. |
 | 2026-04-27 | P2S-009: `git diff --check` + `bash scripts/test.sh` + `bash scripts/build.sh --qa` + Computer Use reset QA | Pass | Reset registry is integrated. The QA save loaded through Computer Use with `Load time: 12000ms`; `Reset Fire State` reported 989 entities and logs recorded `runtime_reset_registry_started`, `runtime_reset_registry_completed failures=0`, and `debug_reset_fire_exposure result=success`. |
+| 2026-04-27 | P2S-013: `git diff --check` + `bash scripts/test.sh` + `bash scripts/build.sh --qa` + Computer Use startup | Pass | Configured `FireProfileSpec` source fields now inject heat, embers, and smoke into the grid with `ConfiguredSource:<entityId>` attribution and conservative `RequiresOperation` gating. Plain C# suite is now 60 passing tests. Computer Use reached the main menu; startup logs showed Prometheus loaded with no scanned Prometheus errors. No live `grid_source_*` rows appeared during menu startup because the currently authored deployed profiles do not emit sources before a save is loaded. |
+| 2026-04-27 | P2S-013 reconciliation with current `main`: `git diff --check` + `bash scripts/test.sh` + `bash scripts/build.sh --qa` + Computer Use startup | Pass | Merged current `main` with P2S-014, P2S-015, and P2S-016. Configured source injection now runs after per-cell environment setup and terminal entity guards, before forced/debug and burning-source injection. Plain C# suite is now 69 passing tests. Computer Use reached the main menu; startup logs showed Prometheus loaded and `environment=deferred:terrain/block/water/soil_runtime_probe` with no scanned Prometheus errors. |
 
 ## Durable Context
 
@@ -69,7 +71,7 @@ Source of truth: current UI labels and telemetry event names should be checked i
 
 | Blocker | Status | Next Check |
 | --- | --- | --- |
-| Sparse 3D grid needs propagation/profile validation | Active | Resource lifecycle now has one live Pine pass; next slice should validate stochastic field ignition from a separate heat source, profile differences, and readable dry-brown feedback on a visible target. |
+| Sparse 3D grid needs propagation/profile validation | Active | Configured source injection is dependency-light verified; next live slice should load a save with an authored emitting source and capture `grid_source_injected` plus downstream ignition evidence. |
 | CLI autoload crashes saves after Prometheus startup | Mitigated | Use normal menu loading for live QA. `--qa` launches Timberborn and then hands navigation to Computer Use. |
 | Runtime visuals need reconnection to grid state | Active | Keep authoring tool intact, then map grid fire state into visual rules. |
 | Timberborn menu automation map is missing | Active | Create a screenshot-backed map of main menu, Escape menu, in-game toolbar groups, Prometheus group entries, and keyboard controls before assigning more UI-heavy QA work to agents. |
@@ -79,7 +81,7 @@ Source of truth: current UI labels and telemetry event names should be checked i
 
 ## Next Exact Action
 
-Start Wave D with P2S-013 through P2S-018 in dependency order. P2S-013 requires live QA after implementation; use `bash scripts/build.sh --qa`, then Computer Use for startup dialogs, save loading, and in-game evidence.
+Integrate the reconciled P2S-013 branch, then continue Wave D. Use `bash scripts/build.sh --qa`, then Computer Use for startup dialogs, save loading, and in-game evidence when a ticket requires live QA.
 
 ## Resume Checklist
 

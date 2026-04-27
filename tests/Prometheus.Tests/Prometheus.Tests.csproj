@@ -24,6 +24,7 @@
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Core/EntitySnapshotStore.cs" Link="Source/Core/EntitySnapshotStore.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Core/FireResetRegistry.cs" Link="Source/Core/FireResetRegistry.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Core/TimberbornCompatibility.cs" Link="Source/Core/TimberbornCompatibility.cs" />
+    <Compile Include="../../Assets/Mods/Prometheus/Scripts/Core/TimberbornOperationStateAdapter.cs" Link="Source/Core/TimberbornOperationStateAdapter.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Core/TickGate.cs" Link="Source/Core/TickGate.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Damage/FireDamageStateRuntimeState.cs" Link="Source/Fire/Damage/FireDamageStateRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Grid/FireGridChunk.cs" Link="Source/Fire/Grid/FireGridChunk.cs" />
@@ -38,6 +39,7 @@
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Impact/FireImpactRuntimeState.cs" Link="Source/Fire/Impact/FireImpactRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Projection/FireRuntimeProjectionRuntimeState.cs" Link="Source/Fire/Projection/FireRuntimeProjectionRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Recovery/FireRecoveryRuntimeState.cs" Link="Source/Fire/Recovery/FireRecoveryRuntimeState.cs" />
+    <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Exposure/FireConfiguredSourceInjector.cs" Link="Source/Fire/Exposure/FireConfiguredSourceInjector.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Exposure/FireExposureRuntimeState.cs" Link="Source/Fire/Exposure/FireExposureRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Visuals/FireVisualEffectAuthoring.cs" Link="Source/Fire/Visuals/FireVisualEffectAuthoring.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Visuals/FireNativeParticleSourceCatalog.cs" Link="Source/Fire/Visuals/FireNativeParticleSourceCatalog.cs" />
