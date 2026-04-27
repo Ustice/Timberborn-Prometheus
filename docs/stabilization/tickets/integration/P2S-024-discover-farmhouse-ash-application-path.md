@@ -1,6 +1,6 @@
 # P2S-024 Discover Farmhouse Ash Application Path
 
-Status: verify
+Status: integration
 
 Agent level: High
 
