@@ -1,6 +1,6 @@
 # P2S-020 Spawn Native Fertile Ash
 
-Status: todo
+Status: ready
 
 Agent level: High
 
@@ -36,4 +36,3 @@ Spawn visible Fertile Ash from valid charred sources and prove normal stockpile 
 ## Integration Notes
 
 Do not integrate if ash is only a debug/internal counter.
-

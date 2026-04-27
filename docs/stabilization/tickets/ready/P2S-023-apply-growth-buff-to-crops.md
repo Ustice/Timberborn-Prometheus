@@ -1,6 +1,6 @@
 # P2S-023 Apply Growth Buff To Crops
 
-Status: todo
+Status: ready
 
 Agent level: Medium
 
@@ -39,4 +39,3 @@ Apply Fertile Ash field amendments as a crop growth-speed buff.
 ## Integration Notes
 
 Medium agent recommended because this mutates live `Growable` state.
-
