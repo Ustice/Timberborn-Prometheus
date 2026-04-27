@@ -87,7 +87,7 @@ Source of truth: current UI labels and telemetry event names should be checked i
 
 ## Next Exact Action
 
-Continue Wave E with P2S-020 integration/QA. P2S-020 owns the live Fertile Ash spawn/collection/storage proof; P2S-024/P2S-025 own farmhouse/farmer application after the recovered-good path is proven.
+P2S-020 is blocked after an unresponsive worker left uncommitted partial edits without live Fertile Ash spawn, collection, or storage proof. Reassign or resume P2S-020 before starting P2S-021, P2S-024, or P2S-025; those tickets depend on the recovered-good path being proven.
 
 ## Resume Checklist
 
