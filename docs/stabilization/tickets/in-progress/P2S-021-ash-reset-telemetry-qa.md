@@ -1,6 +1,6 @@
 # P2S-021 Ash Reset Telemetry QA
 
-Status: ready
+Status: in-progress
 
 Agent level: Low
 
