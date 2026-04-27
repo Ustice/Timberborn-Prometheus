@@ -1,6 +1,6 @@
 # P2S-013 Wire Configured Sources
 
-Status: todo
+Status: in-progress
 
 Agent level: High
 
@@ -38,4 +38,3 @@ Use configured source fields from `FireProfileSpec` to inject heat, embers, and 
 ## Integration Notes
 
 High agent recommended because this crosses profile data, Timberborn operation state, grid runtime, and live behavior.
-

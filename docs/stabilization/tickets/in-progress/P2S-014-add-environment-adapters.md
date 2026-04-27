@@ -1,6 +1,6 @@
 # P2S-014 Add Environment Adapters
 
-Status: todo
+Status: in-progress
 
 Agent level: High
 
@@ -38,4 +38,3 @@ Add read-only Timberborn environment adapters for grid sampling.
 ## Integration Notes
 
 High agent recommended because wrong world reads can destabilize live simulation.
-
