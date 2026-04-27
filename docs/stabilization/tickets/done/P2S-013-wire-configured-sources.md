@@ -1,6 +1,6 @@
 # P2S-013 Wire Configured Sources
 
-Status: integration
+Status: done
 
 Agent level: High
 
