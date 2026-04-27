@@ -47,7 +47,7 @@ What passed:
 
 - `git diff --check`
 - `bash scripts/test.sh` with 56 passed after merging current `main`
-- `bash scripts/build.sh --qa` reached Prometheus startup readiness on the candidate branch
+- `bash scripts/build.sh --qa` previously reached Prometheus startup readiness on the candidate branch. That wait has since been removed from `scripts/build.sh`; use Computer Use to navigate after launch and check logs directly.
 - Fresh `Player.log` and `Fire.log` showed Prometheus startup with no managed exception before save load
 - Candidate commits now preserve the reset registry while adding failure isolation, stale Unity-reference pruning, visual reset null-safety, and deferred per-entity reset hook registration until `Awake`
 
@@ -65,8 +65,8 @@ What was tried:
 - Observed the candidate branch reach a persistent `LOADING` screen after the save load started; after 75 seconds logs still stopped after `Good group Juice has no goods`.
 - Sampled the hung process at `/tmp/timberborn-p2s009-sample.txt`; symbols were mostly unknown and did not expose a Prometheus stack.
 - Merged current `main` into the candidate branch and retried after deferring reset hook registration until `Awake`; the save still remained on the `LOADING` screen after the same bounded wait.
-- Ran `bash scripts/build.sh --qa` on current `main`; the readiness gate passed but the game remained on the main menu, proving the current `--qa` readiness check does not prove save-load completion.
-- Tried manual `cliclick` and Computer Use clicks/Return on the visible main menu `Continue` button; input did not activate the button in the observed run.
+- Ran `bash scripts/build.sh --qa` on current `main`; the old readiness gate passed but the game remained on the main menu, proving that startup detection did not prove save-load completion.
+- Tried manual `cliclick` and Computer Use clicks/Return on the visible main menu `Continue` button; input did not activate the button in the observed run. `cliclick` is no longer part of the QA flow.
 
 Smallest next action:
 

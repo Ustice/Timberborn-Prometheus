@@ -147,7 +147,7 @@ Acceptance: a future session can run one command, see current sprint state, and 
 ## Sprint Exit Gates
 
 - `bash scripts/test.sh` passes.
-- `bash scripts/build.sh --qa` reaches readiness through the normal menu path.
+- `bash scripts/build.sh --qa` passes and Computer Use reaches the normal menu or target save without Prometheus startup errors.
 - Live QA records at least one pass for source-driven spread, moisture/firebreak dampening, runtime visuals, reset, and Fertile Ash eligibility.
 - No Prometheus exceptions are present in the scanned `Player.log` or `Fire.log` window.
 - Debug/admin actions remain safe: `Stop Fires`, `Reset Fire State`, `Clear Beavers`, `View`, visual preview, and QA result recording.

@@ -16,7 +16,7 @@ This is the authoritative runbook for active Prometheus validation.
 
 - [ ] Run `bash scripts/test.sh`.
 - [ ] Run `bash scripts/build.sh --launch` for in-game QA.
-- [ ] Prefer `bash scripts/build.sh --qa` when you want tests, launch, cleared logs, normal-menu continue automation, and Prometheus startup readiness in one command.
+- [ ] Prefer `bash scripts/build.sh --qa` when you want tests, deployment, cleared logs, and a fresh Timberborn launch before Computer Use navigation.
 - [ ] If Steam or Timberborn is slow after deployment, tune `LAUNCH_DELAY_SECONDS`; the default is 15 seconds.
 - [ ] Use normal menu loading for live QA; CLI `-settlementName "<settlement>" -saveName "<save without .timber>"` uses Timberborn's instant scene-load path and currently crashes after Prometheus startup.
 - [ ] Confirm Timberborn launches with Prometheus enabled.
@@ -43,11 +43,7 @@ This is the authoritative runbook for active Prometheus validation.
 
 Last verified at 1920x1080 on 2026-04-25: `Prometheus` root around `632,1043`, `QA` child around `1024,970`, and `Passed` recorded `event=qa_result_recorded result=passed`.
 
-For coordinate-based in-game checks, use a single click-and-capture command so the action and evidence stay together:
-
-```bash
-osascript -e 'tell application id "com.mechanistry.timberborn" to activate' && sleep 0.2 && cliclick c:<x>,<y> && sleep 0.7 && screencapture -x /tmp/timberborn-tight-loop.png
-```
+Use Computer Use screenshots and clicks for coordinate-based in-game checks so the action and visual evidence stay together.
 
 Source of truth: exact UI labels and control construction live in the debug UI source; this checklist defines behavior to verify, not an inventory to keep synchronized.
 
