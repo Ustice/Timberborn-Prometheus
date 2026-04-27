@@ -53,8 +53,8 @@ Options:
                 Implies stopping any running Timberborn process and waiting
                 for a fresh + stable Unity DLL before build/deploy.
                 Also clears Timberborn Player.log and Fire.log before launch.
-  --qa          Run tests, build/deploy, launch Timberborn, try normal menu
-                continue automation, then wait for Prometheus startup readiness.
+  --qa          Run tests, build/deploy, clear logs, and launch Timberborn.
+                Use Computer Use for startup dialogs and live QA navigation.
                 Implies --test and --launch.
 
 Common combos:
@@ -62,7 +62,7 @@ Common combos:
   bash scripts/build.sh --test           # test + build + deploy
   bash scripts/build.sh --launch         # build + stop running + wait for fresh/stable build + deploy + wait + launch
   bash scripts/build.sh --test --launch  # test + launch workflow
-  bash scripts/build.sh --qa             # test + launch + menu continue + readiness wait
+  bash scripts/build.sh --qa             # test + launch for manual/Computer Use QA
 
 Build/deploy model:
   The deployed mod directory is recreated as symlinks on each run:
@@ -75,14 +75,11 @@ Compilation model:
   - If the project file is missing, the script falls back to existing Unity DLL checks.
 
 QA model:
-  - QA mode waits up to QA_READY_TIMEOUT_SECONDS (default: 180) for Player.log
-    to show Prometheus startup with no scanned Prometheus errors.
-  - Set QA_READY_POLL_SECONDS to tune the readiness polling interval.
+  - QA mode runs tests, deploys, clears logs, launches Timberborn, and exits.
+  - Use Computer Use after launch to handle startup dialogs, menu loading, and
+    in-game QA actions.
   - Launch workflows wait LAUNCH_DELAY_SECONDS (default: 15) after clearing
     logs before asking Steam to start Timberborn.
-  - When cliclick is installed, QA mode also tries the normal menu load path:
-    activate Timberborn, press Return twice, wait, then click Continue.
-    Override with QA_MENU_AUTOMATION=0 or QA_MENU_* timing/coordinate vars.
 USAGE
 }
 
@@ -763,6 +760,7 @@ if [[ "$LAUNCH_AFTER_BUILD" == "true" ]]; then
   echo "[build] Waiting ${LAUNCH_DELAY_SECONDS}s before launch..."
   sleep "$LAUNCH_DELAY_SECONDS"
   launch_timberborn
-  run_qa_menu_automation
-  wait_for_qa_readiness
+  if [[ "$QA_MODE" == "true" ]]; then
+    echo "[qa] launched: use Computer Use for startup dialogs, menu loading, and in-game QA."
+  fi
 fi
