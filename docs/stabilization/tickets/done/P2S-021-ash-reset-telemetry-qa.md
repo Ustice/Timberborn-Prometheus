@@ -1,6 +1,6 @@
 # P2S-021 Ash Reset Telemetry QA
 
-Status: integration
+Status: done
 
 Agent level: Low
 
