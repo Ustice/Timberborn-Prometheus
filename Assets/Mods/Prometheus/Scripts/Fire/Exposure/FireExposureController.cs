@@ -90,12 +90,12 @@ namespace Mods.Prometheus.Scripts {
         return;
       }
 
+      InjectConfiguredSource(entityId, footprint);
+
       if (_fireExposureRuntimeState.ConsumeForcedIgnitionRequest(entityId)) {
         TryIgnite(FireSourceAttribution.DebugIgnition(entityId.ToString()));
         FireTelemetry.Log($"event={FireTelemetryEvents.GridIgnitionSeeded} entity={GameObject.name} id={entityId}");
       }
-
-      InjectConfiguredSource(entityId, footprint);
 
       if (_isIgnited) {
         _fireGridRuntimeState.Inject(new FireGridSourceInjection(coordinate, CreateBurningSourceCell(), _ignitionSourceAttribution));
