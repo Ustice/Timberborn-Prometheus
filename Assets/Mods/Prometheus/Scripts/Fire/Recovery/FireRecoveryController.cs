@@ -109,14 +109,14 @@ namespace Mods.Prometheus.Scripts {
       var decision = FertileAshSpawnPolicy.Evaluate(eligibility);
       if (!decision.ShouldQueue) {
         FireTelemetry.Log(
-          $"event={FireTelemetryEvents.FertileAshSpawnSkipped} entity={GameObject.name} id={entityId} reason={decision.Reason} status={eligibility.Status.ToString().ToLowerInvariant()} sourceKind={eligibility.SourceKind.ToString().ToLowerInvariant()} structure={structureKind.ToString().ToLowerInvariant()} damageCategory={damageState.Category.ToString().ToLowerInvariant()}");
+          $"event={FireTelemetryEvents.FertileAshSpawnSkipped} entity={GameObject.name} id={entityId} reason={decision.Reason} status={eligibility.Status.ToString().ToLowerInvariant()} sourceKind={eligibility.SourceKind.ToString().ToLowerInvariant()} structure={structureKind.ToString().ToLowerInvariant()} damageCategory={damageState.Category.ToString().ToLowerInvariant()} cropContext={GetCropContext(damageState.Category)}");
         return;
       }
 
       var coordinates = GetRecoveredGoodStackCoordinates();
       if (_fertileAshRecoveredGoodStackSpawner is null) {
         FireTelemetry.LogWarning(
-          $"event={FireTelemetryEvents.FertileAshSpawnFailed} entity={GameObject.name} id={entityId} amount={decision.Amount} reason=fertile_ash_spawner_missing sourceKind={eligibility.SourceKind.ToString().ToLowerInvariant()} coordinates={coordinates.x},{coordinates.y},{coordinates.z}");
+          $"event={FireTelemetryEvents.FertileAshSpawnFailed} entity={GameObject.name} id={entityId} amount={decision.Amount} reason=fertile_ash_spawner_missing sourceKind={eligibility.SourceKind.ToString().ToLowerInvariant()} damageCategory={damageState.Category.ToString().ToLowerInvariant()} cropContext={GetCropContext(damageState.Category)} coordinates={coordinates.x},{coordinates.y},{coordinates.z}");
         return;
       }
 
@@ -124,16 +124,17 @@ namespace Mods.Prometheus.Scripts {
         exposureSnapshot.DominantSource,
         eligibility.SourceKind.ToString().ToLowerInvariant(),
         damageState.Category.ToString().ToLowerInvariant(),
-        entityId);
+        entityId,
+        GetCropContext(damageState.Category));
 
       if (_fertileAshRecoveredGoodStackSpawner.TryQueueFertileAsh(coordinates, decision.Amount, telemetryContext, out var queueReason)) {
         FireTelemetry.Log(
-          $"event={FireTelemetryEvents.FertileAshSpawnQueued} entity={GameObject.name} id={entityId} amount={decision.Amount} reason={decision.Reason} source={telemetryContext.SourceAttribution} sourceKind={telemetryContext.SourceKind} damageCategory={telemetryContext.DamageCategory} coordinates={coordinates.x},{coordinates.y},{coordinates.z}");
+          $"event={FireTelemetryEvents.FertileAshSpawnQueued} entity={GameObject.name} id={entityId} amount={decision.Amount} reason={decision.Reason} source={telemetryContext.SourceAttribution} sourceKind={telemetryContext.SourceKind} damageCategory={telemetryContext.DamageCategory} cropContext={telemetryContext.CropContext} coordinates={coordinates.x},{coordinates.y},{coordinates.z}");
         return;
       }
 
       FireTelemetry.LogWarning(
-        $"event={FireTelemetryEvents.FertileAshSpawnFailed} entity={GameObject.name} id={entityId} amount={decision.Amount} reason={queueReason} source={telemetryContext.SourceAttribution} sourceKind={telemetryContext.SourceKind} damageCategory={telemetryContext.DamageCategory} coordinates={coordinates.x},{coordinates.y},{coordinates.z}");
+        $"event={FireTelemetryEvents.FertileAshSpawnFailed} entity={GameObject.name} id={entityId} amount={decision.Amount} reason={queueReason} source={telemetryContext.SourceAttribution} sourceKind={telemetryContext.SourceKind} damageCategory={telemetryContext.DamageCategory} cropContext={telemetryContext.CropContext} coordinates={coordinates.x},{coordinates.y},{coordinates.z}");
     }
 
     private FireGridStructureKind GetStructureKind(FireDamageCategory damageCategory) {
@@ -151,10 +152,14 @@ namespace Mods.Prometheus.Scripts {
 
       return damageCategory switch {
         FireDamageCategory.Tree => FireGridStructureKind.Vegetation,
+        FireDamageCategory.Crop => FireGridStructureKind.Vegetation,
         FireDamageCategory.Building => FireGridStructureKind.Building,
         _ => FireGridStructureKind.Unknown,
       };
     }
+
+    private static string GetCropContext(FireDamageCategory damageCategory) =>
+      damageCategory == FireDamageCategory.Crop ? "burned_crop" : "none";
 
     private Vector3Int GetRecoveredGoodStackCoordinates() {
       var position = GameObject.transform.position;

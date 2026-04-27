@@ -2,6 +2,7 @@ namespace Mods.Prometheus.Scripts {
   internal enum FireAftermathSourceKind {
     Unknown,
     CharredTree,
+    CharredCrop,
     CharredBuilding,
     Terrain,
     TopSurface,
@@ -94,6 +95,11 @@ namespace Mods.Prometheus.Scripts {
         return Eligible(FireAftermathSourceKind.CharredTree, "charred_tree");
       }
 
+      if (candidate.StructureKind == FireGridStructureKind.Vegetation
+          && candidate.DamageCategory == FireDamageCategory.Crop) {
+        return Eligible(FireAftermathSourceKind.CharredCrop, "charred_crop");
+      }
+
       if (candidate.StructureKind == FireGridStructureKind.Building
           && candidate.DamageCategory == FireDamageCategory.Building) {
         return Eligible(FireAftermathSourceKind.CharredBuilding, "charred_building");
@@ -122,6 +128,7 @@ namespace Mods.Prometheus.Scripts {
   internal static class FertileAshSpawnPolicy {
 
     internal const int CharredTreeAmount = 1;
+    internal const int CharredCropAmount = 1;
     internal const int CharredBuildingAmount = 4;
 
     internal static FertileAshSpawnDecision Evaluate(FireAftermathEligibilityResult eligibility) {
@@ -131,6 +138,7 @@ namespace Mods.Prometheus.Scripts {
 
       var amount = eligibility.SourceKind switch {
         FireAftermathSourceKind.CharredTree => CharredTreeAmount,
+        FireAftermathSourceKind.CharredCrop => CharredCropAmount,
         FireAftermathSourceKind.CharredBuilding => CharredBuildingAmount,
         _ => 0,
       };

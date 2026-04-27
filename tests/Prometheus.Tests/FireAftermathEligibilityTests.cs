@@ -39,15 +39,33 @@ namespace Prometheus.Tests
         }
 
         [Fact]
+        public void ValidCharredCrop_CanProduceFertileAsh_Test()
+        {
+            var result = FireAftermathEligibilityPolicy.Evaluate(
+              new FireAftermathEligibilityCandidate(
+                FireGridStructureKind.Vegetation,
+                FireDamageCategory.Crop,
+                FireDamageState.Dead,
+                burnedOut: true));
+
+            TestSupport.True(result.CanProduceFertileAsh);
+            TestSupport.Equal(FireAftermathEligibilityStatus.Eligible, result.Status);
+            TestSupport.Equal(FireAftermathSourceKind.CharredCrop, result.SourceKind);
+            TestSupport.Equal("charred_crop", result.Reason);
+        }
+
+        [Fact]
         public void ExcludedObjects_CannotProduceFertileAsh_Test()
         {
             var excludedCandidates = new[]
             {
-                new FireAftermathEligibilityCandidate(FireGridStructureKind.Vegetation, FireDamageCategory.Crop, FireDamageState.Dead, burnedOut: true),
+                new FireAftermathEligibilityCandidate(FireGridStructureKind.Vegetation, FireDamageCategory.Unknown, FireDamageState.Dead, burnedOut: true),
+                new FireAftermathEligibilityCandidate(FireGridStructureKind.Building, FireDamageCategory.Crop, FireDamageState.Dead, burnedOut: true),
                 new FireAftermathEligibilityCandidate(FireGridStructureKind.Building, FireDamageCategory.Unknown, FireDamageState.Dead, burnedOut: true),
                 new FireAftermathEligibilityCandidate(FireGridStructureKind.Barrier, FireDamageCategory.Building, FireDamageState.Dead, burnedOut: true),
                 new FireAftermathEligibilityCandidate(FireGridStructureKind.Water, FireDamageCategory.Unknown, FireDamageState.Dead, burnedOut: true),
                 new FireAftermathEligibilityCandidate(FireGridStructureKind.Air, FireDamageCategory.Unknown, FireDamageState.Dead, burnedOut: true),
+                new FireAftermathEligibilityCandidate(FireGridStructureKind.Vegetation, FireDamageCategory.Crop, FireDamageState.Scorched, burnedOut: true),
                 new FireAftermathEligibilityCandidate(FireGridStructureKind.Vegetation, FireDamageCategory.Tree, FireDamageState.Scorched, burnedOut: true),
                 new FireAftermathEligibilityCandidate(FireGridStructureKind.Building, FireDamageCategory.Building, FireDamageState.Dead, burnedOut: false),
             };
@@ -111,6 +129,11 @@ namespace Prometheus.Tests
                 FireAftermathEligibilityStatus.Eligible,
                 FireAftermathSourceKind.CharredBuilding,
                 "charred_building"));
+            var cropDecision = FertileAshSpawnPolicy.Evaluate(
+              new FireAftermathEligibilityResult(
+                FireAftermathEligibilityStatus.Eligible,
+                FireAftermathSourceKind.CharredCrop,
+                "charred_crop"));
 
             TestSupport.True(treeDecision.ShouldQueue);
             TestSupport.Equal(FertileAshSpawnPolicy.CharredTreeAmount, treeDecision.Amount);
@@ -118,6 +141,10 @@ namespace Prometheus.Tests
             TestSupport.True(buildingDecision.ShouldQueue);
             TestSupport.Equal(FertileAshSpawnPolicy.CharredBuildingAmount, buildingDecision.Amount);
             TestSupport.Equal("charred_building", buildingDecision.Reason);
+            TestSupport.True(cropDecision.ShouldQueue);
+            TestSupport.Equal(FertileAshSpawnPolicy.CharredCropAmount, cropDecision.Amount);
+            TestSupport.Equal("charred_crop", cropDecision.Reason);
+            TestSupport.True(cropDecision.Amount < buildingDecision.Amount);
         }
 
         [Fact]

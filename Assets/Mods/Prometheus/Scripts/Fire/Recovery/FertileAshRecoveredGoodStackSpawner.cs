@@ -14,22 +14,26 @@ namespace Mods.Prometheus.Scripts {
       "unknown",
       "unknown",
       "unknown",
-      0);
+      0,
+      "none");
 
     public string SourceAttribution { get; }
     public string SourceKind { get; }
     public string DamageCategory { get; }
     public int SourceEntityId { get; }
+    public string CropContext { get; }
 
     public FertileAshSpawnTelemetryContext(
       string sourceAttribution,
       string sourceKind,
       string damageCategory,
-      int sourceEntityId) {
+      int sourceEntityId,
+      string cropContext = "none") {
       SourceAttribution = string.IsNullOrWhiteSpace(sourceAttribution) ? "unknown" : sourceAttribution;
       SourceKind = string.IsNullOrWhiteSpace(sourceKind) ? "unknown" : sourceKind;
       DamageCategory = string.IsNullOrWhiteSpace(damageCategory) ? "unknown" : damageCategory;
       SourceEntityId = sourceEntityId;
+      CropContext = string.IsNullOrWhiteSpace(cropContext) ? "none" : cropContext;
     }
 
   }
@@ -41,6 +45,7 @@ namespace Mods.Prometheus.Scripts {
     public string LastSourceAttribution { get; private set; } = "none";
     public string LastSourceKind { get; private set; } = "none";
     public string LastDamageCategory { get; private set; } = "none";
+    public string LastCropContext { get; private set; } = "none";
 
     public void RecordQueuedStack(int amount, FertileAshSpawnTelemetryContext context) {
       QueuedStackCount++;
@@ -48,6 +53,7 @@ namespace Mods.Prometheus.Scripts {
       LastSourceAttribution = context.SourceAttribution;
       LastSourceKind = context.SourceKind;
       LastDamageCategory = context.DamageCategory;
+      LastCropContext = context.CropContext;
     }
 
     public FertileAshResetTelemetrySnapshot ClearForReset() {
@@ -56,13 +62,15 @@ namespace Mods.Prometheus.Scripts {
         QueuedAshAmount,
         LastSourceAttribution,
         LastSourceKind,
-        LastDamageCategory);
+        LastDamageCategory,
+        LastCropContext);
 
       QueuedStackCount = 0;
       QueuedAshAmount = 0;
       LastSourceAttribution = "none";
       LastSourceKind = "none";
       LastDamageCategory = "none";
+      LastCropContext = "none";
       return snapshot;
     }
 
@@ -75,18 +83,21 @@ namespace Mods.Prometheus.Scripts {
     public string LastSourceAttribution { get; }
     public string LastSourceKind { get; }
     public string LastDamageCategory { get; }
+    public string LastCropContext { get; }
 
     public FertileAshResetTelemetrySnapshot(
       int queuedStackCount,
       int queuedAshAmount,
       string lastSourceAttribution,
       string lastSourceKind,
-      string lastDamageCategory) {
+      string lastDamageCategory,
+      string lastCropContext) {
       QueuedStackCount = queuedStackCount;
       QueuedAshAmount = queuedAshAmount;
       LastSourceAttribution = lastSourceAttribution;
       LastSourceKind = lastSourceKind;
       LastDamageCategory = lastDamageCategory;
+      LastCropContext = lastCropContext;
     }
 
   }
@@ -149,12 +160,12 @@ namespace Mods.Prometheus.Scripts {
         reason = "queued_recovered_good_stack";
         _telemetryState?.RecordQueuedStack(amount, context);
         FireTelemetry.Log(
-          $"event={FireTelemetryEvents.FertileAshRecoveredGoodStackQueued} good={FertileAshRecoveredGoodStackRules.FertileAshGoodId} amount={amount} coordinates={coordinates.x},{coordinates.y},{coordinates.z} source={context.SourceAttribution} sourceKind={context.SourceKind} damageCategory={context.DamageCategory} sourceEntityId={context.SourceEntityId}");
+          $"event={FireTelemetryEvents.FertileAshRecoveredGoodStackQueued} good={FertileAshRecoveredGoodStackRules.FertileAshGoodId} amount={amount} coordinates={coordinates.x},{coordinates.y},{coordinates.z} source={context.SourceAttribution} sourceKind={context.SourceKind} damageCategory={context.DamageCategory} cropContext={context.CropContext} sourceEntityId={context.SourceEntityId}");
         return true;
       } catch (Exception exception) {
         reason = "recovered_good_stack_queue_failed";
         FireTelemetry.LogWarning(
-          $"event={FireTelemetryEvents.FertileAshRecoveredGoodStackFailed} reason={reason} exception={exception.GetType().Name} source={context.SourceAttribution} sourceKind={context.SourceKind} damageCategory={context.DamageCategory} sourceEntityId={context.SourceEntityId}");
+          $"event={FireTelemetryEvents.FertileAshRecoveredGoodStackFailed} reason={reason} exception={exception.GetType().Name} source={context.SourceAttribution} sourceKind={context.SourceKind} damageCategory={context.DamageCategory} cropContext={context.CropContext} sourceEntityId={context.SourceEntityId}");
         return false;
       }
     }

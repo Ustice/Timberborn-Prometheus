@@ -110,7 +110,7 @@ namespace Mods.Prometheus.Scripts {
 
     private static void ResetFertileAshTelemetryState(FertileAshRecoveredGoodStackTelemetryState telemetryState) {
       var snapshot = telemetryState.ClearForReset();
-      FireTelemetry.Log($"event={FireTelemetryEvents.FertileAshResetState} queuedStacks={snapshot.QueuedStackCount} queuedAmount={snapshot.QueuedAshAmount} source={snapshot.LastSourceAttribution} sourceKind={snapshot.LastSourceKind} damageCategory={snapshot.LastDamageCategory} nativeStacksDestroyed=0 reason=native_recovered_good_stack_owned_by_timberborn");
+      FireTelemetry.Log($"event={FireTelemetryEvents.FertileAshResetState} queuedStacks={snapshot.QueuedStackCount} queuedAmount={snapshot.QueuedAshAmount} source={snapshot.LastSourceAttribution} sourceKind={snapshot.LastSourceKind} damageCategory={snapshot.LastDamageCategory} cropContext={snapshot.LastCropContext} nativeStacksDestroyed=0 reason=native_recovered_good_stack_owned_by_timberborn");
     }
 
     private IEnumerable<FireResetHook> CreateLoadedEntityHooks() {

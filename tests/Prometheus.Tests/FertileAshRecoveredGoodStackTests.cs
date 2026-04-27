@@ -40,18 +40,20 @@ namespace Prometheus.Tests
 
             state.RecordQueuedStack(
                 3,
-                new FertileAshSpawnTelemetryContext("BurnedOut", "vegetation", "tree", 42));
+                new FertileAshSpawnTelemetryContext("BurnedOut", "charredcrop", "crop", 42, "burned_crop"));
 
             var snapshot = state.ClearForReset();
 
             TestSupport.Equal(1, snapshot.QueuedStackCount);
             TestSupport.Equal(3, snapshot.QueuedAshAmount);
             TestSupport.Equal("BurnedOut", snapshot.LastSourceAttribution);
-            TestSupport.Equal("vegetation", snapshot.LastSourceKind);
-            TestSupport.Equal("tree", snapshot.LastDamageCategory);
+            TestSupport.Equal("charredcrop", snapshot.LastSourceKind);
+            TestSupport.Equal("crop", snapshot.LastDamageCategory);
+            TestSupport.Equal("burned_crop", snapshot.LastCropContext);
             TestSupport.Equal(0, state.QueuedStackCount);
             TestSupport.Equal(0, state.QueuedAshAmount);
             TestSupport.Equal("none", state.LastSourceAttribution);
+            TestSupport.Equal("none", state.LastCropContext);
         }
 
     }
