@@ -7,6 +7,7 @@ Read these in order when starting work.
 | Repo instructions | [../AGENTS.md](../AGENTS.md) | Collaboration rules, markdown style, and QA preference |
 | Quick commands | [../README.md](../README.md) | Fast build/test/deploy entrypoint |
 | Current state | [HANDOFF.md](HANDOFF.md) | Latest verified result, blockers, and next action |
+| Orchestration runs | [ORCHESTRATION.md](ORCHESTRATION.md) | Durable kickoff prompts and multi-agent run loop |
 | Validation runbook | [TEST_PLAN.md](TEST_PLAN.md) | Smoke checks, QA matrices, and evidence templates |
 | Product/design decisions | [DESIGN.md](DESIGN.md) | Durable mechanics, roadmap, and architecture choices |
 | Architecture map | [ARCHITECTURE.md](ARCHITECTURE.md) | Durable module ownership, data flow, reset boundaries, and Phase 3 renewal boundaries |
@@ -21,6 +22,7 @@ Read these in order when starting work.
 | What do I run first? | [../README.md](../README.md) and `bash scripts/build.sh --help` |
 | What is currently verified? | [HANDOFF.md](HANDOFF.md) |
 | What is next? | [HANDOFF.md](HANDOFF.md) |
+| How do I start orchestration? | [ORCHESTRATION.md](ORCHESTRATION.md) |
 | Where is the validation matrix? | [TEST_PLAN.md](TEST_PLAN.md) |
 | Where is the active ticket board? | [tickets/README.md](tickets/README.md) |
 | Where is the stabilization plan? | [STABILIZATION_SPRINT.md](STABILIZATION_SPRINT.md) |
@@ -33,6 +35,7 @@ Read these in order when starting work.
 
 - `README.md` stays compact and points here.
 - `HANDOFF.md` is the only live status document.
+- `ORCHESTRATION.md` owns the durable multi-agent kickoff and run loop.
 - `TEST_PLAN.md` is the only active validation runbook.
 - `DESIGN.md` is the durable product and architecture record.
 - `ARCHITECTURE.md` is the durable module boundary and data-flow map for stabilization work.

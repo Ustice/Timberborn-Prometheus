@@ -4,6 +4,8 @@ This directory is the permanent file-based board for Prometheus work. It is not 
 
 Move ticket files with `git mv` so status changes are traceable in git history. Use `scripts/tickets.sh` for common moves and worktree cleanup when helpful.
 
+Use [../ORCHESTRATION.md](../ORCHESTRATION.md) to start or resume a multi-agent orchestration run.
+
 ## Status Flow
 
 ```text

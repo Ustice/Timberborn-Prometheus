@@ -12,6 +12,7 @@ Phase 2 stabilization closeout is complete for the integrated scope. P2S-001 thr
 
 | Date | Command / Evidence | Result | Notes |
 | --- | --- | --- | --- |
+| 2026-04-27 | `git diff --check` | Pass | Added [ORCHESTRATION.md](ORCHESTRATION.md) as the durable kickoff/runbook for future multi-agent orchestration runs and linked it from README, INDEX, and the ticket board. Runtime verification skipped because this was documentation-only. |
 | 2026-04-27 | Timberborn stop, `bash -n scripts/build.sh`, `bash scripts/build.sh --help`, synthetic shared-lock wait/release tests, `git diff --check`, `bash scripts/test.sh` | Pass | Added shared build/QA locking to `scripts/build.sh`. Normal build runs release the lock on exit; `--qa` keeps a persistent QA-session lock until `bash scripts/build.sh --release-qa-lock` is run. Plain C# suite stayed at 89 passing tests. |
 | 2026-04-27 | Example food-chain cleanup: reference scan, JSON parse scan, `bash scripts/test.sh`, `bash scripts/build.sh` | Pass | Removed leftover example goods, need, recipes, icons, dedicated stove building registration/assets, localization rows, and bakery recipe append. Plain C# suite passed 89 tests and build/deploy completed. |
 | 2026-04-25 | `bash scripts/test.sh && bash scripts/build.sh --launch` | Pass | Removal pass launched Timberborn successfully. |
@@ -70,6 +71,7 @@ Phase 2 stabilization closeout is complete for the integrated scope. P2S-001 thr
 - Timberborn can autoload saves from the command line with `-settlementName "<settlement>" -saveName "<save without .timber>"`; experimental saves are used when the game is in experimental mode. Treat this as unsafe for live QA on the current mod stack because autostart uses `LoadSceneInstantly(...)` rather than the normal menu `LoadScene(...)` path.
 - `bash scripts/build.sh --qa` runs tests, deploys, clears logs, launches Timberborn, then exits. It does not wait for Prometheus startup, menu state, or save-load completion.
 - `scripts/build.sh` uses a shared build/QA lock under `~/Library/Application Support/Timberborn/PrometheusQA/locks` so sibling ticket worktrees wait instead of deploying, clearing logs, stopping Timberborn, or launching QA at the same time. `--qa` keeps the lock after launch until `bash scripts/build.sh --release-qa-lock` is run.
+- [ORCHESTRATION.md](ORCHESTRATION.md) owns the durable kickoff prompt, startup checklist, run loop, and lock rules for future multi-agent orchestration runs.
 - Normal menu loading is currently viable again on `main`: on 2026-04-26, Computer Use drove `Return`, `Return`, `Continue`, `Yes` and loaded the latest `Prometheus QA` autosave into the settlement.
 - Current verified Prometheus toolbar coordinates at 1920x1080 can drift by active Timberborn tool groups; prefer screenshot-confirmed clicks before recording live QA evidence.
 - Use Computer Use for in-game QA clicks, screenshots, and menu evidence.

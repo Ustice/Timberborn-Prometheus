@@ -20,6 +20,7 @@ Source of truth: run `bash scripts/build.sh --help` for current build/deploy beh
 | --- | --- |
 | Startup order and doc map | [docs/INDEX.md](docs/INDEX.md) |
 | Current state and next action | [docs/HANDOFF.md](docs/HANDOFF.md) |
+| Orchestration kickoff | [docs/ORCHESTRATION.md](docs/ORCHESTRATION.md) |
 | Ticket board | [docs/tickets/README.md](docs/tickets/README.md) |
 | Durable design and roadmap | [docs/DESIGN.md](docs/DESIGN.md) |
 | Validation runbook | [docs/TEST_PLAN.md](docs/TEST_PLAN.md) |
