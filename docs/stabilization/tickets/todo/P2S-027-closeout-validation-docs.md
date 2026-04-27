@@ -4,7 +4,7 @@ Status: todo
 
 Agent level: Low
 
-Dependencies: All implementation tickets
+Dependencies: All integrated implementation tickets; P2S-025 is explicitly pushed out of this sprint.
 
 ## Objective
 
@@ -17,8 +17,8 @@ Close the stabilization sprint with verified evidence and current docs.
 - Record source-driven spread evidence.
 - Record native ash gathering evidence.
 - Record storage flow evidence.
-- Record farmhouse amendment evidence.
-- Record faster amended crop growth than a nearby control crop.
+- Record the P2S-025 farmhouse amendment deferral and evidence gap.
+- Record that faster amended crop growth is dependency-light verified only, not live farmhouse-applied.
 - Update `docs/HANDOFF.md`, `docs/DESIGN.md`, and `docs/TEST_PLAN.md`.
 
 ## Unknowns
@@ -42,4 +42,3 @@ Close the stabilization sprint with verified evidence and current docs.
 ## Integration Notes
 
 This ticket moves the sprint from implemented to verified.
-

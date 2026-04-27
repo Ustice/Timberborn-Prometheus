@@ -61,3 +61,9 @@ Blocked on:
 
 - A loadable live QA fixture with finished farmhouse, eligible crop planting spots, and stored `FertileAsh`. The current copied fixture should not be reused for acceptance evidence.
 - Live QA evidence after load: `fertile_ash_farmhouse_amendment_applied`, decreased stored ash, and amended crop growth faster than a nearby control crop.
+
+Sprint decision:
+
+- P2S-025 is pushed out of the current stabilization sprint.
+- Keep this ticket blocked as the follow-up record and keep branch `codex/P2S-025-implement-farmhouse-amendment` for the compile-clean prototype.
+- P2S-027 may close the sprint without farmhouse amendment acceptance evidence, as long as the deferral and evidence gap stay documented.
