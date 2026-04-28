@@ -22,6 +22,9 @@ namespace Mods.Prometheus.Scripts {
       Bind<PrometheusDebugLogTool>().AsSingleton();
       this.MultiBindCustomTool<PrometheusDebugToolGroupElement>();
       MultiBind<ILoadableSingleton>().ToProvider<PrometheusDebugPanelLoadableProvider>().AsSingleton();
+      MultiBind<ILoadableSingleton>().ToProvider<PrometheusWorldLoadStateLoadableProvider>().AsSingleton();
+      MultiBind<IPostLoadableSingleton>().ToProvider<PrometheusWorldLoadStatePostLoadableProvider>().AsSingleton();
+      MultiBind<IUnloadableSingleton>().ToProvider<PrometheusWorldLoadStateUnloadableProvider>().AsSingleton();
       MultiBind<IUpdatableSingleton>().To<FireFieldAmendmentRuntimeTicker>().AsSingleton();
 
       RegisterEntityPanelModule();
@@ -44,6 +47,7 @@ namespace Mods.Prometheus.Scripts {
       Bind<FireVisualEffectRuntimeState>().AsSingleton();
       Bind<FireVisualEffectPreviewRuntimeState>().AsSingleton();
       Bind<FireResetRegistry>().AsSingleton();
+      Bind<PrometheusWorldLoadState>().AsSingleton();
     }
 
     private void BindFireComponents() {
@@ -114,6 +118,48 @@ namespace Mods.Prometheus.Scripts {
 
       public ILoadableSingleton Get() {
         return _prometheusDebugPanel;
+      }
+
+    }
+
+    private class PrometheusWorldLoadStateLoadableProvider : IProvider<ILoadableSingleton> {
+
+      private readonly PrometheusWorldLoadState _worldLoadState;
+
+      public PrometheusWorldLoadStateLoadableProvider(PrometheusWorldLoadState worldLoadState) {
+        _worldLoadState = worldLoadState;
+      }
+
+      public ILoadableSingleton Get() {
+        return _worldLoadState;
+      }
+
+    }
+
+    private class PrometheusWorldLoadStatePostLoadableProvider : IProvider<IPostLoadableSingleton> {
+
+      private readonly PrometheusWorldLoadState _worldLoadState;
+
+      public PrometheusWorldLoadStatePostLoadableProvider(PrometheusWorldLoadState worldLoadState) {
+        _worldLoadState = worldLoadState;
+      }
+
+      public IPostLoadableSingleton Get() {
+        return _worldLoadState;
+      }
+
+    }
+
+    private class PrometheusWorldLoadStateUnloadableProvider : IProvider<IUnloadableSingleton> {
+
+      private readonly PrometheusWorldLoadState _worldLoadState;
+
+      public PrometheusWorldLoadStateUnloadableProvider(PrometheusWorldLoadState worldLoadState) {
+        _worldLoadState = worldLoadState;
+      }
+
+      public IUnloadableSingleton Get() {
+        return _worldLoadState;
       }
 
     }

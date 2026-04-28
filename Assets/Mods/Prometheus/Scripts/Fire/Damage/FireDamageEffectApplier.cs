@@ -10,6 +10,7 @@ namespace Mods.Prometheus.Scripts {
     private const float UpdateIntervalInSeconds = 1f;
 
     private FireRuntimeProjectionRuntimeState _fireRuntimeProjectionRuntimeState;
+    private PrometheusWorldLoadState _prometheusWorldLoadState;
     private float _timeSinceLastUpdate;
     private FireDamageState _lastAppliedState;
     private bool _initialized;
@@ -28,18 +29,18 @@ namespace Mods.Prometheus.Scripts {
     private PropertyInfo _isDeadProperty;
 
     [Inject]
-    public void InjectDependencies(FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState) {
+    public void InjectDependencies(
+      FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState,
+      PrometheusWorldLoadState prometheusWorldLoadState) {
       _fireRuntimeProjectionRuntimeState = fireRuntimeProjectionRuntimeState;
+      _prometheusWorldLoadState = prometheusWorldLoadState;
     }
 
     public void Awake() {
-      BindTargetComponents();
-      _lastAppliedState = FireDamageState.Healthy;
-      _initialized = true;
     }
 
     public void Update() {
-      if (!_initialized) {
+      if (!EnsureWorldReadyAndInitialized()) {
         return;
       }
 
@@ -62,13 +63,29 @@ namespace Mods.Prometheus.Scripts {
     }
 
     internal void DebugRestoreHealthyState() {
-      if (!_initialized) {
-        BindTargetComponents();
-        _initialized = true;
-      }
+      EnsureInitialized();
 
       ApplyState(FireDamageState.Healthy);
       _lastAppliedState = FireDamageState.Healthy;
+    }
+
+    private bool EnsureWorldReadyAndInitialized() {
+      if (_prometheusWorldLoadState?.WorldReady != true) {
+        return false;
+      }
+
+      EnsureInitialized();
+      return _initialized;
+    }
+
+    private void EnsureInitialized() {
+      if (_initialized) {
+        return;
+      }
+
+      BindTargetComponents();
+      _lastAppliedState = FireDamageState.Healthy;
+      _initialized = true;
     }
 
     private void ApplyState(FireDamageState state) {

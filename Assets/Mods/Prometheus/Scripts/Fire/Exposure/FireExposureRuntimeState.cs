@@ -7,6 +7,8 @@ namespace Mods.Prometheus.Scripts {
     public const string ModLoaded = "mod_loaded";
     public const string DebugIgnitionQueued = "debug_ignition_queued";
     public const string DebugIgnitionConsumed = "debug_ignition_consumed";
+    public const string IgniteSelectedQueued = "ignite_selected_queued";
+    public const string IgniteSelectedRejected = "ignite_selected_rejected";
     public const string DebugStopAllFires = "debug_stop_all_fires";
     public const string DebugStopAllFiresResult = "debug_stop_all_fires_result";
     public const string DebugResetFireExposure = "debug_reset_fire_exposure";
@@ -56,11 +58,14 @@ namespace Mods.Prometheus.Scripts {
     public const string GridBurstInjected = "grid_burst_injected";
     public const string TimberbornCompatibilitySummary = "timberborn_compatibility_summary";
     public const string TimberbornCompatibilityProbe = "timberborn_compatibility_probe";
+    public const string WorldLoadStateChanged = "world_load_state_changed";
 
     public static readonly string[] All = {
       ModLoaded,
       DebugIgnitionQueued,
       DebugIgnitionConsumed,
+      IgniteSelectedQueued,
+      IgniteSelectedRejected,
       DebugStopAllFires,
       DebugStopAllFiresResult,
       DebugResetFireExposure,
@@ -110,6 +115,7 @@ namespace Mods.Prometheus.Scripts {
       GridBurstInjected,
       TimberbornCompatibilitySummary,
       TimberbornCompatibilityProbe,
+      WorldLoadStateChanged,
     };
 
   }
@@ -161,13 +167,14 @@ namespace Mods.Prometheus.Scripts {
 
     public bool DebugIgnitionsBlocked => _debugIgnitionBlockSecondsRemaining > 0f;
 
-    public void RequestForcedIgnition(int entityId) {
+    public bool RequestForcedIgnition(int entityId) {
       if (entityId == 0 || DebugIgnitionsBlocked) {
-        return;
+        return false;
       }
 
       _forcedIgnitionEntityIds.Add(entityId);
       FireTelemetry.Log($"event={FireTelemetryEvents.DebugIgnitionQueued} id={entityId}");
+      return true;
     }
 
     public bool ConsumeForcedIgnitionRequest(int entityId) {

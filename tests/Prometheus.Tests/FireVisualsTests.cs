@@ -23,6 +23,37 @@ namespace Prometheus.Tests
         }
 
         [Fact]
+        public void FireVisualEffectRules_EmberPressureShowsFieldPressureWithoutLocalBurningSparks_Test()
+        {
+            var exposed = FireVisualEffectRules.ComputeIntensity(
+              new FireExposureSnapshot(false, 0.15f, 0.2f, 0.65f, 0.18f, 0.25f, 0f, 0.35f, 0.9f, "Grid"),
+              new FireDamageStateSnapshot(FireDamageCategory.Tree, FireDamageState.Healthy, 0f, 0f, 0),
+              FireVisualEffectTuning.Default);
+            var burning = FireVisualEffectRules.ComputeIntensity(
+              new FireExposureSnapshot(true, 0.7f, 0.75f, 0.9f, 0.45f, 1f, 0.2f, 0f, 1f, "Grid"),
+              new FireDamageStateSnapshot(FireDamageCategory.Tree, FireDamageState.Burning, 0.45f, 0.2f, 1),
+              FireVisualEffectTuning.Default);
+
+            TestSupport.True(exposed.Embers > 0.4f);
+            TestSupport.True(exposed.Smoke > 0f);
+            TestSupport.NearlyEqual(0f, exposed.Fire);
+            TestSupport.NearlyEqual(0f, burning.Embers);
+            TestSupport.True(burning.Fire > 0.6f);
+        }
+
+        [Fact]
+        public void FireVisualEffectRules_LowEmberNoiseDoesNotCreateVisualSpam_Test()
+        {
+            var intensity = FireVisualEffectRules.ComputeIntensity(
+              new FireExposureSnapshot(false, 0.05f, 0.08f, 0.12f, 0.05f, 0.1f, 0f, 0.6f, 1f, "Grid"),
+              new FireDamageStateSnapshot(FireDamageCategory.Crop, FireDamageState.Healthy, 0f, 0f, 0),
+              FireVisualEffectTuning.Default);
+
+            TestSupport.NearlyEqual(0f, intensity.Embers);
+            TestSupport.NearlyEqual(0f, intensity.Fire);
+        }
+
+        [Fact]
         public void FireVisualEffectRules_MoistureTradesFireForSteam_Test()
         {
             var dryExposure = TestSupport.CreateExposureSnapshot(burning: true, intensity: 0.8f, moistureDampening: 0f);

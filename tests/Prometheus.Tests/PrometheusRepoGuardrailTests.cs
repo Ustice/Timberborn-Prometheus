@@ -20,6 +20,7 @@ namespace Prometheus.Tests
         {
             "Core/EntitySnapshotStore.cs",
             "Core/FireResetRegistry.cs",
+            "Core/PrometheusWorldLoadState.cs",
             "Core/TimberbornCompatibility.cs",
             "Core/TimberbornOperationStateAdapter.cs",
             "Core/TickGate.cs",
@@ -53,6 +54,8 @@ namespace Prometheus.Tests
         {
             FireTelemetryEvents.DebugIgnitionQueued,
             FireTelemetryEvents.DebugIgnitionConsumed,
+            FireTelemetryEvents.IgniteSelectedQueued,
+            FireTelemetryEvents.IgniteSelectedRejected,
             FireTelemetryEvents.DebugStopAllFires,
             FireTelemetryEvents.DebugStopAllFiresResult,
             FireTelemetryEvents.DebugResetFireExposure,
@@ -85,6 +88,7 @@ namespace Prometheus.Tests
             FireTelemetryEvents.NativeVisualEffectUnavailable,
             FireTelemetryEvents.TimberbornCompatibilitySummary,
             FireTelemetryEvents.TimberbornCompatibilityProbe,
+            FireTelemetryEvents.WorldLoadStateChanged,
         };
 
         [Fact]
@@ -126,6 +130,8 @@ namespace Prometheus.Tests
             {
                 "debug_ignition_queued",
                 "debug_ignition_consumed",
+                "ignite_selected_queued",
+                "ignite_selected_rejected",
                 "debug_stop_all_fires",
                 "debug_stop_all_fires_result",
                 "debug_reset_fire_exposure",
@@ -158,6 +164,7 @@ namespace Prometheus.Tests
                 "native_visual_effect_unavailable",
                 "timberborn_compatibility_summary",
                 "timberborn_compatibility_probe",
+                "world_load_state_changed",
             };
 
             TestSupport.Equal(string.Join(Environment.NewLine, expectedTokens), string.Join(Environment.NewLine, QaTelemetryEvents));
@@ -169,6 +176,23 @@ namespace Prometheus.Tests
               .ToArray();
 
             TestSupport.Equal(string.Empty, string.Join(Environment.NewLine, missing));
+        }
+
+        [Fact]
+        public void Phase3CropProfiles_IncludeCarrotForLiveAshQa_Test()
+        {
+            var carrotProfilePath = Path.Combine(
+              ModRoot,
+              "NaturalResources",
+              "Crops",
+              "Carrot",
+              "Carrot.blueprint.json");
+
+            TestSupport.True(File.Exists(carrotProfilePath));
+
+            var carrotProfile = File.ReadAllText(carrotProfilePath);
+            TestSupport.True(carrotProfile.Contains("\"FireProfileSpec\"", StringComparison.Ordinal));
+            TestSupport.True(carrotProfile.Contains("\"StructureKind\": \"Carrot Crop\"", StringComparison.Ordinal));
         }
 
         private static string[] ReadPrometheusCompileItems()

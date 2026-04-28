@@ -23,6 +23,7 @@
   <ItemGroup>
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Core/EntitySnapshotStore.cs" Link="Source/Core/EntitySnapshotStore.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Core/FireResetRegistry.cs" Link="Source/Core/FireResetRegistry.cs" />
+    <Compile Include="../../Assets/Mods/Prometheus/Scripts/Core/PrometheusWorldLoadState.cs" Link="Source/Core/PrometheusWorldLoadState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Core/TimberbornCompatibility.cs" Link="Source/Core/TimberbornCompatibility.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Core/TimberbornOperationStateAdapter.cs" Link="Source/Core/TimberbornOperationStateAdapter.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Core/TickGate.cs" Link="Source/Core/TickGate.cs" />
@@ -67,6 +68,10 @@
     </Reference>
     <Reference Include="Timberborn.Localization">
       <HintPath>/Users/jasonkleinberg/repos/timberborn-modding/Assets/Plugins/Timberborn/Timberborn.Localization.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="Timberborn.SingletonSystem">
+      <HintPath>/Users/jasonkleinberg/repos/timberborn-modding/Assets/Plugins/Timberborn/Timberborn.SingletonSystem.dll</HintPath>
       <Private>true</Private>
     </Reference>
   </ItemGroup>

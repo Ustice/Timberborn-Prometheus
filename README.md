@@ -29,7 +29,7 @@ Older sprint plans and retired process docs live under [docs/ARCHIVE/](docs/ARCH
 
 ## Current Focus
 
-Prometheus is in a 3D grid fire rewrite. Phase 2 stabilization is closed for the integrated scope, and active work now tracks through the permanent file board in [docs/tickets/README.md](docs/tickets/README.md). The current validation focus is the field-first resource model: heat/ember/smoke transfer, stochastic entity ignition, moisture loss, fuel depletion, charred remnants, and Fertile Ash recovery reset evidence.
+Prometheus is entering Phase 3: intentional fire and ash harvest. Phase 2 stabilization is closed for the integrated scope, and active work now tracks through the permanent file board in [docs/tickets/README.md](docs/tickets/README.md). The current validation focus is controlled-burn preparation as an emergent strategy: a narrow player-facing ignite action, Fertile Ash from burned crops, containment proof, and grid-state visual readability.
 
 Use [docs/HANDOFF.md](docs/HANDOFF.md) for the latest verified result, blocker list, and resume checklist.
 

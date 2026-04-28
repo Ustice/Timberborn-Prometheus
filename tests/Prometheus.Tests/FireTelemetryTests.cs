@@ -14,6 +14,8 @@ namespace Prometheus.Tests
             TestSupport.True(FireTelemetryEvents.All.Length >= 20);
             TestSupport.Equal(FireTelemetryEvents.All.Length, new HashSet<string>(FireTelemetryEvents.All).Count);
             TestSupport.True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.DebugResetFireExposure) >= 0);
+            TestSupport.True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.IgniteSelectedQueued) >= 0);
+            TestSupport.True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.IgniteSelectedRejected) >= 0);
             TestSupport.True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.RuntimeResetRegistryStarted) >= 0);
             TestSupport.True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.RuntimeResetRegistryCompleted) >= 0);
             TestSupport.True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.RuntimeResetHookFailed) >= 0);
@@ -24,6 +26,7 @@ namespace Prometheus.Tests
             TestSupport.True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.FertileAshSpawnQueued) >= 0);
             TestSupport.True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.FertileAshRecoveredGoodStackQueued) >= 0);
             TestSupport.True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.FertileAshResetState) >= 0);
+            TestSupport.True(Array.IndexOf(FireTelemetryEvents.All, FireTelemetryEvents.WorldLoadStateChanged) >= 0);
         }
 
     }

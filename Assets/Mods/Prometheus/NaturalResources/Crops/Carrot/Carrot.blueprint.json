@@ -1,0 +1,15 @@
+{
+  "FireProfileSpec": {
+    "StructureKind": "Carrot Crop",
+    "Fuel": 0.45,
+    "MoistureResistance": 0.35,
+    "BarrierResistance": 0.02,
+    "IgnitionThreshold": 0.5,
+    "OxygenDemand": 0.2,
+    "HeatSourceIntensity": 0.0,
+    "EmberSourceIntensity": 0.0,
+    "SmokeSourceIntensity": 0.0,
+    "SourceRadius": 1.0,
+    "RequiresOperation": false
+  }
+}

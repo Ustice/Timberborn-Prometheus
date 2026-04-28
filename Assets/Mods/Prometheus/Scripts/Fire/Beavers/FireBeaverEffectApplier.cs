@@ -15,6 +15,7 @@ namespace Mods.Prometheus.Scripts {
     private const float TargetEffectCooldownInSeconds = 1f;
 
     private FireRuntimeProjectionRuntimeState _fireRuntimeProjectionRuntimeState;
+    private PrometheusWorldLoadState _prometheusWorldLoadState;
     private QuickNotificationService _quickNotificationService;
 
     private static bool _loggedMissingNeedManagerApi;
@@ -34,12 +35,18 @@ namespace Mods.Prometheus.Scripts {
     [Inject]
     public void InjectDependencies(
       FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState,
+      PrometheusWorldLoadState prometheusWorldLoadState,
       QuickNotificationService quickNotificationService) {
       _fireRuntimeProjectionRuntimeState = fireRuntimeProjectionRuntimeState;
+      _prometheusWorldLoadState = prometheusWorldLoadState;
       _quickNotificationService = quickNotificationService;
     }
 
     public void Update() {
+      if (_prometheusWorldLoadState?.WorldReady != true) {
+        return;
+      }
+
       if (!TickGate.ShouldRun(ref _timeSinceLastUpdate, UpdateIntervalInSeconds)) {
         return;
       }

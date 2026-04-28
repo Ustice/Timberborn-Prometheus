@@ -11,6 +11,7 @@ namespace Mods.Prometheus.Scripts {
     private const float UpdateIntervalInSeconds = 1f;
 
     private FireRuntimeProjectionRuntimeState _fireRuntimeProjectionRuntimeState;
+    private PrometheusWorldLoadState _prometheusWorldLoadState;
     private float _timeSinceLastUpdate;
     private Workplace _workplace;
     private readonly List<Behaviour> _workplaceSupportBehaviours = new();
@@ -28,11 +29,18 @@ namespace Mods.Prometheus.Scripts {
     private int _lastLoggedIndoorExposedWorkerCount = -1;
 
     [Inject]
-    public void InjectDependencies(FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState) {
+    public void InjectDependencies(
+      FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState,
+      PrometheusWorldLoadState prometheusWorldLoadState) {
       _fireRuntimeProjectionRuntimeState = fireRuntimeProjectionRuntimeState;
+      _prometheusWorldLoadState = prometheusWorldLoadState;
     }
 
     public void Update() {
+      if (_prometheusWorldLoadState?.WorldReady != true) {
+        return;
+      }
+
       if (!TickGate.ShouldRun(ref _timeSinceLastUpdate, UpdateIntervalInSeconds)) {
         return;
       }

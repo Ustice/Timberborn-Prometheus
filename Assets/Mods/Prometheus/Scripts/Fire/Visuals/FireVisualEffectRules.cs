@@ -117,8 +117,7 @@ namespace Mods.Prometheus.Scripts {
       var fuelConsumed = Mathf.Clamp01(exposure.FuelConsumed);
       var desiccation = 1f - Mathf.Clamp01(exposure.MoistureDampening);
 
-      // Local object fire progression is smoke/fire/smoke+ash. Sparks belong to the separate ember-field spread visual.
-      var embers = 0f;
+      var embers = ComputeEmberFieldIntensity(exposure, damageState, tuning);
       var smokeBase = damageState.State switch {
         FireDamageState.Scorched => Mathf.Max(0.25f, severity),
         FireDamageState.Burning => Mathf.Max(0.45f, Mathf.Max(exposure.Intensity, exposure.Smoke)),
@@ -139,6 +138,23 @@ namespace Mods.Prometheus.Scripts {
       };
 
       return new FireVisualEffectIntensity(embers, smoke, fire, steam, charAmount, desiccation);
+    }
+
+    private static float ComputeEmberFieldIntensity(
+      FireExposureSnapshot exposure,
+      FireDamageStateSnapshot damageState,
+      FireVisualEffectTuning tuning) {
+      if (exposure.Burning || damageState.State == FireDamageState.Burning || damageState.State == FireDamageState.Dead) {
+        return 0f;
+      }
+
+      var fieldPressure = Mathf.Max(exposure.EmberPressure, exposure.IgnitionProgress * 0.75f);
+      if (fieldPressure < 0.18f) {
+        return 0f;
+      }
+
+      var oxygenFactor = Mathf.Lerp(0.35f, 1f, exposure.OxygenAvailability);
+      return Mathf.Clamp01(fieldPressure * oxygenFactor * tuning.EmberScale);
     }
 
   }

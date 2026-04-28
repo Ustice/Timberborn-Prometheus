@@ -14,27 +14,34 @@ namespace Mods.Prometheus.Scripts {
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
     private FireRuntimeProjectionRuntimeState _fireRuntimeProjectionRuntimeState;
     private FireTuningRuntimeState _fireTuningRuntimeState;
+    private PrometheusWorldLoadState _prometheusWorldLoadState;
     private float _timeSinceLastUpdate;
-    private FireDamageCategory _category;
+    private FireDamageCategory _category = FireDamageCategory.Unknown;
     private float _severity;
     private float _tickProgress;
     private int _damageTicksApplied;
+    private bool _categoryDetected;
 
     [Inject]
     public void InjectDependencies(
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
       FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState,
-      FireTuningRuntimeState fireTuningRuntimeState) {
+      FireTuningRuntimeState fireTuningRuntimeState,
+      PrometheusWorldLoadState prometheusWorldLoadState) {
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
       _fireRuntimeProjectionRuntimeState = fireRuntimeProjectionRuntimeState;
       _fireTuningRuntimeState = fireTuningRuntimeState;
+      _prometheusWorldLoadState = prometheusWorldLoadState;
     }
 
     public void Awake() {
-      _category = DetectCategory();
     }
 
     public void Update() {
+      if (!EnsureWorldReadyAndCategoryDetected()) {
+        return;
+      }
+
       if (!TickGate.ShouldRun(ref _timeSinceLastUpdate, UpdateIntervalInSeconds)) {
         return;
       }
@@ -118,6 +125,20 @@ namespace Mods.Prometheus.Scripts {
       };
     }
 
+    private bool EnsureWorldReadyAndCategoryDetected() {
+      if (_prometheusWorldLoadState?.WorldReady != true) {
+        return false;
+      }
+
+      if (_categoryDetected) {
+        return true;
+      }
+
+      _category = DetectCategory();
+      _categoryDetected = true;
+      return true;
+    }
+
     private FireDamageCategory DetectCategory() {
       var componentCache = GameObject.GetComponent<ComponentCache>();
       if (componentCache is not null) {
@@ -140,7 +161,11 @@ namespace Mods.Prometheus.Scripts {
     }
 
     private static IEnumerable<string> GetCachedComponentTypeNames(ComponentCache componentCache) {
-      foreach (var component in componentCache.AllComponents) {
+      if (!TimberbornComponentCacheLookup.TryGetCachedComponents(componentCache, out var cachedComponents)) {
+        yield break;
+      }
+
+      foreach (var component in cachedComponents) {
         if (component is null) {
           continue;
         }

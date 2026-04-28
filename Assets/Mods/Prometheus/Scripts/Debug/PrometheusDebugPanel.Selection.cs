@@ -18,7 +18,8 @@ namespace Mods.Prometheus.Scripts {
 
       _selectionCopyButton = AddGameButtonTo(selectionToolbar, "Copy", CopySelectedEntityDebugText).SetMarginRight(8);
 
-      _selectionIgniteButton = AddGameButtonTo(selectionToolbar, "Ignite", RequestSelectedDebugIgnition);
+      _selectionIgniteButton = AddGameButtonTo(selectionToolbar, "Ignite Selected", RequestSelectedIgnition);
+      _selectionIgniteButton.tooltip = "Ignite the currently selected Prometheus fire-profiled target.";
 
       _selectionFeedbackLabel = selectionToolbar.AddGameLabel();
 
@@ -101,14 +102,53 @@ namespace Mods.Prometheus.Scripts {
       SetSelectionFeedback("Copied selection details.");
     }
 
-    private void RequestSelectedDebugIgnition() {
-      if (_selectedEntityId == 0 || !_selectedEntityHasFireProfile || !_selectedEntityHasExposureController) {
-        SetSelectionFeedback("Cannot ignite selected entity.");
+    private void RequestSelectedIgnition() {
+      var rejectionReason = GetSelectedIgnitionRejectionReason();
+      if (!string.IsNullOrWhiteSpace(rejectionReason)) {
+        SetSelectionFeedback(GetSelectedIgnitionRejectionFeedback(rejectionReason));
+        LogSelectedIgnitionRejected(rejectionReason);
         return;
       }
 
-      _fireExposureRuntimeState.RequestForcedIgnition(_selectedEntityId);
-      SetSelectionFeedback("Ignition request queued.");
+      if (!_fireExposureRuntimeState.RequestForcedIgnition(_selectedEntityId)) {
+        const string blockedReason = "ignition_blocked";
+        SetSelectionFeedback(GetSelectedIgnitionRejectionFeedback(blockedReason));
+        LogSelectedIgnitionRejected(blockedReason);
+        return;
+      }
+
+      FireTelemetry.Log($"event={FireTelemetryEvents.IgniteSelectedQueued} id={_selectedEntityId} title=\"{FireResetRegistry.EscapeToken(_selectedEntityTitle)}\"");
+      SetSelectionFeedback("Ignite Selected queued.");
+    }
+
+    private string GetSelectedIgnitionRejectionReason() {
+      if (_selectedEntityId == 0) {
+        return "none_selected";
+      }
+
+      if (!_selectedEntityHasFireProfile) {
+        return "missing_fire_profile";
+      }
+
+      if (!_selectedEntityHasExposureController) {
+        return "missing_exposure_controller";
+      }
+
+      return string.Empty;
+    }
+
+    private static string GetSelectedIgnitionRejectionFeedback(string reason) {
+      return reason switch {
+        "none_selected" => "Select a Prometheus fire target first.",
+        "missing_fire_profile" => "Selected target has no fire profile.",
+        "missing_exposure_controller" => "Selected target cannot be ignited by Prometheus.",
+        "ignition_blocked" => "Ignition is temporarily blocked after Stop Fires.",
+        _ => "Cannot ignite selected target.",
+      };
+    }
+
+    private void LogSelectedIgnitionRejected(string reason) {
+      FireTelemetry.Log($"event={FireTelemetryEvents.IgniteSelectedRejected} id={_selectedEntityId} reason={reason} hasFireProfile={_selectedEntityHasFireProfile} hasExposureController={_selectedEntityHasExposureController} title=\"{FireResetRegistry.EscapeToken(_selectedEntityTitle)}\"");
     }
 
     private void SetSelectionFeedback(string message) {

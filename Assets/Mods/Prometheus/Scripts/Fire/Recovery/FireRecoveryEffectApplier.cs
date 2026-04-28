@@ -11,6 +11,7 @@ namespace Mods.Prometheus.Scripts {
     private const float UpdateIntervalInSeconds = 1f;
 
     private FireFieldAmendmentRuntimeState _fireFieldAmendmentRuntimeState;
+    private PrometheusWorldLoadState _prometheusWorldLoadState;
 
     private float _timeSinceLastUpdate;
     private object _growable;
@@ -20,43 +21,24 @@ namespace Mods.Prometheus.Scripts {
     private FireGridCoordinate _groundCoordinate;
     private bool _eligibleCropGrowable;
     private bool _hasModifiedGrowthTime;
+    private bool _initialized;
 
     [Inject]
-    public void InjectDependencies(FireFieldAmendmentRuntimeState fireFieldAmendmentRuntimeState) {
+    public void InjectDependencies(
+      FireFieldAmendmentRuntimeState fireFieldAmendmentRuntimeState,
+      PrometheusWorldLoadState prometheusWorldLoadState) {
       _fireFieldAmendmentRuntimeState = fireFieldAmendmentRuntimeState;
+      _prometheusWorldLoadState = prometheusWorldLoadState;
     }
 
     public void Awake() {
-      _eligibleCropGrowable = FireFieldAmendmentGrowthRules.IsEligibleCropGrowable(
-        TimberbornComponentCacheLookup.EnumerateGameObjectAndCachedComponentTypeNames(GameObject));
-      if (!_eligibleCropGrowable) {
-        return;
-      }
-
-      if (!TimberbornComponentCacheLookup.TryGetCachedOrDirectComponentByTypeName(
-        GameObject,
-        TimberbornCompatibility.GrowableTypeName,
-        out _growable)) {
-        return;
-      }
-
-      var type = _growable.GetType();
-      _growthTimeInDaysProperty = TimberbornCompatibility.FindProperty(type, "GrowthTimeInDays");
-      if (_growthTimeInDaysProperty is null || !_growthTimeInDaysProperty.CanRead || !_growthTimeInDaysProperty.CanWrite) {
-        TimberbornCompatibility.RecordProbe(TimberbornCompatibilityArea.Recovery, false, "Growable.GrowthTimeInDays read/write");
-        _growable = null;
-        _growthTimeInDaysProperty = null;
-        return;
-      }
-
-      TimberbornCompatibility.RecordProbe(TimberbornCompatibilityArea.Recovery, true, "Growable.GrowthTimeInDays read/write");
-      _baseGrowthTimeInDays = (float)_growthTimeInDaysProperty.GetValue(_growable);
-      var footprint = FireGridFootprintSampler.FromWorldPosition(GameObject.transform.position);
-      _primaryCoordinate = footprint.PrimaryCoordinate;
-      _groundCoordinate = new FireGridCoordinate(_primaryCoordinate.X, _primaryCoordinate.Y - 1, _primaryCoordinate.Z);
     }
 
     public void Update() {
+      if (!EnsureWorldReadyAndInitialized()) {
+        return;
+      }
+
       if (!_eligibleCropGrowable || _growable is null || _growthTimeInDaysProperty is null) {
         return;
       }
@@ -85,6 +67,46 @@ namespace Mods.Prometheus.Scripts {
 
     internal void DebugRestoreBaseRecoveryEffects() {
       RestoreBaseGrowthTimeIfNeeded();
+    }
+
+    private bool EnsureWorldReadyAndInitialized() {
+      if (_prometheusWorldLoadState?.WorldReady != true) {
+        return false;
+      }
+
+      if (_initialized) {
+        return true;
+      }
+
+      _initialized = true;
+      _eligibleCropGrowable = FireFieldAmendmentGrowthRules.IsEligibleCropGrowable(
+        TimberbornComponentCacheLookup.EnumerateGameObjectAndCachedComponentTypeNames(GameObject));
+      if (!_eligibleCropGrowable) {
+        return true;
+      }
+
+      if (!TimberbornComponentCacheLookup.TryGetCachedOrDirectComponentByTypeName(
+        GameObject,
+        TimberbornCompatibility.GrowableTypeName,
+        out _growable)) {
+        return true;
+      }
+
+      var type = _growable.GetType();
+      _growthTimeInDaysProperty = TimberbornCompatibility.FindProperty(type, "GrowthTimeInDays");
+      if (_growthTimeInDaysProperty is null || !_growthTimeInDaysProperty.CanRead || !_growthTimeInDaysProperty.CanWrite) {
+        TimberbornCompatibility.RecordProbe(TimberbornCompatibilityArea.Recovery, false, "Growable.GrowthTimeInDays read/write");
+        _growable = null;
+        _growthTimeInDaysProperty = null;
+        return true;
+      }
+
+      TimberbornCompatibility.RecordProbe(TimberbornCompatibilityArea.Recovery, true, "Growable.GrowthTimeInDays read/write");
+      _baseGrowthTimeInDays = (float)_growthTimeInDaysProperty.GetValue(_growable);
+      var footprint = FireGridFootprintSampler.FromWorldPosition(GameObject.transform.position);
+      _primaryCoordinate = footprint.PrimaryCoordinate;
+      _groundCoordinate = new FireGridCoordinate(_primaryCoordinate.X, _primaryCoordinate.Y - 1, _primaryCoordinate.Z);
+      return true;
     }
 
     private void RestoreBaseGrowthTimeIfNeeded() {

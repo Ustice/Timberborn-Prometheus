@@ -19,6 +19,7 @@ namespace Mods.Prometheus.Scripts {
 
     private FireRuntimeProjectionRuntimeState _fireRuntimeProjectionRuntimeState;
     private FireVisualEffectRuntimeState _fireVisualEffectRuntimeState;
+    private PrometheusWorldLoadState _prometheusWorldLoadState;
 
     private readonly List<RendererPropertyBlockState> _rendererStates = new();
     private ParticleEffectGroup _emberEffect;
@@ -33,18 +34,21 @@ namespace Mods.Prometheus.Scripts {
     [Inject]
     public void InjectDependencies(
       FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState,
-      FireVisualEffectRuntimeState fireVisualEffectRuntimeState) {
+      FireVisualEffectRuntimeState fireVisualEffectRuntimeState,
+      PrometheusWorldLoadState prometheusWorldLoadState) {
       _fireRuntimeProjectionRuntimeState = fireRuntimeProjectionRuntimeState;
       _fireVisualEffectRuntimeState = fireVisualEffectRuntimeState;
+      _prometheusWorldLoadState = prometheusWorldLoadState;
     }
 
     public void Awake() {
-      _propertyBlock = new MaterialPropertyBlock();
-      CaptureRenderers();
-      CreateParticleSystems();
     }
 
     public void Update() {
+      if (!EnsureWorldReadyAndInitialized()) {
+        return;
+      }
+
       if (!TickGate.ShouldRun(ref _timeSinceLastUpdate, UpdateIntervalInSeconds)) {
         return;
       }
@@ -74,6 +78,21 @@ namespace Mods.Prometheus.Scripts {
       _fireEffect?.ApplyIntensity(0f, 0.45f, 1.0f, tuning.EffectSize);
       _steamEffect?.ApplyIntensity(0f, 0.9f, 2.0f, tuning.EffectSize);
       ApplySurfaceTint(0f, 0f);
+    }
+
+    private bool EnsureWorldReadyAndInitialized() {
+      if (_prometheusWorldLoadState?.WorldReady != true) {
+        return false;
+      }
+
+      if (_propertyBlock is not null && _emberEffect is not null) {
+        return true;
+      }
+
+      _propertyBlock = new MaterialPropertyBlock();
+      CaptureRenderers();
+      CreateParticleSystems();
+      return true;
     }
 
     private void CaptureRenderers() {

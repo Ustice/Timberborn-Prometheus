@@ -31,12 +31,12 @@ namespace Prometheus.Tests
         public void ExposureRuntimeState_ForcedIgnitionConsumesAndClears_Test()
         {
             var state = new FireExposureRuntimeState();
-            state.RequestForcedIgnition(10);
+            TestSupport.True(state.RequestForcedIgnition(10));
 
             TestSupport.True(state.ConsumeForcedIgnitionRequest(10));
             TestSupport.False(state.ConsumeForcedIgnitionRequest(10));
 
-            state.RequestForcedIgnition(10);
+            TestSupport.True(state.RequestForcedIgnition(10));
             state.ClearSnapshotsAndIgnitionRequests();
             TestSupport.False(state.ConsumeForcedIgnitionRequest(10));
             TestSupport.Equal(0, state.PendingForcedIgnitionCount);
@@ -46,16 +46,16 @@ namespace Prometheus.Tests
         public void ExposureRuntimeState_DebugIgnitionBlockClearsQueuedRequests_Test()
         {
             var state = new FireExposureRuntimeState();
-            state.RequestForcedIgnition(10);
+            TestSupport.True(state.RequestForcedIgnition(10));
             state.BlockDebugIgnitionsForSeconds(30f);
-            state.RequestForcedIgnition(11);
+            TestSupport.False(state.RequestForcedIgnition(11));
 
             TestSupport.Equal(0, state.PendingForcedIgnitionCount);
             TestSupport.False(state.ConsumeForcedIgnitionRequest(10));
             TestSupport.False(state.ConsumeForcedIgnitionRequest(11));
 
             state.TickIgnitionBlock(31f);
-            state.RequestForcedIgnition(11);
+            TestSupport.True(state.RequestForcedIgnition(11));
             TestSupport.True(state.ConsumeForcedIgnitionRequest(11));
         }
 

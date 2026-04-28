@@ -24,6 +24,8 @@ Use these instructions for every Prometheus ticket worker unless the ticket says
 - Do not overlap another worker's write scope unless the orchestrator approves it.
 - Keep behavior unchanged for split/refactor tickets unless the ticket explicitly asks for behavior changes.
 - Prefer small reconciliation edits over broad refactors when compile or integration requires support outside the nominal scope.
+- For Phase 3 tickets, treat controlled burns as emergent containment from existing fire-system inputs and player preparation. Do not add controlled-burn zones, permits, schedules, labor paths, source types, or buildings unless a future ticket explicitly changes that product decision.
+- Keep farmhouse Fertile Ash application deferred to TKT-001 until the required fresh live fixture evidence exists.
 
 ## Verification
 

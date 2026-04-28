@@ -14,6 +14,7 @@ namespace Mods.Prometheus.Scripts {
     private FireRuntimeProjectionRuntimeState _fireRuntimeProjectionRuntimeState;
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
     private FertileAshRecoveredGoodStackSpawner _fertileAshRecoveredGoodStackSpawner;
+    private PrometheusWorldLoadState _prometheusWorldLoadState;
 
     private float _timeSinceLastUpdate;
     private bool _sawBurnPhase;
@@ -27,15 +28,21 @@ namespace Mods.Prometheus.Scripts {
       FireRecoveryRuntimeState fireRecoveryRuntimeState,
       FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState,
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
-      FertileAshRecoveredGoodStackSpawner fertileAshRecoveredGoodStackSpawner) {
+      FertileAshRecoveredGoodStackSpawner fertileAshRecoveredGoodStackSpawner,
+      PrometheusWorldLoadState prometheusWorldLoadState) {
       _fireExposureRuntimeState = fireExposureRuntimeState;
       _fireRecoveryRuntimeState = fireRecoveryRuntimeState;
       _fireRuntimeProjectionRuntimeState = fireRuntimeProjectionRuntimeState;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
       _fertileAshRecoveredGoodStackSpawner = fertileAshRecoveredGoodStackSpawner;
+      _prometheusWorldLoadState = prometheusWorldLoadState;
     }
 
     public void Update() {
+      if (_prometheusWorldLoadState?.WorldReady != true) {
+        return;
+      }
+
       if (!TickGate.ShouldRun(ref _timeSinceLastUpdate, UpdateIntervalInSeconds)) {
         return;
       }

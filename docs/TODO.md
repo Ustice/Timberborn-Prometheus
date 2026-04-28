@@ -92,10 +92,26 @@
 - [x] Verify the in-game `Prometheus` -> `QA` panel can record a `Passed` result.
 - [ ] Build a Computer Use screenshot map for startup dialogs, menus, and in-game Prometheus tool groups.
 - [ ] Use normal menu loading for live QA until Timberborn's CLI instant-load crash is understood or bypassed.
+- [x] Gate expensive Prometheus runtime scans/binding behind Timberborn post-load readiness.
+- [x] Use a two-minute save-load threshold before treating a Timberborn load as hung.
 - [ ] Use `Fire.log` for runtime evidence.
 - [ ] Update [HANDOFF.md](HANDOFF.md), [DESIGN.md](DESIGN.md), and [TEST_PLAN.md](TEST_PLAN.md) when milestone state changes.
 
-## 9. Standing Project Habit
+## 9. Phase 3 Intentional Fire And Ash Harvest
+
+- [x] Create the Phase 3 ticket set under [tickets/](tickets/).
+- [x] Document controlled burns as emergent containment, not a separate runtime mechanic.
+- [ ] Add a player-facing `Ignite Selected` action that reuses the forced-ignition/grid-seeding path.
+- [ ] Reject invalid selected targets without fire profiles and report UI feedback plus telemetry.
+- [ ] Extend aftermath eligibility so valid burned crops can produce Fertile Ash.
+- [ ] Add crop/source-kind classification, ash amount policy, and dependency-light tests.
+- [ ] Live-verify crop ash with `fertile_ash_*` telemetry, visible recovered-good stack, District Center storage, and clean Prometheus logs.
+- [ ] Prove containment across moisture, water, barriers, exposed faces, spacing, and profile differences.
+- [ ] Capture at least one prepared burn that stays bounded and one unprepared/control burn that spreads more aggressively.
+- [ ] Map enough runtime grid/exposure state into smoke, fire, steam, char, and ember visuals for prepared burns to be readable without debug logs.
+- [ ] Keep farmhouse ash application deferred until [tickets/deferred/TKT-001-farmhouse-fertile-ash-application.md](tickets/deferred/TKT-001-farmhouse-fertile-ash-application.md) has fresh fixture evidence.
+
+## 10. Standing Project Habit
 
 - [ ] Keep this TODO updated before and after each meaningful implementation slice.
 - [ ] Move completed milestone facts into [HANDOFF.md](HANDOFF.md) when they are verified.

@@ -21,6 +21,7 @@ namespace Mods.Prometheus.Scripts {
     private TimberbornEnvironmentAdapter _timberbornEnvironmentAdapter;
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
     private FireRuntimeProjectionRuntimeState _fireRuntimeProjectionRuntimeState;
+    private PrometheusWorldLoadState _prometheusWorldLoadState;
     private FireProfile _fireProfile;
     private float _remainingFuel = -1f;
     private float _remainingMoisture = -1f;
@@ -47,13 +48,15 @@ namespace Mods.Prometheus.Scripts {
       FireGridSimulationCoordinator fireGridSimulationCoordinator,
       TimberbornEnvironmentAdapter timberbornEnvironmentAdapter,
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
-      FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState) {
+      FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState,
+      PrometheusWorldLoadState prometheusWorldLoadState) {
       _fireExposureRuntimeState = fireExposureRuntimeState;
       _fireGridRuntimeState = fireGridRuntimeState;
       _fireGridSimulationCoordinator = fireGridSimulationCoordinator;
       _timberbornEnvironmentAdapter = timberbornEnvironmentAdapter;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
       _fireRuntimeProjectionRuntimeState = fireRuntimeProjectionRuntimeState;
+      _prometheusWorldLoadState = prometheusWorldLoadState;
     }
 
     public void Awake() {
@@ -63,6 +66,10 @@ namespace Mods.Prometheus.Scripts {
     }
 
     public void Update() {
+      if (_prometheusWorldLoadState?.WorldReady != true) {
+        return;
+      }
+
       _fireExposureRuntimeState.TickIgnitionBlock(Time.deltaTime);
       if (!TickGate.ShouldRun(ref _timeSinceLastUpdate, UpdateIntervalInSeconds)) {
         return;
