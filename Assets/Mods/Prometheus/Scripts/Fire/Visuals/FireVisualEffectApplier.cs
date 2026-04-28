@@ -10,12 +10,18 @@ namespace Mods.Prometheus.Scripts {
                                           IUpdatableComponent {
 
     private const float UpdateIntervalInSeconds = 0.25f;
+    private const float VisualTelemetryIntervalInSeconds = 2f;
     private const int MaxEmissionRate = 48;
+    private const int VisualTelemetryBudget = 180;
+    private const int SurfaceTintTelemetryBudget = 24;
 
     private static readonly int ColorPropertyId = Shader.PropertyToID("_Color");
     private static readonly int BaseColorPropertyId = Shader.PropertyToID("_BaseColor");
+    private static readonly int TintColorPropertyId = Shader.PropertyToID("_TintColor");
     private static readonly Color DesiccatedTintColor = new(0.45f, 0.30f, 0.14f, 1f);
     private static readonly Color CharTintColor = new(0.10f, 0.09f, 0.08f, 1f);
+    private static int _visualTelemetryCount;
+    private static int _surfaceTintTelemetryCount;
 
     private FireRuntimeProjectionRuntimeState _fireRuntimeProjectionRuntimeState;
     private FireVisualEffectRuntimeState _fireVisualEffectRuntimeState;
@@ -28,8 +34,12 @@ namespace Mods.Prometheus.Scripts {
     private ParticleEffectGroup _steamEffect;
     private MaterialPropertyBlock _propertyBlock;
     private float _timeSinceLastUpdate;
+    private float _lastVisualTelemetryTime = -999f;
     private float _effectBaseHeight = 1.25f;
+    private float _lastDesiccationIntensity;
+    private float _lastCharIntensity;
     private bool _initializedRenderers;
+    private bool _isCropProfile;
 
     [Inject]
     public void InjectDependencies(
@@ -42,6 +52,9 @@ namespace Mods.Prometheus.Scripts {
     }
 
     public void Awake() {
+      var fireProfile = GetComponent<FireProfile>();
+      _isCropProfile = fireProfile != null
+                       && fireProfile.StructureKind.IndexOf("crop", System.StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
     public void Update() {
@@ -59,16 +72,51 @@ namespace Mods.Prometheus.Scripts {
         : FireRuntimeProjectionRules.EmptyProjection;
 
       var intensity = FireVisualEffectRules.ComputeIntensity(projection, _fireVisualEffectRuntimeState.CurrentTuning);
+      LogVisualIntensity(entityId, projection, intensity);
       var tuning = _fireVisualEffectRuntimeState.CurrentTuning;
       _emberEffect.ApplyTuning(tuning, _effectBaseHeight);
       _smokeEffect.ApplyTuning(tuning, _effectBaseHeight);
       _fireEffect.ApplyTuning(tuning, _effectBaseHeight);
       _steamEffect.ApplyTuning(tuning, _effectBaseHeight);
       _emberEffect.ApplyIntensity(intensity.Embers, 0.75f, 1.4f, tuning.EffectSize);
-      _smokeEffect.ApplyIntensity(intensity.Smoke, 1.2f, 2.6f, tuning.EffectSize);
+      _smokeEffect.ApplyIntensity(_isCropProfile ? 0f : intensity.Smoke, 1.2f, 2.6f, tuning.EffectSize);
       _fireEffect.ApplyIntensity(intensity.Fire, 0.45f, 1.0f, tuning.EffectSize);
       _steamEffect.ApplyIntensity(intensity.Steam, 0.9f, 2.0f, tuning.EffectSize);
       ApplySurfaceTint(intensity.Desiccation, intensity.Char);
+    }
+
+    public void LateUpdate() {
+      if (_propertyBlock is null || _rendererStates.Count == 0) {
+        return;
+      }
+
+      ApplySurfaceTint(_lastDesiccationIntensity, _lastCharIntensity);
+    }
+
+    private void LogVisualIntensity(
+      int entityId,
+      FireRuntimeProjectionSnapshot projection,
+      FireVisualEffectIntensity intensity) {
+      if (_visualTelemetryCount >= VisualTelemetryBudget) {
+        return;
+      }
+
+      if (Time.realtimeSinceStartup - _lastVisualTelemetryTime < VisualTelemetryIntervalInSeconds) {
+        return;
+      }
+
+      if (intensity.Smoke <= 0.01f
+          && intensity.Embers <= 0.01f
+          && intensity.Steam <= 0.01f
+          && intensity.Fire <= 0.01f) {
+        return;
+      }
+
+      _lastVisualTelemetryTime = Time.realtimeSinceStartup;
+      _visualTelemetryCount++;
+      var damage = projection.VisualDamageState;
+      var exposure = projection.VisualExposure;
+      FireTelemetry.Log($"event={FireTelemetryEvents.VisualRuntimeIntensity} entity={GameObject.name} id={entityId} isCropProfile={_isCropProfile} damageCategory={damage.Category.ToString().ToLowerInvariant()} damageState={damage.State.ToString().ToLowerInvariant()} burning={exposure.Burning} visualEmbers={intensity.Embers:0.000} visualSmoke={intensity.Smoke:0.000} visualFire={intensity.Fire:0.000} visualSteam={intensity.Steam:0.000} visualChar={intensity.Char:0.000} visualDesiccation={intensity.Desiccation:0.000} exposureHeat={exposure.HeatExposure:0.000} exposureEmber={exposure.EmberPressure:0.000} exposureSmoke={exposure.Smoke:0.000} exposureIgnition={exposure.IgnitionProgress:0.000}");
     }
 
     internal void DebugResetVisualEffects() {
@@ -221,6 +269,8 @@ namespace Mods.Prometheus.Scripts {
     private void ApplySurfaceTint(float desiccationIntensity, float charIntensity) {
       var clampedDesiccation = Mathf.Clamp01(desiccationIntensity);
       var clampedIntensity = Mathf.Clamp01(charIntensity);
+      _lastDesiccationIntensity = clampedDesiccation;
+      _lastCharIntensity = clampedIntensity;
       for (var i = 0; i < _rendererStates.Count; i++) {
         var rendererState = _rendererStates[i];
         if (rendererState.Renderer == null) {
@@ -229,6 +279,7 @@ namespace Mods.Prometheus.Scripts {
 
         if (clampedDesiccation <= 0.01f && clampedIntensity <= 0.01f) {
           rendererState.Renderer.SetPropertyBlock(rendererState.OriginalPropertyBlock);
+          rendererState.RestoreOriginalMaterialColors();
           continue;
         }
 
@@ -238,8 +289,20 @@ namespace Mods.Prometheus.Scripts {
         var tintedColor = Color.Lerp(dryColor, CharTintColor, clampedIntensity * 0.9f);
         _propertyBlock.SetColor(ColorPropertyId, tintedColor);
         _propertyBlock.SetColor(BaseColorPropertyId, tintedColor);
+        _propertyBlock.SetColor(TintColorPropertyId, tintedColor);
         rendererState.Renderer.SetPropertyBlock(_propertyBlock);
+        rendererState.ApplyMaterialTint(tintedColor);
+        LogSurfaceTint(rendererState, clampedDesiccation, clampedIntensity);
       }
+    }
+
+    private void LogSurfaceTint(RendererPropertyBlockState rendererState, float desiccationIntensity, float charIntensity) {
+      if (_surfaceTintTelemetryCount >= SurfaceTintTelemetryBudget) {
+        return;
+      }
+
+      _surfaceTintTelemetryCount++;
+      FireTelemetry.Log($"event=visual_surface_tint_applied entity={GameObject.name} renderer=\"{rendererState.Renderer.name}\" materials={rendererState.MaterialCount} colorProperties={rendererState.ColorPropertyCount} desiccation={desiccationIntensity:0.000} char={charIntensity:0.000}");
     }
 
     private sealed class RendererPropertyBlockState {
@@ -247,12 +310,41 @@ namespace Mods.Prometheus.Scripts {
       public Renderer Renderer { get; }
       public Color BaseColor { get; }
       public MaterialPropertyBlock OriginalPropertyBlock { get; }
+      public int MaterialCount => _materialStates.Count;
+      public int ColorPropertyCount => _materialStates.Sum(state => state.ColorPropertyCount);
+
+      private readonly List<MaterialTintState> _materialStates = new();
 
       public RendererPropertyBlockState(Renderer renderer) {
         Renderer = renderer;
         BaseColor = TryGetRendererBaseColor(renderer, out var color) ? color : Color.white;
         OriginalPropertyBlock = new MaterialPropertyBlock();
         renderer.GetPropertyBlock(OriginalPropertyBlock);
+        CaptureMaterialStates(renderer);
+      }
+
+      public void ApplyMaterialTint(Color color) {
+        for (var i = 0; i < _materialStates.Count; i++) {
+          _materialStates[i].ApplyTint(color);
+        }
+      }
+
+      public void RestoreOriginalMaterialColors() {
+        for (var i = 0; i < _materialStates.Count; i++) {
+          _materialStates[i].Restore();
+        }
+      }
+
+      private void CaptureMaterialStates(Renderer renderer) {
+        var materials = renderer.materials;
+        for (var i = 0; i < materials.Length; i++) {
+          var material = materials[i];
+          if (material == null) {
+            continue;
+          }
+
+          _materialStates.Add(new MaterialTintState(material));
+        }
       }
 
       private static bool TryGetRendererBaseColor(Renderer renderer, out Color color) {
@@ -273,6 +365,55 @@ namespace Mods.Prometheus.Scripts {
         }
 
         return false;
+      }
+
+    }
+
+    private sealed class MaterialTintState {
+
+      private readonly Material _material;
+      private readonly List<ColorPropertyState> _colorProperties = new();
+
+      public int ColorPropertyCount => _colorProperties.Count;
+
+      public MaterialTintState(Material material) {
+        _material = material;
+        CaptureProperty(ColorPropertyId);
+        CaptureProperty(BaseColorPropertyId);
+        CaptureProperty(TintColorPropertyId);
+      }
+
+      public void ApplyTint(Color color) {
+        for (var i = 0; i < _colorProperties.Count; i++) {
+          _material.SetColor(_colorProperties[i].PropertyId, color);
+        }
+      }
+
+      public void Restore() {
+        for (var i = 0; i < _colorProperties.Count; i++) {
+          var property = _colorProperties[i];
+          _material.SetColor(property.PropertyId, property.OriginalColor);
+        }
+      }
+
+      private void CaptureProperty(int propertyId) {
+        if (!_material.HasProperty(propertyId)) {
+          return;
+        }
+
+        _colorProperties.Add(new ColorPropertyState(propertyId, _material.GetColor(propertyId)));
+      }
+
+    }
+
+    private readonly struct ColorPropertyState {
+
+      public int PropertyId { get; }
+      public Color OriginalColor { get; }
+
+      public ColorPropertyState(int propertyId, Color originalColor) {
+        PropertyId = propertyId;
+        OriginalColor = originalColor;
       }
 
     }

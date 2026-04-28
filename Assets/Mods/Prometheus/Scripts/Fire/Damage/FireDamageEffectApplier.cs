@@ -13,6 +13,7 @@ namespace Mods.Prometheus.Scripts {
     private PrometheusWorldLoadState _prometheusWorldLoadState;
     private float _timeSinceLastUpdate;
     private FireDamageState _lastAppliedState;
+    private FireNaturalResourceVisualStage _lastAppliedTreeVisualStage;
     private bool _initialized;
 
     private object _deteriorableComponent;
@@ -54,19 +55,23 @@ namespace Mods.Prometheus.Scripts {
       }
 
       var snapshot = projection.DamageState;
-      if (snapshot.State == _lastAppliedState) {
+      var treeVisualStage = FireNaturalResourceVisualRules.DetermineTreeStage(snapshot, projection.VisualExposure);
+      if (snapshot.State == _lastAppliedState && treeVisualStage == _lastAppliedTreeVisualStage) {
         return;
       }
 
-      ApplyState(snapshot.State);
+      ApplyState(snapshot, treeVisualStage);
       _lastAppliedState = snapshot.State;
+      _lastAppliedTreeVisualStage = treeVisualStage;
     }
 
     internal void DebugRestoreHealthyState() {
       EnsureInitialized();
 
-      ApplyState(FireDamageState.Healthy);
+      var healthySnapshot = new FireDamageStateSnapshot(FireDamageCategory.Unknown, FireDamageState.Healthy, 0f, 0f, 0);
+      ApplyState(healthySnapshot, FireNaturalResourceVisualStage.Healthy);
       _lastAppliedState = FireDamageState.Healthy;
+      _lastAppliedTreeVisualStage = FireNaturalResourceVisualStage.Healthy;
     }
 
     private bool EnsureWorldReadyAndInitialized() {
@@ -85,11 +90,19 @@ namespace Mods.Prometheus.Scripts {
 
       BindTargetComponents();
       _lastAppliedState = FireDamageState.Healthy;
+      _lastAppliedTreeVisualStage = FireNaturalResourceVisualStage.Healthy;
       _initialized = true;
     }
 
-    private void ApplyState(FireDamageState state) {
-      switch (state) {
+    private void ApplyState(
+      FireDamageStateSnapshot snapshot,
+      FireNaturalResourceVisualStage treeVisualStage) {
+      if (snapshot.Category == FireDamageCategory.Tree && _livingNaturalResourceComponent is not null) {
+        ApplyTreeNaturalResourceState(treeVisualStage);
+        return;
+      }
+
+      switch (snapshot.State) {
         case FireDamageState.Healthy:
           InvokeIfAvailable(_setDeteriorationToZeroMethod, _deteriorableComponent);
           InvokeIfAvailable(_resumeGrowingMethod, _growableComponent);
@@ -113,6 +126,23 @@ namespace Mods.Prometheus.Scripts {
           SetBoolIfAvailable(_isDeadProperty, _livingNaturalResourceComponent, true);
           break;
       }
+    }
+
+    private void ApplyTreeNaturalResourceState(FireNaturalResourceVisualStage visualStage) {
+      if (visualStage == FireNaturalResourceVisualStage.Healthy) {
+        InvokeIfAvailable(_resumeGrowingMethod, _growableComponent);
+      } else {
+        InvokeIfAvailable(_pauseGrowingMethod, _growableComponent);
+      }
+
+      SetBoolIfAvailable(
+        _isDyingProperty,
+        _livingNaturalResourceComponent,
+        FireNaturalResourceVisualRules.UsesDriedVisual(visualStage));
+      SetBoolIfAvailable(
+        _isDeadProperty,
+        _livingNaturalResourceComponent,
+        FireNaturalResourceVisualRules.UsesStumpVisual(visualStage));
     }
 
     private void BindTargetComponents() {

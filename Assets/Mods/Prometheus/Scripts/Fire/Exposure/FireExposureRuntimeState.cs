@@ -50,9 +50,11 @@ namespace Mods.Prometheus.Scripts {
     public const string VisualPreviewApply = "visual_preview_apply";
     public const string VisualPreviewClear = "visual_preview_clear";
     public const string VisualTuningJson = "visual_tuning_json";
+    public const string VisualRuntimeIntensity = "visual_runtime_intensity";
     public const string NativeVisualEffectResolved = "native_visual_effect_resolved";
     public const string NativeVisualEffectUnavailable = "native_visual_effect_unavailable";
     public const string GridIgnitionSeeded = "grid_ignition_seeded";
+    public const string GridRuntimeState = "grid_runtime_state";
     public const string GridSourceInjected = "grid_source_injected";
     public const string GridSourceSuppressed = "grid_source_suppressed";
     public const string GridBurstInjected = "grid_burst_injected";
@@ -107,9 +109,11 @@ namespace Mods.Prometheus.Scripts {
       VisualPreviewApply,
       VisualPreviewClear,
       VisualTuningJson,
+      VisualRuntimeIntensity,
       NativeVisualEffectResolved,
       NativeVisualEffectUnavailable,
       GridIgnitionSeeded,
+      GridRuntimeState,
       GridSourceInjected,
       GridSourceSuppressed,
       GridBurstInjected,
@@ -262,7 +266,8 @@ namespace Mods.Prometheus.Scripts {
       var excess = (fieldStrength - threshold) / (1f - threshold);
       var oxygenFactor = UnityEngine.Mathf.Clamp01(oxygenAvailability);
       var fuelFactor = UnityEngine.Mathf.Clamp01(fuelRemaining);
-      var perSecondProbability = UnityEngine.Mathf.Clamp01(excess * excess * oxygenFactor * fuelFactor);
+      var ignitionCurve = (excess * 0.65f) + (excess * excess * 0.35f);
+      var perSecondProbability = UnityEngine.Mathf.Clamp01(ignitionCurve * oxygenFactor * fuelFactor);
       return UnityEngine.Mathf.Clamp01(1f - UnityEngine.Mathf.Pow(1f - perSecondProbability, tickSeconds));
     }
 

@@ -12,6 +12,12 @@ namespace Mods.Prometheus.Scripts {
         return FireCellState.Cold;
       }
 
+      if (!entry.IsSelf
+          && (sourceEnvironment.StructureKind == FireGridStructureKind.Air
+              || targetEnvironment.StructureKind == FireGridStructureKind.Air)) {
+        return FireCellState.Cold;
+      }
+
       var targetMultiplier = entry.IsSelf ? 1f : targetEnvironment.TransferMultiplier;
       if (targetMultiplier <= 0f) {
         return FireCellState.Cold;

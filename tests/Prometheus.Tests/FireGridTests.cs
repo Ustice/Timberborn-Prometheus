@@ -116,6 +116,36 @@ namespace Prometheus.Tests
         }
 
         [Fact]
+        public void FireGridPropagationPolicy_OpenAirDoesNotReceiveNeighborFire_Test()
+        {
+            var source = TestSupport.HotCell();
+            var entry = TestSupport.FindKernelEntry(FireGridKernel.Full27.Entries, 1, 0, 0);
+
+            var transfer = FireGridPropagationRules.Transfer(
+              source,
+              TestSupport.BurnableEnvironment(),
+              FireCellEnvironment.OpenAir,
+              entry);
+
+            TestSupport.False(transfer.IsActive);
+        }
+
+        [Fact]
+        public void FireGridPropagationPolicy_OpenAirDoesNotRelayNeighborFire_Test()
+        {
+            var source = TestSupport.HotCell();
+            var entry = TestSupport.FindKernelEntry(FireGridKernel.Full27.Entries, 1, 0, 0);
+
+            var transfer = FireGridPropagationRules.Transfer(
+              source,
+              FireCellEnvironment.OpenAir,
+              TestSupport.BurnableEnvironment(),
+              entry);
+
+            TestSupport.False(transfer.IsActive);
+        }
+
+        [Fact]
         public void FireGridPropagationPolicy_WaterPolicyDeterministicallyBlocksPropagation_Test()
         {
             var entry = TestSupport.FindKernelEntry(FireGridKernel.Full27.Entries, 1, 0, 0);
@@ -200,6 +230,14 @@ namespace Prometheus.Tests
 
             TestSupport.Equal(0, grid.TotalChunkCount);
             TestSupport.Equal(0, grid.ActiveCellCount);
+        }
+
+        [Fact]
+        public void FireCellState_SmokeOnlyCellsDoNotKeepGridActive_Test()
+        {
+            var state = new FireCellState(0f, 0f, 1f, 0f, 0f, FireGridBurnState.Heating);
+
+            TestSupport.False(state.IsActive);
         }
 
         [Fact]
@@ -376,7 +414,7 @@ namespace Prometheus.Tests
         }
 
         [Fact]
-        public void FireGridRuntimeState_BurningVegetationEmitsAcrossForestLine_Test()
+        public void FireGridRuntimeState_BurningVegetationEmitsBoundedPressureAcrossForestLine_Test()
         {
             var grid = new FireGridRuntimeState();
             for (var x = 0; x < 5; x++)
@@ -385,14 +423,14 @@ namespace Prometheus.Tests
             }
 
             grid.Inject(new FireGridCoordinate(0, 0, 0), TestSupport.HotCell());
-            for (var step = 0; step < 12; step++)
+            for (var step = 0; step < 18; step++)
             {
                 grid.Step(FireGridKernel.Full27);
             }
 
             TestSupport.True(grid.TryGetState(new FireGridCoordinate(3, 0, 0), out var distantTreeState));
-            TestSupport.True(distantTreeState.BurnState == FireGridBurnState.Burning || distantTreeState.BurnState == FireGridBurnState.Smoldering);
-            TestSupport.True(distantTreeState.IgnitionProgress > 0.35f);
+            TestSupport.True(distantTreeState.IsActive);
+            TestSupport.True(distantTreeState.Heat > FireGridPropagationPolicy.ActiveCellThreshold);
         }
 
         [Fact]

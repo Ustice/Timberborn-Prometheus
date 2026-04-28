@@ -10,6 +10,17 @@ namespace Mods.Prometheus.Scripts {
     private const float UpdateIntervalInSeconds = 0.5f;
     private const float BaseFuelConsumptionPerTick = 0.006f;
     private const float BaseMoistureEvaporationPerTick = 0.025f;
+    private const float TreeFuelConsumptionMultiplier = 0.75f;
+    private const int TreeBurningSpreadRadius = 2;
+    private const float TreeBurningInnerSpreadFalloff = 0.18f;
+    private const float TreeBurningOuterSpreadFalloff = 0.32f;
+    private const float CropFuelConsumptionMultiplier = 1.6f;
+    private const float CropMoistureEvaporationMultiplier = 1.5f;
+    private const float CropMaxMoisture = 0.22f;
+    private const float CropBurningHeatScale = 0.75f;
+    private const float CropBurningEmberScale = 0.85f;
+    private const float CropBurningSmokeScale = 0.35f;
+    private const int CropBurningSpreadRadius = 2;
     private const float BurningHeatFloor = 0.65f;
     private const float BurningEmberFloor = 0.35f;
     private const float BurningSmokeFloor = 0.25f;
@@ -17,7 +28,6 @@ namespace Mods.Prometheus.Scripts {
 
     private FireExposureRuntimeState _fireExposureRuntimeState;
     private FireGridRuntimeState _fireGridRuntimeState;
-    private FireGridSimulationCoordinator _fireGridSimulationCoordinator;
     private TimberbornEnvironmentAdapter _timberbornEnvironmentAdapter;
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
     private FireRuntimeProjectionRuntimeState _fireRuntimeProjectionRuntimeState;
@@ -45,14 +55,12 @@ namespace Mods.Prometheus.Scripts {
     public void InjectDependencies(
       FireExposureRuntimeState fireExposureRuntimeState,
       FireGridRuntimeState fireGridRuntimeState,
-      FireGridSimulationCoordinator fireGridSimulationCoordinator,
       TimberbornEnvironmentAdapter timberbornEnvironmentAdapter,
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
       FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState,
       PrometheusWorldLoadState prometheusWorldLoadState) {
       _fireExposureRuntimeState = fireExposureRuntimeState;
       _fireGridRuntimeState = fireGridRuntimeState;
-      _fireGridSimulationCoordinator = fireGridSimulationCoordinator;
       _timberbornEnvironmentAdapter = timberbornEnvironmentAdapter;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
       _fireRuntimeProjectionRuntimeState = fireRuntimeProjectionRuntimeState;
@@ -105,10 +113,9 @@ namespace Mods.Prometheus.Scripts {
       }
 
       if (_isIgnited) {
-        _fireGridRuntimeState.Inject(new FireGridSourceInjection(coordinate, CreateBurningSourceCell(), _ignitionSourceAttribution));
+        InjectBurningSource(coordinate);
       }
 
-      _fireGridSimulationCoordinator.StepFrame(Time.frameCount);
       PublishSnapshot(entityId, CreateSnapshotFromGrid(entityId, footprint));
     }
 
@@ -204,6 +211,10 @@ namespace Mods.Prometheus.Scripts {
     }
 
     private FireGridFootprint GetGridFootprint() {
+      if (IsCropProfile) {
+        return FireGridFootprintSampler.FromWorldPosition(GameObject.transform.position);
+      }
+
       if (TryGetRendererBounds(out var bounds)) {
         return FireGridFootprintSampler.FromBounds(bounds);
       }
@@ -217,7 +228,17 @@ namespace Mods.Prometheus.Scripts {
 
     private float MaxFuel => Mathf.Max(0.1f, _fireProfile == null ? 1f : _fireProfile.Fuel);
 
-    private float MaxMoisture => Mathf.Max(0.1f, 0.25f + (_fireProfile == null ? 0f : _fireProfile.MoistureResistance));
+    private float MaxMoisture => IsCropProfile
+      ? CropMaxMoisture
+      : Mathf.Max(0.1f, 0.25f + (_fireProfile == null ? 0f : _fireProfile.MoistureResistance));
+
+    private bool IsCropProfile =>
+      _fireProfile != null
+      && _fireProfile.StructureKind.IndexOf("crop", System.StringComparison.OrdinalIgnoreCase) >= 0;
+
+    private bool IsTreeProfile =>
+      _fireProfile != null
+      && _fireProfile.StructureKind.IndexOf("tree", System.StringComparison.OrdinalIgnoreCase) >= 0;
 
     private float FuelConsumed => Mathf.Clamp01(1f - (_remainingFuel / MaxFuel));
 
@@ -344,12 +365,16 @@ namespace Mods.Prometheus.Scripts {
       }
 
       var dryingPressure = Mathf.Clamp01(Mathf.Max(sample.Heat, sample.EmberPressure * 0.7f));
-      _remainingMoisture = Mathf.Max(0f, _remainingMoisture - (BaseMoistureEvaporationPerTick * dryingPressure));
+      var evaporationMultiplier = IsCropProfile ? CropMoistureEvaporationMultiplier : 1f;
+      _remainingMoisture = Mathf.Max(0f, _remainingMoisture - (BaseMoistureEvaporationPerTick * dryingPressure * evaporationMultiplier));
     }
 
     private void ConsumeFuel(FireGridSample sample) {
       var pressure = Mathf.Clamp01(Mathf.Max(BurningHeatFloor, sample.Heat, sample.EmberPressure));
-      _remainingFuel = Mathf.Max(0f, _remainingFuel - (BaseFuelConsumptionPerTick * pressure));
+      var fuelConsumptionMultiplier = IsCropProfile
+        ? CropFuelConsumptionMultiplier
+        : IsTreeProfile ? TreeFuelConsumptionMultiplier : 1f;
+      _remainingFuel = Mathf.Max(0f, _remainingFuel - (BaseFuelConsumptionPerTick * pressure * fuelConsumptionMultiplier));
       if (_remainingFuel > 0f) {
         return;
       }
@@ -384,14 +409,77 @@ namespace Mods.Prometheus.Scripts {
 
     private FireCellState CreateBurningSourceCell() {
       var fuelRemaining = Mathf.Clamp01(_remainingFuel / MaxFuel);
+      var heatScale = IsCropProfile ? CropBurningHeatScale : 1f;
+      var emberScale = IsCropProfile ? CropBurningEmberScale : 1f;
+      var smokeScale = IsCropProfile ? CropBurningSmokeScale : 1f;
       return new(
-        Mathf.Lerp(0.45f, 1f, fuelRemaining),
-        Mathf.Lerp(0.2f, 0.85f, fuelRemaining),
-        Mathf.Lerp(0.15f, 0.35f, fuelRemaining),
+        Mathf.Lerp(0.45f, 1f, fuelRemaining) * heatScale,
+        Mathf.Lerp(0.2f, 0.85f, fuelRemaining) * emberScale,
+        Mathf.Lerp(0.15f, 0.35f, fuelRemaining) * smokeScale,
         1f,
         FuelConsumed,
         FireGridBurnState.Burning,
         _ignitionSourceAttribution);
+    }
+
+    private void InjectBurningSource(FireGridCoordinate coordinate) {
+      var sourceCell = CreateBurningSourceCell();
+      _fireGridRuntimeState.Inject(new FireGridSourceInjection(coordinate, sourceCell, _ignitionSourceAttribution));
+
+      if (IsTreeProfile) {
+        InjectHorizontalBurningHalo(
+          coordinate,
+          sourceCell,
+          TreeBurningSpreadRadius,
+          TreeBurningInnerSpreadFalloff,
+          TreeBurningOuterSpreadFalloff,
+          0.1f);
+      }
+
+      if (IsCropProfile) {
+        InjectHorizontalBurningHalo(
+          coordinate,
+          sourceCell,
+          CropBurningSpreadRadius,
+          0.68f,
+          0.38f,
+          0.25f);
+      }
+    }
+
+    private void InjectHorizontalBurningHalo(
+      FireGridCoordinate coordinate,
+      FireCellState sourceCell,
+      int radius,
+      float innerFalloff,
+      float outerFalloff,
+      float smokeFalloffMultiplier) {
+      for (var dx = -radius; dx <= radius; dx++) {
+        for (var dz = -radius; dz <= radius; dz++) {
+          if (dx == 0 && dz == 0) {
+            continue;
+          }
+
+          var distance = Mathf.Max(Mathf.Abs(dx), Mathf.Abs(dz));
+          if (distance > radius) {
+            continue;
+          }
+
+          var targetCoordinate = new FireGridCoordinate(coordinate.X + dx, coordinate.Y, coordinate.Z + dz);
+          var targetEnvironment = _fireGridRuntimeState.GetEnvironment(targetCoordinate);
+          if (targetEnvironment.StructureKind == FireGridStructureKind.Air || targetEnvironment.IsUnderwater) {
+            continue;
+          }
+
+          var falloff = Mathf.Lerp(outerFalloff, innerFalloff, 1f - ((distance - 1f) / Mathf.Max(1f, radius - 1f)));
+          var spreadCell = sourceCell.With(
+            heat: sourceCell.Heat * falloff,
+            emberPressure: sourceCell.EmberPressure * falloff,
+            smoke: sourceCell.Smoke * smokeFalloffMultiplier * falloff,
+            ignitionProgress: sourceCell.IgnitionProgress * falloff);
+          _fireGridRuntimeState.Inject(new FireGridSourceInjection(targetCoordinate, spreadCell, _ignitionSourceAttribution));
+        }
+      }
     }
 
     private void PublishSnapshot(int entityId, FireExposureSnapshot snapshot) {

@@ -51,7 +51,7 @@ namespace Mods.Prometheus.Scripts {
         return;
       }
 
-      if (Time.time - _lastNeedManagerRefreshTime >= NeedManagerRefreshIntervalInSeconds || _cachedNeedManagers.Count == 0) {
+      if (Time.time - _lastNeedManagerRefreshTime >= NeedManagerRefreshIntervalInSeconds) {
         RefreshNeedManagers();
         _lastNeedManagerRefreshTime = Time.time;
       }

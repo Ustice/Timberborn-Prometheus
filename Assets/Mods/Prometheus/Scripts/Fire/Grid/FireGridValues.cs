@@ -276,7 +276,6 @@ namespace Mods.Prometheus.Scripts {
     public bool IsActive =>
       Heat > FireGridPropagationPolicy.ActiveCellThreshold
       || EmberPressure > FireGridPropagationPolicy.ActiveCellThreshold
-      || Smoke > FireGridPropagationPolicy.ActiveCellThreshold
       || IgnitionProgress > FireGridPropagationPolicy.ActiveCellThreshold;
 
     public FireCellState(

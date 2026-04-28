@@ -35,6 +35,7 @@ namespace Prometheus.Tests
             "Fire/Grid/FireGridPropagationRules.cs",
             "Fire/Grid/FireGridRuntimeState.cs",
             "Fire/Grid/FireGridSimulationCoordinator.cs",
+            "Fire/Grid/FireGridSimulationSingleton.cs",
             "Fire/Grid/FireGridValues.cs",
             "Fire/Impact/FireImpactRuntimeState.cs",
             "Fire/Projection/FireRuntimeProjectionRuntimeState.cs",
@@ -73,6 +74,7 @@ namespace Prometheus.Tests
             FireTelemetryEvents.BuildingOperationsDisabled,
             FireTelemetryEvents.BuildingOperationsRestored,
             FireTelemetryEvents.GridIgnitionSeeded,
+            FireTelemetryEvents.GridRuntimeState,
             FireTelemetryEvents.GridSourceInjected,
             FireTelemetryEvents.GridSourceSuppressed,
             FireTelemetryEvents.FertileAshSpawnQueued,
@@ -84,6 +86,7 @@ namespace Prometheus.Tests
             FireTelemetryEvents.VisualPreviewApply,
             FireTelemetryEvents.VisualPreviewClear,
             FireTelemetryEvents.VisualTuningJson,
+            FireTelemetryEvents.VisualRuntimeIntensity,
             FireTelemetryEvents.NativeVisualEffectResolved,
             FireTelemetryEvents.NativeVisualEffectUnavailable,
             FireTelemetryEvents.TimberbornCompatibilitySummary,
@@ -149,6 +152,7 @@ namespace Prometheus.Tests
                 "building_operations_disabled",
                 "building_operations_restored",
                 "grid_ignition_seeded",
+                "grid_runtime_state",
                 "grid_source_injected",
                 "grid_source_suppressed",
                 "fertile_ash_spawn_queued",
@@ -160,6 +164,7 @@ namespace Prometheus.Tests
                 "visual_preview_apply",
                 "visual_preview_clear",
                 "visual_tuning_json",
+                "visual_runtime_intensity",
                 "native_visual_effect_resolved",
                 "native_visual_effect_unavailable",
                 "timberborn_compatibility_summary",
@@ -193,6 +198,8 @@ namespace Prometheus.Tests
             var carrotProfile = File.ReadAllText(carrotProfilePath);
             TestSupport.True(carrotProfile.Contains("\"FireProfileSpec\"", StringComparison.Ordinal));
             TestSupport.True(carrotProfile.Contains("\"StructureKind\": \"Carrot Crop\"", StringComparison.Ordinal));
+            TestSupport.True(carrotProfile.Contains("\"Fuel\": 0.35", StringComparison.Ordinal));
+            TestSupport.True(carrotProfile.Contains("\"IgnitionThreshold\": 0.22", StringComparison.Ordinal));
         }
 
         private static string[] ReadPrometheusCompileItems()

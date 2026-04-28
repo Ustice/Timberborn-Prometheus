@@ -14,7 +14,7 @@ namespace Mods.Prometheus.Scripts {
 
     public FireExposureSnapshot VisualExposure => HasExposure
       ? Exposure
-      : FireExposureRules.CreateTerminalDeadBuildingSnapshot();
+      : FireExposureRules.CreateColdSnapshot();
 
     public FireDamageStateSnapshot VisualDamageState => HasDamageState
       ? DamageState

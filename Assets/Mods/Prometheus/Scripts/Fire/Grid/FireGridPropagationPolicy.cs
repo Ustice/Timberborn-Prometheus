@@ -12,15 +12,15 @@ namespace Mods.Prometheus.Scripts {
     public const float SelfEmberWeight = 0.60f;
     public const float SelfSmokeWeight = 0.55f;
 
-    public const float NeighborHeatBaseWeight = 0.08f;
-    public const float NeighborEmberBaseWeight = 0.06f;
-    public const float NeighborSmokeBaseWeight = 0.07f;
+    public const float NeighborHeatBaseWeight = 0.15f;
+    public const float NeighborEmberBaseWeight = 0.12f;
+    public const float NeighborSmokeBaseWeight = 0.035f;
 
     public const float UpwardHeatMultiplier = 1.8f;
     public const float DownwardHeatMultiplier = 0.35f;
     public const float LateralHeatMultiplier = 1f;
 
-    public const float UpwardSmokeMultiplier = 2.2f;
+    public const float UpwardSmokeMultiplier = 1.2f;
     public const float DownwardSmokeMultiplier = 0.08f;
     public const float LateralSmokeMultiplier = 0.35f;
 
@@ -33,14 +33,14 @@ namespace Mods.Prometheus.Scripts {
     public const float IgnitionEmberWeight = 0.85f;
     public const float IgnitionHeatFromProgress = 0.65f;
     public const float IgnitionEmberFromProgress = 0.55f;
-    public const float IgnitionSmokeFromProgress = 0.35f;
-    public const float SmokeDecayMultiplier = 0.92f;
+    public const float IgnitionSmokeFromProgress = 0.1f;
+    public const float SmokeDecayMultiplier = 0.55f;
     public const float SmolderIgnitionThreshold = 0.35f;
     public const float SmolderEmberThreshold = 0.2f;
     public const float BurningIgnitionThreshold = 0.75f;
     public const float BurningHeatThreshold = 0.35f;
 
-    public const float BurningEmissionMultiplier = 2.25f;
+    public const float BurningEmissionMultiplier = 2.6f;
     public const float SmolderingEmissionMultiplier = 1.1f;
     public const float HeatingEmissionMultiplier = 0.85f;
 

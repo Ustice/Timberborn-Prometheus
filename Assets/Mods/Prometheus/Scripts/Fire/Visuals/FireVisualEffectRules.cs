@@ -119,6 +119,7 @@ namespace Mods.Prometheus.Scripts {
 
       var embers = ComputeEmberFieldIntensity(exposure, damageState, tuning);
       var smokeBase = damageState.State switch {
+        _ when damageState.Category == FireDamageCategory.Crop => 0f,
         FireDamageState.Scorched => Mathf.Max(0.25f, severity),
         FireDamageState.Burning => Mathf.Max(0.45f, Mathf.Max(exposure.Intensity, exposure.Smoke)),
         FireDamageState.Dead => 0.15f,

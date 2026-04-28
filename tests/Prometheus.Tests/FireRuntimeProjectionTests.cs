@@ -97,7 +97,8 @@ namespace Prometheus.Tests
               FireVisualEffectTuning.Default);
 
             TestSupport.NearlyEqual(0f, emptyIntensity.Fire);
-            TestSupport.True(emptyIntensity.Char > 0.7f);
+            TestSupport.NearlyEqual(0f, emptyIntensity.Smoke);
+            TestSupport.NearlyEqual(0f, emptyIntensity.Char);
 
             var burningProjection = FireRuntimeProjectionRules.EmptyProjection
               .WithExposure(TestSupport.CreateExposureSnapshot(burning: true, intensity: 0.85f, moistureDampening: 0f))

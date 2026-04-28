@@ -26,7 +26,9 @@ namespace Prometheus.Tests
             Step(prepared, 4);
 
             TestSupport.True(control.TryGetState(boundary, out var controlBoundary));
-            TestSupport.True(prepared.TryGetState(boundary, out var preparedBoundary));
+            var preparedBoundary = prepared.TryGetState(boundary, out var preparedState)
+              ? preparedState
+              : FireCellState.Cold;
             TestSupport.True(preparedBoundary.Heat < controlBoundary.Heat);
             TestSupport.True(preparedBoundary.EmberPressure < controlBoundary.EmberPressure);
             TestSupport.True(preparedBoundary.IgnitionProgress < controlBoundary.IgnitionProgress);

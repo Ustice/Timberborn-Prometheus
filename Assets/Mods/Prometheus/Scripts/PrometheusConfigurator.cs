@@ -26,6 +26,7 @@ namespace Mods.Prometheus.Scripts {
       MultiBind<IPostLoadableSingleton>().ToProvider<PrometheusWorldLoadStatePostLoadableProvider>().AsSingleton();
       MultiBind<IUnloadableSingleton>().ToProvider<PrometheusWorldLoadStateUnloadableProvider>().AsSingleton();
       MultiBind<IUpdatableSingleton>().To<FireFieldAmendmentRuntimeTicker>().AsSingleton();
+      MultiBind<IUpdatableSingleton>().To<FireGridSimulationSingleton>().AsSingleton();
 
       RegisterEntityPanelModule();
       RegisterTemplateModule();

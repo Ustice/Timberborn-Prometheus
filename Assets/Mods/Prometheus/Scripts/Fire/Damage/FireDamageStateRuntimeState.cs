@@ -13,6 +13,14 @@ namespace Mods.Prometheus.Scripts {
     Dead,
   }
 
+  internal enum FireNaturalResourceVisualStage {
+    Healthy,
+    Dried,
+    DriedAndCharred,
+    DeadAndCharred,
+    StumpAndCharred,
+  }
+
   internal readonly struct FireDamageStateSnapshot {
 
     public FireDamageCategory Category { get; }
@@ -56,6 +64,52 @@ namespace Mods.Prometheus.Scripts {
 
       return FireDamageState.Healthy;
     }
+
+  }
+
+  internal static class FireNaturalResourceVisualRules {
+
+    private const float DriedMoistureDampeningThreshold = 0.35f;
+    private const float CharredFuelConsumedThreshold = 0.08f;
+    private const float StumpFuelConsumedThreshold = 0.95f;
+
+    internal static FireNaturalResourceVisualStage DetermineTreeStage(
+      FireDamageStateSnapshot damageState,
+      FireExposureSnapshot exposure) {
+      if (damageState.Category != FireDamageCategory.Tree) {
+        return FireNaturalResourceVisualStage.Healthy;
+      }
+
+      if (IsBurnedOut(exposure)) {
+        return FireNaturalResourceVisualStage.StumpAndCharred;
+      }
+
+      if (damageState.State == FireDamageState.Dead) {
+        return FireNaturalResourceVisualStage.DeadAndCharred;
+      }
+
+      if (damageState.State is FireDamageState.Scorched or FireDamageState.Burning
+          || damageState.Severity >= 0.2f
+          || exposure.FuelConsumed >= CharredFuelConsumedThreshold) {
+        return FireNaturalResourceVisualStage.DriedAndCharred;
+      }
+
+      if (exposure.MoistureDampening <= DriedMoistureDampeningThreshold) {
+        return FireNaturalResourceVisualStage.Dried;
+      }
+
+      return FireNaturalResourceVisualStage.Healthy;
+    }
+
+    internal static bool UsesDriedVisual(FireNaturalResourceVisualStage stage) =>
+      stage != FireNaturalResourceVisualStage.Healthy;
+
+    internal static bool UsesStumpVisual(FireNaturalResourceVisualStage stage) =>
+      stage == FireNaturalResourceVisualStage.StumpAndCharred;
+
+    private static bool IsBurnedOut(FireExposureSnapshot exposure) =>
+      exposure.FuelConsumed >= StumpFuelConsumedThreshold
+      || exposure.DominantSource == "BurnedOut";
 
   }
 }

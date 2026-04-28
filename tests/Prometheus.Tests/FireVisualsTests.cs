@@ -35,7 +35,7 @@ namespace Prometheus.Tests
               FireVisualEffectTuning.Default);
 
             TestSupport.True(exposed.Embers > 0.4f);
-            TestSupport.True(exposed.Smoke > 0f);
+            TestSupport.NearlyEqual(0f, exposed.Smoke);
             TestSupport.NearlyEqual(0f, exposed.Fire);
             TestSupport.NearlyEqual(0f, burning.Embers);
             TestSupport.True(burning.Fire > 0.6f);
@@ -51,6 +51,30 @@ namespace Prometheus.Tests
 
             TestSupport.NearlyEqual(0f, intensity.Embers);
             TestSupport.NearlyEqual(0f, intensity.Fire);
+        }
+
+        [Fact]
+        public void FireVisualEffectRules_HealthySmokeFieldDoesNotRenderAsFireWave_Test()
+        {
+            var intensity = FireVisualEffectRules.ComputeIntensity(
+              new FireExposureSnapshot(false, 0f, 0f, 0f, 0.9f, 0f, 0f, 0.2f, 1f, "Grid"),
+              new FireDamageStateSnapshot(FireDamageCategory.Crop, FireDamageState.Healthy, 0f, 0f, 0),
+              FireVisualEffectTuning.Default);
+
+            TestSupport.NearlyEqual(0f, intensity.Smoke);
+            TestSupport.NearlyEqual(0f, intensity.Fire);
+        }
+
+        [Fact]
+        public void FireVisualEffectRules_CropBurnsDoNotEmitSmokePlumes_Test()
+        {
+            var intensity = FireVisualEffectRules.ComputeIntensity(
+              new FireExposureSnapshot(true, 1f, 0.75f, 0.8f, 0.4f, 1f, 0.2f, 0f, 1f, "Grid"),
+              new FireDamageStateSnapshot(FireDamageCategory.Crop, FireDamageState.Burning, 0.75f, 0.3f, 2),
+              FireVisualEffectTuning.Default);
+
+            TestSupport.NearlyEqual(0f, intensity.Smoke);
+            TestSupport.True(intensity.Fire > 0.8f);
         }
 
         [Fact]
@@ -104,6 +128,35 @@ namespace Prometheus.Tests
             TestSupport.True(intensity.Char > 0.95f);
             TestSupport.True(intensity.Desiccation > 0.95f);
             TestSupport.NearlyEqual(0f, intensity.Fire);
+        }
+
+        [Fact]
+        public void FireNaturalResourceVisualRules_TreesProgressFromDryToCharredStump_Test()
+        {
+            var healthy = FireNaturalResourceVisualRules.DetermineTreeStage(
+              new FireDamageStateSnapshot(FireDamageCategory.Tree, FireDamageState.Healthy, 0f, 0f, 0),
+              FireExposureRules.CreateColdSnapshot());
+            var dried = FireNaturalResourceVisualRules.DetermineTreeStage(
+              new FireDamageStateSnapshot(FireDamageCategory.Tree, FireDamageState.Healthy, 0f, 0f, 0),
+              new FireExposureSnapshot(false, 0f, 0f, 0f, 0f, 0f, 0f, 0.2f, 1f, "Grid"));
+            var driedAndCharred = FireNaturalResourceVisualRules.DetermineTreeStage(
+              new FireDamageStateSnapshot(FireDamageCategory.Tree, FireDamageState.Scorched, 0.35f, 0.2f, 1),
+              new FireExposureSnapshot(true, 0.5f, 0.45f, 0.25f, 0.2f, 0.8f, 0.12f, 0f, 1f, "Grid"));
+            var deadAndCharred = FireNaturalResourceVisualRules.DetermineTreeStage(
+              new FireDamageStateSnapshot(FireDamageCategory.Tree, FireDamageState.Dead, 1f, 1f, 4),
+              new FireExposureSnapshot(true, 0.75f, 0.6f, 0.5f, 0.25f, 1f, 0.45f, 0f, 1f, "Grid"));
+            var stumpAndCharred = FireNaturalResourceVisualRules.DetermineTreeStage(
+              new FireDamageStateSnapshot(FireDamageCategory.Tree, FireDamageState.Dead, 1f, 1f, 4),
+              FireExposureRules.CreateBurnedOutSnapshot());
+
+            TestSupport.Equal(FireNaturalResourceVisualStage.Healthy, healthy);
+            TestSupport.Equal(FireNaturalResourceVisualStage.Dried, dried);
+            TestSupport.Equal(FireNaturalResourceVisualStage.DriedAndCharred, driedAndCharred);
+            TestSupport.Equal(FireNaturalResourceVisualStage.DeadAndCharred, deadAndCharred);
+            TestSupport.Equal(FireNaturalResourceVisualStage.StumpAndCharred, stumpAndCharred);
+            TestSupport.True(FireNaturalResourceVisualRules.UsesDriedVisual(deadAndCharred));
+            TestSupport.False(FireNaturalResourceVisualRules.UsesStumpVisual(deadAndCharred));
+            TestSupport.True(FireNaturalResourceVisualRules.UsesStumpVisual(stumpAndCharred));
         }
 
         [Fact]
