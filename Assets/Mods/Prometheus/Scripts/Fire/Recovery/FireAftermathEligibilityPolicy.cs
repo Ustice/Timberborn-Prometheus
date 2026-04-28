@@ -130,6 +130,10 @@ namespace Mods.Prometheus.Scripts {
     internal const int CharredTreeAmount = 1;
     internal const int CharredCropAmount = 1;
     internal const int CharredBuildingAmount = 4;
+    internal const string CharredTreeRemnantHarvestReason = "charred_tree_remnant_harvest";
+
+    internal static bool ShouldUseRemnantHarvest(FireAftermathSourceKind sourceKind) =>
+      sourceKind == FireAftermathSourceKind.CharredTree;
 
     internal static FertileAshSpawnDecision Evaluate(FireAftermathEligibilityResult eligibility) {
       if (!eligibility.CanProduceFertileAsh) {

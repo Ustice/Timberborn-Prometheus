@@ -41,13 +41,7 @@ namespace Mods.Prometheus.Scripts {
     }
 
     internal static IEnumerable<GameObject> FindLoadedPrometheusFireEntityGameObjects() {
-      var allObjects = Resources.FindObjectsOfTypeAll<GameObject>();
-      for (var i = 0; i < allObjects.Length; i++) {
-        var gameObject = allObjects[i];
-        if (gameObject == null || !gameObject.scene.IsValid() || !gameObject.scene.isLoaded) {
-          continue;
-        }
-
+      foreach (var gameObject in PrometheusLoadedSceneObjectLookup.FindLoadedSceneGameObjects()) {
         if (HasPrometheusFireComponent(gameObject)) {
           yield return gameObject;
         }

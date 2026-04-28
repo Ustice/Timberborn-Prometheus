@@ -65,6 +65,12 @@ namespace Mods.Prometheus.Scripts {
       return FireDamageState.Healthy;
     }
 
+    internal static bool IsTerminalDeadState(
+      FireDamageCategory category,
+      FireDamageState previousState) =>
+      previousState == FireDamageState.Dead
+      && (category == FireDamageCategory.Tree || category == FireDamageCategory.Building);
+
   }
 
   internal static class FireNaturalResourceVisualRules {
@@ -108,6 +114,25 @@ namespace Mods.Prometheus.Scripts {
 
     internal static bool UsesStumpVisual(FireNaturalResourceVisualStage stage) =>
       stage == FireNaturalResourceVisualStage.StumpAndCharred;
+
+    internal static bool UsesDeadVisual(FireNaturalResourceVisualStage stage) =>
+      stage is FireNaturalResourceVisualStage.DeadAndCharred
+        or FireNaturalResourceVisualStage.StumpAndCharred;
+
+    internal static FireNaturalResourceVisualStage ClampToLatchedTreeStage(
+      FireNaturalResourceVisualStage stage,
+      bool reachedDeadVisualStage,
+      bool reachedStumpVisualStage) {
+      if (reachedStumpVisualStage) {
+        return FireNaturalResourceVisualStage.StumpAndCharred;
+      }
+
+      if (reachedDeadVisualStage && stage < FireNaturalResourceVisualStage.DeadAndCharred) {
+        return FireNaturalResourceVisualStage.DeadAndCharred;
+      }
+
+      return stage;
+    }
 
     internal static string ModelStateName(FireNaturalResourceVisualStage stage) =>
       stage switch {

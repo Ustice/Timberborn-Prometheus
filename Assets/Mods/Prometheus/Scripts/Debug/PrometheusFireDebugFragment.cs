@@ -295,17 +295,7 @@ namespace Mods.Prometheus.Scripts {
 
     internal static bool TryFocusCameraOnEntity(int entityId, out string entityName) {
       entityName = string.Empty;
-      var allObjects = Resources.FindObjectsOfTypeAll<GameObject>();
-      for (var i = 0; i < allObjects.Length; i++) {
-        var gameObject = allObjects[i];
-        if (gameObject == null || gameObject.GetInstanceID() != entityId) {
-          continue;
-        }
-
-        if (!gameObject.scene.IsValid() || !gameObject.scene.isLoaded) {
-          continue;
-        }
-
+      if (PrometheusLoadedSceneObjectLookup.TryFindLoadedGameObject(entityId, out var gameObject)) {
         var camera = Camera.main;
         if (camera == null) {
           entityName = gameObject.name;
@@ -374,6 +364,9 @@ namespace Mods.Prometheus.Scripts {
     private readonly ILoc _loc;
     private readonly PrometheusQaExchange _qaExchange = new();
     private const float DebugStopAllFiresIgnitionBlockSeconds = 60f;
+    private const int DebugSelectedSuppressionRadius = 4;
+    private const float DebugSelectedSuppressionStrength = 0.85f;
+    private const float DebugSelectedSuppressionDurationSeconds = 45f;
 
     public event Action<bool> OpenStateChanged;
     public event Action<int> UnreadCountChanged;
@@ -406,6 +399,7 @@ namespace Mods.Prometheus.Scripts {
     private TextField _qaNoteField;
     private Button _selectionCopyButton;
     private Button _selectionIgniteButton;
+    private Button _selectionSuppressButton;
     private SelectableObject _selectionBeforePanelToolSwitch;
     private int _selectedEntityId;
     private bool _selectedEntityHasFireProfile;
@@ -512,28 +506,7 @@ namespace Mods.Prometheus.Scripts {
     }
 
     private static Dictionary<int, GameObject> BuildLoadedSceneGameObjectIndexByEntityId() {
-      var loadedObjectsByEntityId = new Dictionary<int, GameObject>();
-      var allObjects = Resources.FindObjectsOfTypeAll<GameObject>();
-
-      for (var i = 0; i < allObjects.Length; i++) {
-        var gameObject = allObjects[i];
-        if (gameObject == null) {
-          continue;
-        }
-
-        if (!gameObject.scene.IsValid() || !gameObject.scene.isLoaded) {
-          continue;
-        }
-
-        var entityId = gameObject.GetInstanceID();
-        if (entityId == 0 || loadedObjectsByEntityId.ContainsKey(entityId)) {
-          continue;
-        }
-
-        loadedObjectsByEntityId[entityId] = gameObject;
-      }
-
-      return loadedObjectsByEntityId;
+      return PrometheusLoadedSceneObjectLookup.BuildIndexByEntityId();
     }
 
     private void RemoveEntityFromRuntimeStores(int entityId) {

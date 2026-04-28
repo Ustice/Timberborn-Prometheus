@@ -19,6 +19,7 @@ namespace Mods.Prometheus.Scripts {
     Focus,
     Operation,
     Environment,
+    Agriculture,
   }
 
   internal readonly struct TimberbornCompatibilityProbeResult {
@@ -76,6 +77,10 @@ namespace Mods.Prometheus.Scripts {
     internal const string BushTypeName = "Bush";
     internal const string LivingNaturalResourceTypeName = "LivingNaturalResource";
     internal const string TreeComponentTypeName = "TreeComponent";
+    internal const string NaturalResourceModelTypeName = "NaturalResourceModel";
+    internal const string CuttableTypeName = "Cuttable";
+    internal const string YielderTypeName = "Yielder";
+    internal const string EmptyDeadNaturalResourceOverriderTypeName = "EmptyDeadNaturalResourceOverrider";
 
     private static readonly BindingFlags InstanceBindingFlags =
       BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
@@ -279,6 +284,7 @@ namespace Mods.Prometheus.Scripts {
         { TimberbornCompatibilityArea.Focus, new TimberbornCompatibilityProbeResult(TimberbornCompatibilityProbeStatus.Resolved, "EntitySelectionService.SelectAndFocusOn") },
         { TimberbornCompatibilityArea.Operation, new TimberbornCompatibilityProbeResult(TimberbornCompatibilityProbeStatus.Resolved, "type-name operation classifier") },
         { TimberbornCompatibilityArea.Environment, new TimberbornCompatibilityProbeResult(TimberbornCompatibilityProbeStatus.Deferred, "terrain/block/water/soil runtime probe") },
+        { TimberbornCompatibilityArea.Agriculture, new TimberbornCompatibilityProbeResult(TimberbornCompatibilityProbeStatus.Deferred, "FarmHouse planting coordinate runtime probe") },
       };
 
     private static bool TryBindNeedMethods(Type needType, out MethodInfo needAddPointsMethod, out MethodInfo needSetPointsMethod) {
@@ -288,7 +294,7 @@ namespace Mods.Prometheus.Scripts {
     }
 
     private static string CreateSummaryMessage() =>
-      $"event=timberborn_compatibility_summary damage={FormatProbe(TimberbornCompatibilityArea.Damage)} recovery={FormatProbe(TimberbornCompatibilityArea.Recovery)} beaver={FormatProbe(TimberbornCompatibilityArea.Beaver)} workplace={FormatProbe(TimberbornCompatibilityArea.Workplace)} cache={FormatProbe(TimberbornCompatibilityArea.Cache)} focus={FormatProbe(TimberbornCompatibilityArea.Focus)} operation={FormatProbe(TimberbornCompatibilityArea.Operation)} environment={FormatProbe(TimberbornCompatibilityArea.Environment)}";
+      $"event=timberborn_compatibility_summary damage={FormatProbe(TimberbornCompatibilityArea.Damage)} recovery={FormatProbe(TimberbornCompatibilityArea.Recovery)} beaver={FormatProbe(TimberbornCompatibilityArea.Beaver)} workplace={FormatProbe(TimberbornCompatibilityArea.Workplace)} cache={FormatProbe(TimberbornCompatibilityArea.Cache)} focus={FormatProbe(TimberbornCompatibilityArea.Focus)} operation={FormatProbe(TimberbornCompatibilityArea.Operation)} environment={FormatProbe(TimberbornCompatibilityArea.Environment)} agriculture={FormatProbe(TimberbornCompatibilityArea.Agriculture)}";
 
     private static string FormatProbe(TimberbornCompatibilityArea area) {
       var result = ProbeResults[area];

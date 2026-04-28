@@ -24,6 +24,7 @@
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Core/EntitySnapshotStore.cs" Link="Source/Core/EntitySnapshotStore.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Core/FireResetRegistry.cs" Link="Source/Core/FireResetRegistry.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Core/PrometheusWorldLoadState.cs" Link="Source/Core/PrometheusWorldLoadState.cs" />
+    <Compile Include="../../Assets/Mods/Prometheus/Scripts/Core/PrometheusSingletonLifecycles.cs" Link="Source/Core/PrometheusSingletonLifecycles.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Core/TimberbornCompatibility.cs" Link="Source/Core/TimberbornCompatibility.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Core/TimberbornOperationStateAdapter.cs" Link="Source/Core/TimberbornOperationStateAdapter.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Core/TickGate.cs" Link="Source/Core/TickGate.cs" />
@@ -41,7 +42,9 @@
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Impact/FireImpactRuntimeState.cs" Link="Source/Fire/Impact/FireImpactRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Projection/FireRuntimeProjectionRuntimeState.cs" Link="Source/Fire/Projection/FireRuntimeProjectionRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Recovery/FireAftermathEligibilityPolicy.cs" Link="Source/Fire/Recovery/FireAftermathEligibilityPolicy.cs" />
+    <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Recovery/FarmHouseFertileAshAmendmentWorkplaceBehavior.cs" Link="Source/Fire/Recovery/FarmHouseFertileAshAmendmentWorkplaceBehavior.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Recovery/FertileAshRecoveredGoodStackSpawner.cs" Link="Source/Fire/Recovery/FertileAshRecoveredGoodStackSpawner.cs" />
+    <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Recovery/FireBurnedGroundAshDepositRuntimeState.cs" Link="Source/Fire/Recovery/FireBurnedGroundAshDepositRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Recovery/FireFieldAmendmentGrowthRules.cs" Link="Source/Fire/Recovery/FireFieldAmendmentGrowthRules.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Recovery/FireFieldAmendmentRuntimeState.cs" Link="Source/Fire/Recovery/FireFieldAmendmentRuntimeState.cs" />
     <Compile Include="../../Assets/Mods/Prometheus/Scripts/Fire/Recovery/FireRecoveryRuntimeState.cs" Link="Source/Fire/Recovery/FireRecoveryRuntimeState.cs" />

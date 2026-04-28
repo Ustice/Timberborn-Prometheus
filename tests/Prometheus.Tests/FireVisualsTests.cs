@@ -183,7 +183,10 @@ namespace Prometheus.Tests
             TestSupport.Equal(FireNaturalResourceVisualStage.StumpAndCharred, stumpByVisualFuel);
             TestSupport.Equal(FireNaturalResourceVisualStage.StumpAndCharred, stumpAndCharred);
             TestSupport.True(FireNaturalResourceVisualRules.UsesDriedVisual(deadAndCharred));
+            TestSupport.True(FireNaturalResourceVisualRules.UsesDeadVisual(deadAndCharred));
             TestSupport.False(FireNaturalResourceVisualRules.UsesStumpVisual(deadAndCharred));
+            TestSupport.False(FireNaturalResourceVisualRules.UsesDeadVisual(driedAndCharred));
+            TestSupport.True(FireNaturalResourceVisualRules.UsesDeadVisual(stumpAndCharred));
             TestSupport.True(FireNaturalResourceVisualRules.UsesStumpVisual(stumpAndCharred));
         }
 
@@ -195,6 +198,22 @@ namespace Prometheus.Tests
             TestSupport.Equal("#Dying", FireNaturalResourceVisualRules.ModelStateName(FireNaturalResourceVisualStage.DriedAndCharred));
             TestSupport.Equal("#Dead", FireNaturalResourceVisualRules.ModelStateName(FireNaturalResourceVisualStage.DeadAndCharred));
             TestSupport.Equal("#Leftover", FireNaturalResourceVisualRules.ModelStateName(FireNaturalResourceVisualStage.StumpAndCharred));
+        }
+
+        [Fact]
+        public void FireNaturalResourceVisualRules_LatchedTreeStagesDoNotRegress_Test()
+        {
+            var deadLatch = FireNaturalResourceVisualRules.ClampToLatchedTreeStage(
+              FireNaturalResourceVisualStage.DriedAndCharred,
+              true,
+              false);
+            var stumpLatch = FireNaturalResourceVisualRules.ClampToLatchedTreeStage(
+              FireNaturalResourceVisualStage.DeadAndCharred,
+              true,
+              true);
+
+            TestSupport.Equal(FireNaturalResourceVisualStage.DeadAndCharred, deadLatch);
+            TestSupport.Equal(FireNaturalResourceVisualStage.StumpAndCharred, stumpLatch);
         }
 
         [Fact]

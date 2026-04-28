@@ -21,6 +21,7 @@ namespace Mods.Prometheus.Scripts {
     private float _tickProgress;
     private int _damageTicksApplied;
     private bool _categoryDetected;
+    private bool _reachedTerminalDeadState;
 
     [Inject]
     public void InjectDependencies(
@@ -48,6 +49,13 @@ namespace Mods.Prometheus.Scripts {
 
       var entityId = GameObject.GetInstanceID();
       _fireRuntimeProjectionRuntimeState.TryGetSnapshot(entityId, out var projection);
+      var previousState = DeterminePreviousState(entityId);
+      if (FireDamageStateRules.IsTerminalDeadState(_category, previousState)) {
+        _reachedTerminalDeadState = true;
+        _severity = 1f;
+        _tickProgress = 1f;
+      }
+
       if (_category == FireDamageCategory.Tree
           && projection.HasExposure
           && projection.Exposure.FuelConsumed >= 0.25f) {
@@ -67,8 +75,6 @@ namespace Mods.Prometheus.Scripts {
       var tickRate = GetTickRate(_category) * _fireTuningRuntimeState.Current.DamageTickMultiplier;
       var tickSeverityDelta = GetTickSeverityDelta(_category) * _fireTuningRuntimeState.Current.DamageTickMultiplier;
 
-      var previousState = FireDamageStateRules.DetermineState(_severity);
-
       if (pressure > 0.02f) {
         _tickProgress += pressure * tickRate;
 
@@ -78,7 +84,7 @@ namespace Mods.Prometheus.Scripts {
           _damageTicksApplied++;
         }
       } else {
-        var canDecay = !(_category == FireDamageCategory.Building && previousState == FireDamageState.Dead);
+        var canDecay = !FireDamageStateRules.IsTerminalDeadState(_category, previousState);
         if (canDecay) {
           _severity = Mathf.Clamp01(_severity - 0.05f);
           _tickProgress = Mathf.Clamp01(_tickProgress - 0.1f);
@@ -89,6 +95,16 @@ namespace Mods.Prometheus.Scripts {
       }
 
       var state = FireDamageStateRules.DetermineState(_severity);
+      if (FireDamageStateRules.IsTerminalDeadState(_category, previousState)) {
+        state = FireDamageState.Dead;
+        _severity = 1f;
+        _tickProgress = 1f;
+      }
+
+      if (state == FireDamageState.Dead) {
+        _reachedTerminalDeadState = FireDamageStateRules.IsTerminalDeadState(_category, state);
+      }
+
       var snapshot = new FireDamageStateSnapshot(_category, state, _severity, _tickProgress, _damageTicksApplied);
       _fireDamageStateRuntimeState.SetSnapshot(entityId, snapshot);
       _fireRuntimeProjectionRuntimeState.SetDamageState(entityId, snapshot);
@@ -99,12 +115,30 @@ namespace Mods.Prometheus.Scripts {
       _severity = 0f;
       _tickProgress = 0f;
       _damageTicksApplied = 0;
+      _reachedTerminalDeadState = false;
       _fireDamageStateRuntimeState.SetSnapshot(
         entityId,
         new FireDamageStateSnapshot(_category, FireDamageState.Healthy, 0f, 0f, 0));
       _fireRuntimeProjectionRuntimeState.SetDamageState(
         entityId,
         new FireDamageStateSnapshot(_category, FireDamageState.Healthy, 0f, 0f, 0));
+    }
+
+    private FireDamageState DeterminePreviousState(int entityId) {
+      if (_reachedTerminalDeadState) {
+        return FireDamageState.Dead;
+      }
+
+      if (_fireDamageStateRuntimeState.TryGetSnapshot(entityId, out var damageSnapshot)) {
+        return damageSnapshot.State;
+      }
+
+      if (_fireRuntimeProjectionRuntimeState.TryGetSnapshot(entityId, out var projection)
+          && projection.HasDamageState) {
+        return projection.DamageState.State;
+      }
+
+      return FireDamageStateRules.DetermineState(_severity);
     }
 
     private static float GetTickRate(FireDamageCategory category) {

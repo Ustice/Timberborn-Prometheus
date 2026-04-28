@@ -110,8 +110,18 @@
 - [ ] Capture at least one prepared burn that stays bounded and one unprepared/control burn that spreads more aggressively.
 - [ ] Map enough runtime grid/exposure state into smoke, fire, steam, char, and ember visuals for prepared burns to be readable without debug logs.
 - [ ] Keep farmhouse ash application deferred until [tickets/deferred/TKT-001-farmhouse-fertile-ash-application.md](tickets/deferred/TKT-001-farmhouse-fertile-ash-application.md) has fresh fixture evidence.
+- [x] Stabilize tree dead and stump lifecycle under [tickets/verify/TKT-007-tree-dead-stump-lifecycle.md](tickets/verify/TKT-007-tree-dead-stump-lifecycle.md).
+- [x] Decide and implement unified burned-ground Fertile Ash recovery under [tickets/verify/TKT-008-unified-burned-ground-ash-recovery.md](tickets/verify/TKT-008-unified-burned-ground-ash-recovery.md).
+- [x] Extend aftermath parity to buildings and crops under [tickets/verify/TKT-009-building-crop-aftermath-parity.md](tickets/verify/TKT-009-building-crop-aftermath-parity.md).
+- [ ] Prove and enable the farmhouse Fertile Ash application scaffold under [tickets/blocked/TKT-010-agriculture-fertile-ash-application.md](tickets/blocked/TKT-010-agriculture-fertile-ash-application.md).
 
-## 10. Standing Project Habit
+## 10. Fire Suppression
+
+- [x] Add the first suppression slice under [tickets/verify/TKT-011-fire-suppression-first-slice.md](tickets/verify/TKT-011-fire-suppression-first-slice.md).
+- [x] Slow suppression-era fire response at the heartbeat or pacing layer rather than undoing accepted tree and crop tuning.
+- [x] Capture a live suppressed-vs-unsuppressed comparison.
+
+## 11. Standing Project Habit
 
 - [ ] Keep this TODO updated before and after each meaningful implementation slice.
 - [ ] Move completed milestone facts into [HANDOFF.md](HANDOFF.md) when they are verified.

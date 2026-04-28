@@ -119,6 +119,30 @@ namespace Mods.Prometheus.Scripts {
       _chunks.Clear();
     }
 
+    public int ApplySuppressionArea(FireSuppressionZoneSnapshot zone) {
+      if (zone.Radius <= 0 || zone.Strength <= 0f) {
+        return 0;
+      }
+
+      var dampedCells = 0;
+      var currentEntries = _chunks.Values.SelectMany(chunk => chunk.StateEntries).ToArray();
+      for (var i = 0; i < currentEntries.Length; i++) {
+        var coordinate = currentEntries[i].Key;
+        var state = currentEntries[i].Value;
+        var strength = SuppressionStrengthAt(zone, coordinate);
+        if (strength <= 0f) {
+          continue;
+        }
+
+        var suppressed = FireSuppressionRules.ApplyToCell(state, strength);
+        GetOrCreateChunk(coordinate).SetState(coordinate, suppressed);
+        dampedCells++;
+      }
+
+      PruneInactiveChunks();
+      return dampedCells;
+    }
+
     public void Step(FireGridKernel kernel) {
       var nextStates = new Dictionary<FireGridCoordinate, FireCellState>();
       var currentEntries = _chunks.Values.SelectMany(chunk => chunk.StateEntries).ToArray();
@@ -170,6 +194,19 @@ namespace Mods.Prometheus.Scripts {
       chunk = new FireGridChunk();
       _chunks[chunkCoordinate] = chunk;
       return chunk;
+    }
+
+    private static float SuppressionStrengthAt(FireSuppressionZoneSnapshot zone, FireGridCoordinate coordinate) {
+      var distance = UnityEngine.Mathf.Max(
+        UnityEngine.Mathf.Abs(coordinate.X - zone.Center.X),
+        UnityEngine.Mathf.Abs(coordinate.Y - zone.Center.Y),
+        UnityEngine.Mathf.Abs(coordinate.Z - zone.Center.Z));
+      if (distance > zone.Radius) {
+        return 0f;
+      }
+
+      var edgeFalloff = UnityEngine.Mathf.Lerp(1f, 0.45f, distance / (float)zone.Radius);
+      return UnityEngine.Mathf.Clamp01(zone.Strength * edgeFalloff);
     }
 
   }

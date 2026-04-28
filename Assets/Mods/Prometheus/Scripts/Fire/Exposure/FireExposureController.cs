@@ -21,9 +21,9 @@ namespace Mods.Prometheus.Scripts {
     private const float CropBurningEmberScale = 0.85f;
     private const float CropBurningSmokeScale = 0.35f;
     private const int CropBurningSpreadRadius = 2;
-    private const float BurningHeatFloor = 0.65f;
-    private const float BurningEmberFloor = 0.35f;
-    private const float BurningSmokeFloor = 0.25f;
+    internal const float BurningHeatFloor = 0.65f;
+    internal const float BurningEmberFloor = 0.35f;
+    internal const float BurningSmokeFloor = 0.25f;
     private const float ConfiguredSourceTelemetryIntervalInSeconds = 5f;
 
     private FireExposureRuntimeState _fireExposureRuntimeState;
@@ -113,7 +113,7 @@ namespace Mods.Prometheus.Scripts {
       }
 
       if (_isIgnited) {
-        InjectBurningSource(coordinate);
+        InjectBurningSource(coordinate, _fireExposureRuntimeState.GetSuppressionStrength(footprint.Coordinates));
       }
 
       PublishSnapshot(entityId, CreateSnapshotFromGrid(entityId, footprint));
@@ -149,7 +149,8 @@ namespace Mods.Prometheus.Scripts {
     }
 
     private FireExposureSnapshot CreateSnapshotFromGrid(int entityId, FireGridFootprint footprint) {
-      var sample = _fireGridRuntimeState.Sample(footprint);
+      var suppressionStrength = _fireExposureRuntimeState.GetSuppressionStrength(footprint.Coordinates);
+      var sample = FireSuppressionRules.ApplyToSample(_fireGridRuntimeState.Sample(footprint), suppressionStrength);
       if (!sample.HasActivity) {
         if (!_isIgnited) {
           return CreateColdSnapshotWithFuel();
@@ -163,19 +164,22 @@ namespace Mods.Prometheus.Scripts {
       EvaporateMoisture(sample);
 
       if (_isIgnited) {
-        ConsumeFuel(sample);
+        ConsumeFuel(sample, suppressionStrength);
       }
 
       if (_isBurnedOut) {
         return FireExposureRules.CreateBurnedOutSnapshot();
       }
 
+      var burningHeatFloor = FireSuppressionRules.BurningHeatFloor(suppressionStrength);
+      var burningEmberFloor = FireSuppressionRules.BurningEmberFloor(suppressionStrength);
+      var burningSmokeFloor = FireSuppressionRules.BurningSmokeFloor(suppressionStrength);
       var intensity = _isIgnited
-        ? Mathf.Clamp01(Mathf.Max(BurningHeatFloor, sample.Heat, sample.IgnitionProgress))
+        ? Mathf.Clamp01(Mathf.Max(burningHeatFloor, sample.Heat, sample.IgnitionProgress))
         : Mathf.Clamp01(Mathf.Max(sample.Heat, sample.IgnitionProgress));
-      var heat = _isIgnited ? Mathf.Max(BurningHeatFloor, sample.Heat) : sample.Heat;
-      var ember = _isIgnited ? Mathf.Max(BurningEmberFloor, sample.EmberPressure) : sample.EmberPressure;
-      var smoke = _isIgnited ? Mathf.Max(BurningSmokeFloor, sample.Smoke) : sample.Smoke;
+      var heat = _isIgnited ? Mathf.Max(burningHeatFloor, sample.Heat) : sample.Heat;
+      var ember = _isIgnited ? Mathf.Max(burningEmberFloor, sample.EmberPressure) : sample.EmberPressure;
+      var smoke = _isIgnited ? Mathf.Max(burningSmokeFloor, sample.Smoke) : sample.Smoke;
       return new FireExposureSnapshot(
         _isIgnited,
         intensity,
@@ -369,11 +373,12 @@ namespace Mods.Prometheus.Scripts {
       _remainingMoisture = Mathf.Max(0f, _remainingMoisture - (BaseMoistureEvaporationPerTick * dryingPressure * evaporationMultiplier));
     }
 
-    private void ConsumeFuel(FireGridSample sample) {
+    private void ConsumeFuel(FireGridSample sample, float suppressionStrength) {
       var pressure = Mathf.Clamp01(Mathf.Max(BurningHeatFloor, sample.Heat, sample.EmberPressure));
       var fuelConsumptionMultiplier = IsCropProfile
         ? CropFuelConsumptionMultiplier
         : IsTreeProfile ? TreeFuelConsumptionMultiplier : 1f;
+      fuelConsumptionMultiplier *= FireSuppressionRules.FuelConsumptionMultiplier(suppressionStrength);
       _remainingFuel = Mathf.Max(0f, _remainingFuel - (BaseFuelConsumptionPerTick * pressure * fuelConsumptionMultiplier));
       if (_remainingFuel > 0f) {
         return;
@@ -422,8 +427,8 @@ namespace Mods.Prometheus.Scripts {
         _ignitionSourceAttribution);
     }
 
-    private void InjectBurningSource(FireGridCoordinate coordinate) {
-      var sourceCell = CreateBurningSourceCell();
+    private void InjectBurningSource(FireGridCoordinate coordinate, float suppressionStrength) {
+      var sourceCell = FireSuppressionRules.ApplyToCell(CreateBurningSourceCell(), suppressionStrength);
       _fireGridRuntimeState.Inject(new FireGridSourceInjection(coordinate, sourceCell, _ignitionSourceAttribution));
 
       if (IsTreeProfile) {

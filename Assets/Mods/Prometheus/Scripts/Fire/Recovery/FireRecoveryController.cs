@@ -14,6 +14,10 @@ namespace Mods.Prometheus.Scripts {
     private FireRuntimeProjectionRuntimeState _fireRuntimeProjectionRuntimeState;
     private FireDamageStateRuntimeState _fireDamageStateRuntimeState;
     private FertileAshRecoveredGoodStackSpawner _fertileAshRecoveredGoodStackSpawner;
+    private FireBurnedGroundAshDepositRuntimeState _burnedGroundAshDepositRuntimeState;
+#if !PROMETHEUS_TESTS
+    private FireBurnedGroundAshDepositMarkerSpawner _burnedGroundAshDepositMarkerSpawner;
+#endif
     private PrometheusWorldLoadState _prometheusWorldLoadState;
 
     private float _timeSinceLastUpdate;
@@ -29,12 +33,20 @@ namespace Mods.Prometheus.Scripts {
       FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState,
       FireDamageStateRuntimeState fireDamageStateRuntimeState,
       FertileAshRecoveredGoodStackSpawner fertileAshRecoveredGoodStackSpawner,
+      FireBurnedGroundAshDepositRuntimeState burnedGroundAshDepositRuntimeState,
+#if !PROMETHEUS_TESTS
+      FireBurnedGroundAshDepositMarkerSpawner burnedGroundAshDepositMarkerSpawner,
+#endif
       PrometheusWorldLoadState prometheusWorldLoadState) {
       _fireExposureRuntimeState = fireExposureRuntimeState;
       _fireRecoveryRuntimeState = fireRecoveryRuntimeState;
       _fireRuntimeProjectionRuntimeState = fireRuntimeProjectionRuntimeState;
       _fireDamageStateRuntimeState = fireDamageStateRuntimeState;
       _fertileAshRecoveredGoodStackSpawner = fertileAshRecoveredGoodStackSpawner;
+      _burnedGroundAshDepositRuntimeState = burnedGroundAshDepositRuntimeState;
+#if !PROMETHEUS_TESTS
+      _burnedGroundAshDepositMarkerSpawner = burnedGroundAshDepositMarkerSpawner;
+#endif
       _prometheusWorldLoadState = prometheusWorldLoadState;
     }
 
@@ -133,6 +145,13 @@ namespace Mods.Prometheus.Scripts {
         damageState.Category.ToString().ToLowerInvariant(),
         entityId,
         GetCropContext(damageState.Category));
+      RecordBurnedGroundAshDeposit(coordinates, decision.Amount, telemetryContext);
+
+      if (FertileAshSpawnPolicy.ShouldUseRemnantHarvest(eligibility.SourceKind)) {
+        FireTelemetry.Log(
+          $"event={FireTelemetryEvents.FertileAshSpawnQueued} entity={GameObject.name} id={entityId} amount={decision.Amount} reason={FertileAshSpawnPolicy.CharredTreeRemnantHarvestReason} source={telemetryContext.SourceAttribution} sourceKind={telemetryContext.SourceKind} damageCategory={telemetryContext.DamageCategory} cropContext={telemetryContext.CropContext} coordinates={coordinates.x},{coordinates.y},{coordinates.z}");
+        return;
+      }
 
       if (_fertileAshRecoveredGoodStackSpawner.TryQueueFertileAsh(coordinates, decision.Amount, telemetryContext, out var queueReason)) {
         FireTelemetry.Log(
@@ -174,6 +193,22 @@ namespace Mods.Prometheus.Scripts {
         Mathf.RoundToInt(position.x),
         Mathf.RoundToInt(position.y),
         Mathf.RoundToInt(position.z));
+    }
+
+    private void RecordBurnedGroundAshDeposit(
+      Vector3Int coordinates,
+      int amount,
+      FertileAshSpawnTelemetryContext telemetryContext) {
+      if (_burnedGroundAshDepositRuntimeState is null
+          || !_burnedGroundAshDepositRuntimeState.TryRecordDeposit(coordinates, telemetryContext.SourceEntityId, amount, telemetryContext, out var deposit)) {
+        return;
+      }
+
+      FireTelemetry.Log(
+        $"event={FireTelemetryEvents.BurnedGroundAshDepositCreated} sourceEntityId={deposit.SourceEntityId} amount={deposit.Amount} sourceKind={deposit.SourceKind} damageCategory={deposit.DamageCategory} cropContext={deposit.CropContext} coordinates={deposit.Coordinates.x},{deposit.Coordinates.y},{deposit.Coordinates.z}");
+#if !PROMETHEUS_TESTS
+      _burnedGroundAshDepositMarkerSpawner?.TryCreateMarker(deposit);
+#endif
     }
 
     private static bool IsBurnedOut(FireExposureSnapshot exposureSnapshot) =>

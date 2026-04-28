@@ -73,6 +73,91 @@ namespace Prometheus.Tests
         }
 
         [Fact]
+        public void ExposureRuntimeState_ExtinguishAllBurning_DoesNotModifyDuringEnumeration_Test()
+        {
+            var exposure = new FireExposureRuntimeState();
+            exposure.SetSnapshot(8, TestSupport.CreateExposureSnapshot(burning: true, intensity: 0.8f));
+            exposure.SetSnapshot(9, TestSupport.CreateExposureSnapshot(burning: false, intensity: 0.4f));
+            exposure.SetSnapshot(10, TestSupport.CreateExposureSnapshot(burning: false, intensity: 0f));
+
+            var extinguished = exposure.ExtinguishAllBurning();
+
+            TestSupport.Equal(2, extinguished);
+            TestSupport.True(exposure.TryGetSnapshot(8, out var first));
+            TestSupport.True(exposure.TryGetSnapshot(9, out var second));
+            TestSupport.True(exposure.TryGetSnapshot(10, out var third));
+            TestSupport.False(first.Burning);
+            TestSupport.False(second.Burning);
+            TestSupport.False(third.Burning);
+            TestSupport.NearlyEqual(0f, first.Intensity);
+            TestSupport.NearlyEqual(0f, second.Intensity);
+            TestSupport.NearlyEqual(0f, third.Intensity);
+        }
+
+        [Fact]
+        public void ExposureRuntimeState_SuppressionAreasExpireAndClear_Test()
+        {
+            var exposure = new FireExposureRuntimeState();
+            var center = new FireGridCoordinate(4, 2, 6);
+
+            TestSupport.True(exposure.RequestSuppressionArea(center, 3, 0.8f, 10f));
+            TestSupport.Equal(1, exposure.ActiveSuppressionZoneCount);
+            TestSupport.True(exposure.GetSuppressionStrength(center) > 0.79f);
+            TestSupport.True(exposure.GetSuppressionStrength(new FireGridCoordinate(6, 2, 6)) > 0f);
+            TestSupport.NearlyEqual(0f, exposure.GetSuppressionStrength(new FireGridCoordinate(9, 2, 6)));
+
+            exposure.TickSuppression(11f);
+
+            TestSupport.Equal(0, exposure.ActiveSuppressionZoneCount);
+            TestSupport.NearlyEqual(0f, exposure.GetSuppressionStrength(center));
+        }
+
+        [Fact]
+        public void FireSuppressionRules_DampenGridSampleAndCell_Test()
+        {
+            var sample = new FireGridSample(
+              true,
+              1f,
+              0.8f,
+              0.6f,
+              0.7f,
+              0f,
+              0f,
+              1f,
+              FireGridBurnState.Burning,
+              FireSourceAttribution.DebugIgnition("test"));
+            var suppressedSample = FireSuppressionRules.ApplyToSample(sample, 1f);
+            var suppressedCell = FireSuppressionRules.ApplyToCell(TestSupport.HotCell(), 1f);
+
+            TestSupport.True(suppressedSample.Heat < sample.Heat);
+            TestSupport.True(suppressedSample.EmberPressure < sample.EmberPressure);
+            TestSupport.True(suppressedSample.Smoke < sample.Smoke);
+            TestSupport.True(suppressedSample.IgnitionProgress < sample.IgnitionProgress);
+            TestSupport.True(suppressedSample.MoistureDampening > sample.MoistureDampening);
+            TestSupport.True(suppressedCell.Heat < TestSupport.HotCell().Heat);
+            TestSupport.True(FireSuppressionRules.FuelConsumptionMultiplier(1f) < 1f);
+        }
+
+        [Fact]
+        public void FireGridRuntimeState_ApplySuppressionAreaDampensActiveCells_Test()
+        {
+            var grid = TestSupport.CreateGridWithFuelAroundOrigin();
+            var center = new FireGridCoordinate(0, 0, 0);
+            var outside = new FireGridCoordinate(5, 0, 0);
+            grid.Inject(center, TestSupport.HotCell());
+            grid.SetEnvironment(outside, TestSupport.BurnableEnvironment());
+            grid.Inject(outside, TestSupport.HotCell());
+
+            var dampedCells = grid.ApplySuppressionArea(new FireSuppressionZoneSnapshot(center, 2, 1f, 10f));
+
+            TestSupport.Equal(1, dampedCells);
+            TestSupport.True(grid.TryGetState(center, out var suppressed));
+            TestSupport.True(grid.TryGetState(outside, out var untouched));
+            TestSupport.True(suppressed.Heat < untouched.Heat);
+            TestSupport.NearlyEqual(1f, untouched.Heat);
+        }
+
+        [Fact]
         public void RecoveryReset_ClearsAshenState_Test()
         {
             var state = new FireRecoveryRuntimeState();
@@ -94,9 +179,10 @@ namespace Prometheus.Tests
             var projection = new FireRuntimeProjectionRuntimeState();
             var recovery = new FireRecoveryRuntimeState();
             var ashTelemetry = new FertileAshRecoveredGoodStackTelemetryState();
+            var ashDeposits = new FireBurnedGroundAshDepositRuntimeState();
             var fieldAmendments = new FireFieldAmendmentRuntimeState();
             var previews = new FireVisualEffectPreviewRuntimeState();
-            var registry = new FireResetRegistry(grid, exposure, impact, damage, projection, recovery, ashTelemetry, fieldAmendments, previews);
+            var registry = new FireResetRegistry(grid, exposure, impact, damage, projection, recovery, ashTelemetry, ashDeposits, fieldAmendments, previews);
             var entityHookCount = 0;
 
             registry.RegisterGlobal(FireResetHookKind.BeaverEffect, "test-beaver", () => { });
@@ -109,6 +195,12 @@ namespace Prometheus.Tests
             ashTelemetry.RecordQueuedStack(
                 2,
                 new FertileAshSpawnTelemetryContext("BurnedOut", "vegetation", "tree", 42));
+            ashDeposits.TryRecordDeposit(
+                new Vector3Int(1, 0, 2),
+                42,
+                2,
+                new FertileAshSpawnTelemetryContext("BurnedOut", "vegetation", "tree", 42),
+                out _);
             fieldAmendments.SetAmendment(new FireGridCoordinate(1, 0, 2), 12f, 3);
 
             var result = registry.ResetAll("test");
@@ -125,7 +217,17 @@ namespace Prometheus.Tests
             TestSupport.Equal(0, recovery.SnapshotCount);
             TestSupport.Equal(0, ashTelemetry.QueuedStackCount);
             TestSupport.Equal(0, ashTelemetry.QueuedAshAmount);
+            TestSupport.Equal(0, ashDeposits.DepositCount);
             TestSupport.Equal(0, fieldAmendments.ActiveAmendmentCount);
+        }
+
+        [Fact]
+        public void FertileAshSpawnPolicy_UsesTreeRemnantHarvestForCharredTrees_Test()
+        {
+            TestSupport.True(FertileAshSpawnPolicy.ShouldUseRemnantHarvest(FireAftermathSourceKind.CharredTree));
+            TestSupport.False(FertileAshSpawnPolicy.ShouldUseRemnantHarvest(FireAftermathSourceKind.CharredCrop));
+            TestSupport.False(FertileAshSpawnPolicy.ShouldUseRemnantHarvest(FireAftermathSourceKind.CharredBuilding));
+            TestSupport.Equal("charred_tree_remnant_harvest", FertileAshSpawnPolicy.CharredTreeRemnantHarvestReason);
         }
 
         [Fact]
@@ -139,6 +241,7 @@ namespace Prometheus.Tests
                 new FireRuntimeProjectionRuntimeState(),
                 new FireRecoveryRuntimeState(),
                 new FertileAshRecoveredGoodStackTelemetryState(),
+                new FireBurnedGroundAshDepositRuntimeState(),
                 new FireFieldAmendmentRuntimeState(),
                 new FireVisualEffectPreviewRuntimeState());
             var entityHookCount = 0;
@@ -163,6 +266,7 @@ namespace Prometheus.Tests
                 new FireRuntimeProjectionRuntimeState(),
                 new FireRecoveryRuntimeState(),
                 new FertileAshRecoveredGoodStackTelemetryState(),
+                new FireBurnedGroundAshDepositRuntimeState(),
                 new FireFieldAmendmentRuntimeState(),
                 new FireVisualEffectPreviewRuntimeState());
             var successfulEntityHookCount = 0;

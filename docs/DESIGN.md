@@ -17,7 +17,7 @@ Design target: fire should be dangerous enough to matter, manageable with prepar
 - Prefer terrain, moisture, spacing, firebreaks, and grid shaping over direct beaver-control minigames.
 - Keep gameplay decisions in dependency-light rules/runtime state; keep Unity/Timberborn adapters thin.
 - Make every applied runtime effect define how `Reset Fire State` clears it.
-- Keep fragile integration points centralized: type-name matching, entity identity assumptions, telemetry names, and reflection hooks.
+- Keep fragile integration points centralized: type-name matching, entity identity assumptions, loaded-scene scans, lifecycle registration, telemetry names, and reflection hooks.
 
 ## Current Architecture Direction
 
@@ -44,11 +44,15 @@ Source of truth: exact runtime types and telemetry names live in source, especia
 | Dampening | Water/moisture dampen pressure; any future containment mechanics stay behind core spread coherence. |
 | Recovery | Fertile Ash is the only core post-fire resource unless future playtesting proves another loop is needed. |
 
-Current recovery integration uses Timberborn recovered-good stacks as the safe native collection path for Fertile Ash. Native gatherable natural-resource spawning remains unchosen because no authored ash natural-resource template has been confirmed. Valid burned-out trees and buildings can queue `FertileAsh` recovered-good stacks after aftermath eligibility passes; Timberborn then handles visible stacks, beaver pickup, and normal District Center storage. Prometheus reset clears its own ash queue telemetry and field-amendment state, but it does not destroy Timberborn-owned recovered-good entities. Active field amendments can reduce eligible crop growable time in dependency-light rules, but live farmhouse-driven ash consumption and live farmhouse-applied crop-growth proof are deferred with TKT-001.
+Current recovery integration uses Timberborn recovered-good stacks as the safe native collection path for Fertile Ash. Native gatherable natural-resource spawning remains unchosen because no authored ash natural-resource template has been confirmed. Valid burned-out trees and buildings can queue `FertileAsh` recovered-good stacks after aftermath eligibility passes; Timberborn then handles visible stacks, beaver pickup, and normal District Center storage. Prometheus reset clears its own ash queue telemetry and field-amendment state, but it does not destroy Timberborn-owned recovered-good entities. Active field amendments can reduce eligible crop growable time in dependency-light rules. The farmhouse-first application scaffold selects an in-range planting coordinate before consuming one stored `FertileAsh`, but the live `FarmHouse` workplace decorator stays unregistered until TKT-010 has reliable save-load and live worker evidence.
+
+Burned-ground ash recovery now separates tree remnants from loose aftermath. Burned trees should become native remnant harvest targets by rewriting the stump/remnant yielder to `FertileAsh`; they should not spawn visible recovered-good Rubble. Crops and buildings still use the Timberborn recovered-good stack path, with live proof from a Carrot and an unfinished Bakery construction-site burn. The Prometheus-owned local ash deposit marker remains a reset-safe readability layer, while any Timberborn-owned recovered-good entities remain outside Prometheus reset destruction.
 
 Phase 3 keeps "controlled burn" as a player-preparation outcome, not a new runtime object. Players should prepare containment with terrain, moisture, water, spacing, barriers, and firebreaks, then intentionally ignite one selected valid target through the existing Prometheus tool surface. The ignite action reuses the forced-ignition/grid-seeding path and must reject targets without a fire profile. Do not add controlled-burn zones, permits, source types, scheduling, new labor paths, or burn-specific buildings for this slice.
 
-The first Phase 3 economy milestone is harvest and storage only. Burned crops become valid Fertile Ash aftermath sources alongside trees and buildings, with a crop-specific source classification and telemetry context. Farmhouse ash application stays deferred under [tickets/deferred/TKT-001-farmhouse-fertile-ash-application.md](tickets/deferred/TKT-001-farmhouse-fertile-ash-application.md) until a fresh fixture proves live ash consumption and amended-vs-control crop growth.
+The first Phase 3 economy milestone is harvest and storage only. Burned crops become valid Fertile Ash aftermath sources alongside trees and buildings, with a crop-specific source classification and telemetry context. Farmhouse ash application stays behind TKT-010 until a fresh fixture proves live ash consumption, `fertile_ash_farmhouse_amendment_applied`, and amended-vs-control crop growth.
+
+The first suppression slice is a targeted damping field applied from the existing Prometheus selection tool. Suppression is intentionally separate from baseline fire tuning: it lowers local grid heat, ember pressure, smoke, ignition progress, and burning fuel consumption while active, then expires. Future suppression should turn this debug-facing proof into a player-facing tool or beaver/water workflow without changing accepted unsuppressed crop and tree spread behavior by default.
 
 ## Durable Decisions
 
@@ -87,6 +91,12 @@ In-game QA instructions and tester results use Markdown exchange files under `~/
 Status: Accepted.
 
 Phase 3 treats controlled burns as a strategy created by existing fire-system inputs and player preparation. The mod may expose a narrow selected-target ignition tool, but containment must come from terrain, water, moisture, exposed faces, barriers, spacing, and profile differences rather than a separate controlled-burn mechanic.
+
+### ADR-007: Scene-Touching Work Waits For WorldReady
+
+Status: Accepted.
+
+Prometheus runtime work that ticks globally, scans loaded scene objects, mutates Timberborn model/yielder/component state, or drives QA commands must wait for `PrometheusWorldLoadState.WorldReady`. Lifecycle bindings go through `PrometheusConfigurator.RegisterSingletonLifecycleHooks()`, globally updated Prometheus singletons use the world-ready helper path, and loaded-scene object enumeration goes through `PrometheusLoadedSceneObjectLookup` or `TimberbornComponentCacheLookup`.
 
 ## Roadmap
 
@@ -137,6 +147,9 @@ Phase 3 treats controlled burns as a strategy created by existing fire-system in
 | 2026-04-27 | Process | Archived the sprint-specific ticket board and moved active tracking to permanent `docs/tickets/` with a documentation-only verification exception | Done |
 | 2026-04-27 | Docs | Reframed `ARCHITECTURE.md` as durable system architecture instead of stabilization-sprint work planning | Done |
 | 2026-04-27 | Phase 3 Planning | Opened the intentional fire and ash harvest sprint around selected-target ignition, crop ash, containment validation, and runtime visual readability | Active |
+| 2026-04-28 | Phase 3 Recovery | Added a compile-clean farmhouse-first Fertile Ash amendment scaffold with stable telemetry and dependency-light tests; live decorator registration remains disabled until save-load QA and worker evidence are reliable | Blocked Live Proof |
+| 2026-04-28 | Runtime Safety | Centralized lifecycle registration and loaded-scene object lookup after save-load hangs showed Prometheus can still fire too early or through a bad fixture path | Live Load Pass |
+| 2026-04-28 | Phase 3 Recovery | Proved crop and building aftermath parity live: Carrot and unfinished Bakery construction-site burns both created local burned-ground ash markers and queued recovered Fertile Ash stacks, while tree ash stayed remnant-harvest | Live Pass |
 | 2026-04-25 | Phase 2 Visuals | Replaced the old Visual Tuning sliders with an effect authoring inspector, selected-entity temporary preview, native source picker/search, and JSON/log target context export | In Validation |
 | 2026-04-24 | Phase 2 UX | Migrated debug navigation to required TimberUi and ModdableToolGroups dependencies with native-style controls and bottom-bar submenu entries | In Validation |
 | 2026-04-24 | Phase 2 Content | Pruned old bucket-kit, firefighting-foam, fire-control-gear, fireworks-crate, and festival-risk scaffolding; renamed ash fertilizer content to Fertile Ash | Done |

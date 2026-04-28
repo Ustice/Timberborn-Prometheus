@@ -35,6 +35,7 @@ namespace Mods.Prometheus.Scripts {
       FireRuntimeProjectionRuntimeState fireRuntimeProjectionRuntimeState,
       FireRecoveryRuntimeState fireRecoveryRuntimeState,
       FertileAshRecoveredGoodStackTelemetryState fertileAshRecoveredGoodStackTelemetryState,
+      FireBurnedGroundAshDepositRuntimeState burnedGroundAshDepositRuntimeState,
       FireFieldAmendmentRuntimeState fireFieldAmendmentRuntimeState,
       FireVisualEffectPreviewRuntimeState fireVisualEffectPreviewRuntimeState) {
       RegisterGlobal(FireResetHookKind.GridState, nameof(FireGridRuntimeState), fireGridRuntimeState.Clear);
@@ -44,10 +45,12 @@ namespace Mods.Prometheus.Scripts {
       RegisterGlobal(FireResetHookKind.DamageState, nameof(FireRuntimeProjectionRuntimeState), fireRuntimeProjectionRuntimeState.ClearSnapshots);
       RegisterGlobal(FireResetHookKind.AshState, nameof(FireRecoveryRuntimeState), fireRecoveryRuntimeState.ClearSnapshots);
       RegisterGlobal(FireResetHookKind.AshState, nameof(FertileAshRecoveredGoodStackTelemetryState), () => ResetFertileAshTelemetryState(fertileAshRecoveredGoodStackTelemetryState));
+      RegisterGlobal(FireResetHookKind.AshState, nameof(FireBurnedGroundAshDepositRuntimeState), () => ResetBurnedGroundAshDeposits(burnedGroundAshDepositRuntimeState));
       RegisterGlobal(FireResetHookKind.AshState, nameof(FireFieldAmendmentRuntimeState), fireFieldAmendmentRuntimeState.ClearAmendments);
       RegisterGlobal(FireResetHookKind.PreviewState, nameof(FireVisualEffectPreviewRuntimeState), fireVisualEffectPreviewRuntimeState.ClearAllPreviews);
 #if !PROMETHEUS_TESTS
       RegisterGlobal(FireResetHookKind.BeaverEffect, nameof(FireBeaverEffectApplier), () => FireBeaverEffectApplier.DebugClearFireNeedEffects());
+      RegisterGlobal(FireResetHookKind.AshState, nameof(FireBurnedGroundAshDepositMarkerSpawner), () => FireBurnedGroundAshDepositMarkerSpawner.ClearAllMarkers());
 #endif
     }
 
@@ -111,6 +114,11 @@ namespace Mods.Prometheus.Scripts {
     private static void ResetFertileAshTelemetryState(FertileAshRecoveredGoodStackTelemetryState telemetryState) {
       var snapshot = telemetryState.ClearForReset();
       FireTelemetry.Log($"event={FireTelemetryEvents.FertileAshResetState} queuedStacks={snapshot.QueuedStackCount} queuedAmount={snapshot.QueuedAshAmount} source={snapshot.LastSourceAttribution} sourceKind={snapshot.LastSourceKind} damageCategory={snapshot.LastDamageCategory} cropContext={snapshot.LastCropContext} nativeStacksDestroyed=0 reason=native_recovered_good_stack_owned_by_timberborn");
+    }
+
+    private static void ResetBurnedGroundAshDeposits(FireBurnedGroundAshDepositRuntimeState state) {
+      var depositCount = state.ClearDeposits();
+      FireTelemetry.Log($"event={FireTelemetryEvents.BurnedGroundAshDepositsReset} depositsCleared={depositCount}");
     }
 
     private IEnumerable<FireResetHook> CreateLoadedEntityHooks() {

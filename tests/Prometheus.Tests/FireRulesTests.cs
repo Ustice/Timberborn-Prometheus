@@ -32,6 +32,16 @@ namespace Prometheus.Tests
         }
 
         [Fact]
+        public void TerminalDeadState_CoversTreesAndBuildingsOnly_Test()
+        {
+            TestSupport.True(FireDamageStateRules.IsTerminalDeadState(FireDamageCategory.Tree, FireDamageState.Dead));
+            TestSupport.True(FireDamageStateRules.IsTerminalDeadState(FireDamageCategory.Building, FireDamageState.Dead));
+            TestSupport.False(FireDamageStateRules.IsTerminalDeadState(FireDamageCategory.Crop, FireDamageState.Dead));
+            TestSupport.False(FireDamageStateRules.IsTerminalDeadState(FireDamageCategory.Tree, FireDamageState.Burning));
+            TestSupport.False(FireDamageStateRules.IsTerminalDeadState(FireDamageCategory.Unknown, FireDamageState.Dead));
+        }
+
+        [Fact]
         public void WorkplaceSupportComponentClassification_PreservesWorkplaceBoundary_Test()
         {
             TestSupport.True(TimberbornCompatibility.IsWorkplaceSupportComponentName("Workplace"));

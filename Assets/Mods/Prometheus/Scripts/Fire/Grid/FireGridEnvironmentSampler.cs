@@ -146,6 +146,12 @@ namespace Mods.Prometheus.Scripts {
     public static FireGridEnvironmentSample CreateDefaultWorldSample() =>
       FireGridEnvironmentSample.OpenAir;
 
+    public static bool ShouldSampleSoilMoisture(
+      FireGridCoordinate coordinate,
+      bool terrainTopSurfaceAvailable,
+      int terrainTopSurfaceY) =>
+      terrainTopSurfaceAvailable && coordinate.Y >= 0 && coordinate.Y <= terrainTopSurfaceY;
+
     public static FireGridEnvironmentSample FromWorldSample(
       FireGridCoordinate coordinate,
       FireGridWorldEnvironmentSample worldSample) {

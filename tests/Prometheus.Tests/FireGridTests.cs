@@ -474,7 +474,7 @@ namespace Prometheus.Tests
         public void FireGridSimulationCoordinator_StepsGridOnlyOncePerFrame_Test()
         {
             var grid = TestSupport.CreateGridWithFuelAroundOrigin();
-            var coordinator = new FireGridSimulationCoordinator(grid);
+            var coordinator = new FireGridSimulationCoordinator(grid, new FireExposureRuntimeState());
             var source = new FireGridCoordinate(0, 0, 0);
             var target = new FireGridCoordinate(1, 0, 0);
 
@@ -611,6 +611,31 @@ namespace Prometheus.Tests
             TestSupport.NearlyEqual(0.6f, sample.Moisture);
             TestSupport.NearlyEqual(0.02f, sample.WaterDepth);
             TestSupport.Equal(FireGridExposedFaces.PositiveY | FireGridExposedFaces.PositiveX, sample.ExposedFaceMask);
+        }
+
+        [Fact]
+        public void FireGridEnvironmentSampler_SoilMoistureSamplingRequiresTerrainCell_Test()
+        {
+            TestSupport.True(FireGridEnvironmentSampler.ShouldSampleSoilMoisture(
+              new FireGridCoordinate(2, 8, 4),
+              terrainTopSurfaceAvailable: true,
+              terrainTopSurfaceY: 8));
+            TestSupport.True(FireGridEnvironmentSampler.ShouldSampleSoilMoisture(
+              new FireGridCoordinate(2, 5, 4),
+              terrainTopSurfaceAvailable: true,
+              terrainTopSurfaceY: 8));
+            TestSupport.False(FireGridEnvironmentSampler.ShouldSampleSoilMoisture(
+              new FireGridCoordinate(2, 9, 4),
+              terrainTopSurfaceAvailable: true,
+              terrainTopSurfaceY: 8));
+            TestSupport.False(FireGridEnvironmentSampler.ShouldSampleSoilMoisture(
+              new FireGridCoordinate(2, -1, 4),
+              terrainTopSurfaceAvailable: true,
+              terrainTopSurfaceY: 8));
+            TestSupport.False(FireGridEnvironmentSampler.ShouldSampleSoilMoisture(
+              new FireGridCoordinate(2, 8, 4),
+              terrainTopSurfaceAvailable: false,
+              terrainTopSurfaceY: 8));
         }
 
         [Fact]

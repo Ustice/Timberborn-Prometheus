@@ -18,8 +18,11 @@ namespace Mods.Prometheus.Scripts {
 
       _selectionCopyButton = AddGameButtonTo(selectionToolbar, "Copy", CopySelectedEntityDebugText).SetMarginRight(8);
 
-      _selectionIgniteButton = AddGameButtonTo(selectionToolbar, "Ignite Selected", RequestSelectedIgnition);
+      _selectionIgniteButton = AddGameButtonTo(selectionToolbar, "Ignite Selected", RequestSelectedIgnition).SetMarginRight(8);
       _selectionIgniteButton.tooltip = "Ignite the currently selected Prometheus fire-profiled target.";
+
+      _selectionSuppressButton = AddGameButtonTo(selectionToolbar, "Suppress Selected", RequestSelectedSuppression);
+      _selectionSuppressButton.tooltip = "Apply a temporary suppression field around the selected Prometheus fire-profiled target.";
 
       _selectionFeedbackLabel = selectionToolbar.AddGameLabel();
 
@@ -121,6 +124,34 @@ namespace Mods.Prometheus.Scripts {
       SetSelectionFeedback("Ignite Selected queued.");
     }
 
+    private void RequestSelectedSuppression() {
+      var rejectionReason = GetSelectedIgnitionRejectionReason();
+      if (!string.IsNullOrWhiteSpace(rejectionReason)) {
+        SetSelectionFeedback(GetSelectedSuppressionRejectionFeedback(rejectionReason));
+        FireTelemetry.Log($"event={FireTelemetryEvents.FireSuppressionAreaQueued} id={_selectedEntityId} result=rejected reason={rejectionReason} hasFireProfile={_selectedEntityHasFireProfile} hasExposureController={_selectedEntityHasExposureController} title=\"{FireResetRegistry.EscapeToken(_selectedEntityTitle)}\"");
+        return;
+      }
+
+      if (!TryFindLoadedGameObject(_selectedEntityId, out var gameObject)) {
+        SetSelectionFeedback("Selected target is no longer loaded.");
+        FireTelemetry.Log($"event={FireTelemetryEvents.FireSuppressionAreaQueued} id={_selectedEntityId} result=rejected reason=target_unloaded title=\"{FireResetRegistry.EscapeToken(_selectedEntityTitle)}\"");
+        return;
+      }
+
+      var coordinate = FireGridFootprintSampler.FromWorldPosition(gameObject.transform.position).PrimaryCoordinate;
+      if (!_fireExposureRuntimeState.RequestSuppressionArea(
+            coordinate,
+            DebugSelectedSuppressionRadius,
+            DebugSelectedSuppressionStrength,
+            DebugSelectedSuppressionDurationSeconds,
+            "DebugSelection")) {
+        SetSelectionFeedback("Could not apply suppression.");
+        return;
+      }
+
+      SetSelectionFeedback("Suppression field applied.");
+    }
+
     private string GetSelectedIgnitionRejectionReason() {
       if (_selectedEntityId == 0) {
         return "none_selected";
@@ -147,6 +178,15 @@ namespace Mods.Prometheus.Scripts {
       };
     }
 
+    private static string GetSelectedSuppressionRejectionFeedback(string reason) {
+      return reason switch {
+        "none_selected" => "Select a Prometheus fire target first.",
+        "missing_fire_profile" => "Selected target has no fire profile.",
+        "missing_exposure_controller" => "Selected target cannot be suppressed by Prometheus.",
+        _ => "Cannot suppress selected target.",
+      };
+    }
+
     private void LogSelectedIgnitionRejected(string reason) {
       FireTelemetry.Log($"event={FireTelemetryEvents.IgniteSelectedRejected} id={_selectedEntityId} reason={reason} hasFireProfile={_selectedEntityHasFireProfile} hasExposureController={_selectedEntityHasExposureController} title=\"{FireResetRegistry.EscapeToken(_selectedEntityTitle)}\"");
     }
@@ -160,23 +200,7 @@ namespace Mods.Prometheus.Scripts {
     }
 
     private static bool TryFindLoadedGameObject(int entityId, out GameObject loadedGameObject) {
-      var allObjects = Resources.FindObjectsOfTypeAll<GameObject>();
-      for (var i = 0; i < allObjects.Length; i++) {
-        var gameObject = allObjects[i];
-        if (gameObject == null || gameObject.GetInstanceID() != entityId) {
-          continue;
-        }
-
-        if (!gameObject.scene.IsValid() || !gameObject.scene.isLoaded) {
-          continue;
-        }
-
-        loadedGameObject = gameObject;
-        return true;
-      }
-
-      loadedGameObject = null;
-      return false;
+      return PrometheusLoadedSceneObjectLookup.TryFindLoadedGameObject(entityId, out loadedGameObject);
     }
 
   }

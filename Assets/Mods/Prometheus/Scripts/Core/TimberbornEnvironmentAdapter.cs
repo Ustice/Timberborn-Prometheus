@@ -43,7 +43,12 @@ namespace Mods.Prometheus.Scripts {
         out var hasBlockOccupancy,
         out var hasTopBlockOccupancy);
       var waterAvailable = TrySampleWaterDepth(timberbornCoordinates, out var waterDepth);
-      var soilAvailable = TrySampleSoilMoisture(timberbornCoordinates, out var soilMoisture);
+      var soilAvailable = TrySampleSoilMoisture(
+        coordinate,
+        timberbornCoordinates,
+        terrainAvailable,
+        terrainTopSurfaceY,
+        out var soilMoisture);
       var exposedFaceMaskAvailable = terrainAvailable || blockAvailable;
       var exposedFaceMask = exposedFaceMaskAvailable
         ? SampleExposedFaceMask(coordinate)
@@ -113,9 +118,16 @@ namespace Mods.Prometheus.Scripts {
       }
     }
 
-    private bool TrySampleSoilMoisture(Vector3Int timberbornCoordinates, out float soilMoisture) {
+    private bool TrySampleSoilMoisture(
+      FireGridCoordinate coordinate,
+      Vector3Int timberbornCoordinates,
+      bool terrainAvailable,
+      int terrainTopSurfaceY,
+      out float soilMoisture) {
       soilMoisture = 0f;
-      if (_soilMoistureService is null || _mapIndexService is null) {
+      if (_soilMoistureService is null
+        || _mapIndexService is null
+        || !FireGridEnvironmentSampler.ShouldSampleSoilMoisture(coordinate, terrainAvailable, terrainTopSurfaceY)) {
         return false;
       }
 

@@ -21,12 +21,7 @@ namespace Mods.Prometheus.Scripts {
       Bind<PrometheusDebugQaTool>().AsSingleton();
       Bind<PrometheusDebugLogTool>().AsSingleton();
       this.MultiBindCustomTool<PrometheusDebugToolGroupElement>();
-      MultiBind<ILoadableSingleton>().ToProvider<PrometheusDebugPanelLoadableProvider>().AsSingleton();
-      MultiBind<ILoadableSingleton>().ToProvider<PrometheusWorldLoadStateLoadableProvider>().AsSingleton();
-      MultiBind<IPostLoadableSingleton>().ToProvider<PrometheusWorldLoadStatePostLoadableProvider>().AsSingleton();
-      MultiBind<IUnloadableSingleton>().ToProvider<PrometheusWorldLoadStateUnloadableProvider>().AsSingleton();
-      MultiBind<IUpdatableSingleton>().To<FireFieldAmendmentRuntimeTicker>().AsSingleton();
-      MultiBind<IUpdatableSingleton>().To<FireGridSimulationSingleton>().AsSingleton();
+      RegisterSingletonLifecycleHooks();
 
       RegisterEntityPanelModule();
       RegisterTemplateModule();
@@ -43,7 +38,9 @@ namespace Mods.Prometheus.Scripts {
       Bind<FireRuntimeProjectionRuntimeState>().AsSingleton();
       Bind<FireRecoveryRuntimeState>().AsSingleton();
       Bind<FertileAshRecoveredGoodStackTelemetryState>().AsSingleton();
+      Bind<FireBurnedGroundAshDepositRuntimeState>().AsSingleton();
       Bind<FertileAshRecoveredGoodStackSpawner>().AsSingleton();
+      Bind<FireBurnedGroundAshDepositMarkerSpawner>().AsSingleton();
       Bind<FireFieldAmendmentRuntimeState>().AsSingleton();
       Bind<FireVisualEffectRuntimeState>().AsSingleton();
       Bind<FireVisualEffectPreviewRuntimeState>().AsSingleton();
@@ -60,10 +57,37 @@ namespace Mods.Prometheus.Scripts {
       Bind<FireVisualEffectApplier>().AsTransient();
       Bind<FireRecoveryController>().AsTransient();
       Bind<FireRecoveryEffectApplier>().AsTransient();
+      Bind<FarmHouseFertileAshAmendmentWorkplaceBehavior>().AsTransient();
       Bind<FireWorkplaceEffectApplier>().AsTransient();
       Bind<FireBeaverEffectApplier>().AsTransient();
       Bind<FireEntityLifecycleCleanup>().AsTransient();
     }
+
+    private void RegisterSingletonLifecycleHooks() {
+      RegisterLoadableSingleton<PrometheusDebugPanelLoadableProvider>();
+      RegisterLoadableSingleton<PrometheusWorldLoadStateLoadableProvider>();
+      RegisterPostLoadableSingleton<PrometheusWorldLoadStatePostLoadableProvider>();
+      RegisterUnloadableSingleton<PrometheusWorldLoadStateUnloadableProvider>();
+      RegisterWorldReadyUpdatableSingleton<PrometheusQaCommandSingleton>();
+      RegisterWorldReadyUpdatableSingleton<FireFieldAmendmentRuntimeTicker>();
+      RegisterWorldReadyUpdatableSingleton<FireGridSimulationSingleton>();
+    }
+
+    private void RegisterLoadableSingleton<TProvider>()
+      where TProvider : IProvider<ILoadableSingleton> =>
+      MultiBind<ILoadableSingleton>().ToProvider<TProvider>().AsSingleton();
+
+    private void RegisterPostLoadableSingleton<TProvider>()
+      where TProvider : IProvider<IPostLoadableSingleton> =>
+      MultiBind<IPostLoadableSingleton>().ToProvider<TProvider>().AsSingleton();
+
+    private void RegisterUnloadableSingleton<TProvider>()
+      where TProvider : IProvider<IUnloadableSingleton> =>
+      MultiBind<IUnloadableSingleton>().ToProvider<TProvider>().AsSingleton();
+
+    private void RegisterWorldReadyUpdatableSingleton<TSingleton>()
+      where TSingleton : class, IPrometheusWorldReadyUpdatableSingleton =>
+      MultiBind<IUpdatableSingleton>().To<TSingleton>().AsSingleton();
 
     private void RegisterEntityPanelModule() {
       MultiBind<EntityPanelModule>().ToProvider<EntityPanelModuleProvider>().AsSingleton();

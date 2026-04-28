@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System;
 using System.Linq;
 using Bindito.Core;
 using Timberborn.BaseComponentSystem;
@@ -20,7 +21,7 @@ namespace Mods.Prometheus.Scripts {
     private static int _visualTelemetryCount;
     private static int _surfaceMaterialTelemetryCount;
     private static int _surfaceMaterialTextureTelemetryCount;
-    private static Texture2D _charredPineTexture;
+    private static readonly Dictionary<int, Texture> CharredTextureCache = new();
 
     private FireRuntimeProjectionRuntimeState _fireRuntimeProjectionRuntimeState;
     private FireVisualEffectRuntimeState _fireVisualEffectRuntimeState;
@@ -39,6 +40,8 @@ namespace Mods.Prometheus.Scripts {
     private bool _isTreeProfile;
     private bool _loggedSurfaceMaterials;
     private FireNaturalResourceVisualStage _lastAppliedSurfaceStage = FireNaturalResourceVisualStage.Healthy;
+    private FireNaturalResourceVisualStage _latchedTreeVisualStage = FireNaturalResourceVisualStage.Healthy;
+    private float _stumpSmokeSecondsRemaining;
 
     [Inject]
     public void InjectDependencies(
@@ -72,11 +75,15 @@ namespace Mods.Prometheus.Scripts {
         ? projectionSnapshot
         : FireRuntimeProjectionRules.EmptyProjection;
 
-      var intensity = FireVisualEffectRules.ComputeIntensity(projection, _fireVisualEffectRuntimeState.CurrentTuning);
+      var treeVisualStage = DetermineEffectiveTreeVisualStage(projection);
+      var intensity = ApplyTreeVisualStageIntensity(
+        treeVisualStage,
+        FireVisualEffectRules.ComputeIntensity(projection, _fireVisualEffectRuntimeState.CurrentTuning));
       LogVisualIntensity(entityId, projection, intensity);
       LogSurfaceMaterialDiscovery(intensity);
-      ApplyTreeSurfaceTexture(projection);
+      ApplyTreeSurfaceTexture(treeVisualStage);
       var tuning = _fireVisualEffectRuntimeState.CurrentTuning;
+      _stumpSmokeSecondsRemaining = Mathf.Max(0f, _stumpSmokeSecondsRemaining - UpdateIntervalInSeconds);
       _emberEffect.ApplyTuning(tuning, _effectBaseHeight);
       _smokeEffect.ApplyTuning(tuning, _effectBaseHeight);
       _fireEffect.ApplyTuning(tuning, _effectBaseHeight);
@@ -115,11 +122,13 @@ namespace Mods.Prometheus.Scripts {
 
     internal void DebugResetVisualEffects() {
       var tuning = _fireVisualEffectRuntimeState.CurrentTuning;
+      _latchedTreeVisualStage = FireNaturalResourceVisualStage.Healthy;
+      _stumpSmokeSecondsRemaining = 0f;
       _emberEffect?.ApplyIntensity(0f, 0.75f, 1.4f, tuning.EffectSize);
       _smokeEffect?.ApplyIntensity(0f, 1.2f, 2.6f, tuning.EffectSize);
       _fireEffect?.ApplyIntensity(0f, 0.45f, 1.0f, tuning.EffectSize);
       _steamEffect?.ApplyIntensity(0f, 0.9f, 2.0f, tuning.EffectSize);
-      ApplyTreeSurfaceTexture(FireRuntimeProjectionRules.EmptyProjection);
+      ApplyTreeSurfaceTexture(FireNaturalResourceVisualStage.Healthy);
     }
 
     private void LogSurfaceMaterialDiscovery(FireVisualEffectIntensity intensity) {
@@ -198,14 +207,47 @@ namespace Mods.Prometheus.Scripts {
         ? "none"
         : $"{FireResetRegistry.EscapeToken(texture.name)}:{texture.width}x{texture.height}";
 
-    private void ApplyTreeSurfaceTexture(FireRuntimeProjectionSnapshot projection) {
+    private FireNaturalResourceVisualStage DetermineEffectiveTreeVisualStage(FireRuntimeProjectionSnapshot projection) {
+      if (!_isTreeProfile || !projection.HasDamageState) {
+        return FireNaturalResourceVisualStage.Healthy;
+      }
+
+      var stage = FireNaturalResourceVisualRules.DetermineTreeStage(projection.VisualDamageState, projection.VisualExposure);
+      if (_latchedTreeVisualStage == FireNaturalResourceVisualStage.StumpAndCharred) {
+        return FireNaturalResourceVisualStage.StumpAndCharred;
+      }
+
+      if (_latchedTreeVisualStage >= FireNaturalResourceVisualStage.DeadAndCharred
+          && stage < FireNaturalResourceVisualStage.DeadAndCharred) {
+        return FireNaturalResourceVisualStage.DeadAndCharred;
+      }
+
+      if (stage > _latchedTreeVisualStage) {
+        _latchedTreeVisualStage = stage;
+        if (stage == FireNaturalResourceVisualStage.StumpAndCharred) {
+          _stumpSmokeSecondsRemaining = 5f;
+        }
+      }
+
+      return _latchedTreeVisualStage;
+    }
+
+    private FireVisualEffectIntensity ApplyTreeVisualStageIntensity(
+      FireNaturalResourceVisualStage treeVisualStage,
+      FireVisualEffectIntensity intensity) {
+      if (!_isTreeProfile || treeVisualStage != FireNaturalResourceVisualStage.StumpAndCharred) {
+        return intensity;
+      }
+
+      var stumpSmoke = Mathf.Clamp01(0.22f * (_stumpSmokeSecondsRemaining / 5f));
+      return new FireVisualEffectIntensity(0f, stumpSmoke, 0f, 0f, 1f, 1f);
+    }
+
+    private void ApplyTreeSurfaceTexture(FireNaturalResourceVisualStage stage) {
       if (!_isTreeProfile || _treeSurfaceStates.Count == 0) {
         return;
       }
 
-      var stage = projection.HasDamageState
-        ? FireNaturalResourceVisualRules.DetermineTreeStage(projection.VisualDamageState, projection.VisualExposure)
-        : FireNaturalResourceVisualStage.Healthy;
       if (stage == _lastAppliedSurfaceStage) {
         return;
       }
@@ -213,8 +255,7 @@ namespace Mods.Prometheus.Scripts {
       _lastAppliedSurfaceStage = stage;
       var useBlackTexture = stage is FireNaturalResourceVisualStage.DeadAndCharred
         or FireNaturalResourceVisualStage.StumpAndCharred;
-      var targetTexture = useBlackTexture ? CharredPineTexture : null;
-      _treeSurfaceStates.ForEach(state => state.Apply(targetTexture));
+      _treeSurfaceStates.ForEach(state => state.Apply(useBlackTexture));
       LogSurfaceTextureSwap(stage, useBlackTexture);
     }
 
@@ -224,49 +265,82 @@ namespace Mods.Prometheus.Scripts {
       }
 
       _surfaceMaterialTextureTelemetryCount++;
-      FireTelemetry.Log($"event=visual_surface_material_texture_applied entity={GameObject.name} stage={stage.ToString().ToLowerInvariant()} renderers={_treeSurfaceStates.Count} mainTex=\"{(useBlackTexture ? TextureToTelemetry(CharredPineTexture) : "original")}\"");
+      FireTelemetry.Log($"event=visual_surface_material_texture_applied entity={GameObject.name} id={GameObject.GetInstanceID()} stage={stage.ToString().ToLowerInvariant()} renderers={_treeSurfaceStates.Count} mainTex=\"{(useBlackTexture ? "derived_original" : "original")}\"");
     }
 
-    private static Texture2D CharredPineTexture {
-      get {
-        if (_charredPineTexture != null) {
-          return _charredPineTexture;
+    private static Texture GetOrCreateCharredTexture(Texture originalTexture) {
+      if (originalTexture == null) {
+        return null;
+      }
+
+      var cacheKey = originalTexture.GetInstanceID();
+      if (CharredTextureCache.TryGetValue(cacheKey, out var charredTexture)) {
+        return charredTexture;
+      }
+
+      charredTexture = TryCreateCharredCopy(originalTexture);
+      if (charredTexture != null) {
+        CharredTextureCache[cacheKey] = charredTexture;
+      }
+
+      return charredTexture;
+    }
+
+    private static Texture2D TryCreateCharredCopy(Texture originalTexture) {
+      var width = Mathf.Max(1, originalTexture.width);
+      var height = Mathf.Max(1, originalTexture.height);
+      var previousRenderTexture = RenderTexture.active;
+      var renderTexture = RenderTexture.GetTemporary(width, height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+      try {
+        Graphics.Blit(originalTexture, renderTexture);
+        RenderTexture.active = renderTexture;
+        var readableCopy = new Texture2D(width, height, TextureFormat.RGBA32, false);
+        readableCopy.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+        readableCopy.Apply(false, false);
+
+        var pixels = readableCopy.GetPixels();
+        for (var i = 0; i < pixels.Length; i++) {
+          var x = i % width;
+          var y = i / width;
+          pixels[i] = CharOriginalPinePixel(pixels[i], x, y, width, height);
         }
 
-        const int textureSize = 128;
-        _charredPineTexture = new Texture2D(textureSize, textureSize, TextureFormat.RGBA32, false) {
-          name = "PrometheusCharredPineBark",
-          hideFlags = HideFlags.HideAndDontSave
-        };
-        for (var y = 0; y < textureSize; y++) {
-          for (var x = 0; x < textureSize; x++) {
-            _charredPineTexture.SetPixel(x, y, ComputeCharredPinePixel(x, y));
-          }
-        }
-
-        _charredPineTexture.wrapMode = TextureWrapMode.Repeat;
-        _charredPineTexture.filterMode = FilterMode.Bilinear;
-        _charredPineTexture.Apply(false, true);
-        return _charredPineTexture;
+        readableCopy.SetPixels(pixels);
+        readableCopy.wrapMode = TextureWrapMode.Repeat;
+        readableCopy.filterMode = FilterMode.Bilinear;
+        readableCopy.name = $"{originalTexture.name}.PrometheusCharred";
+        readableCopy.hideFlags = HideFlags.HideAndDontSave;
+        readableCopy.Apply(false, true);
+        FireTelemetry.Log($"event=visual_surface_texture_loaded source=derived original=\"{FireResetRegistry.EscapeToken(originalTexture.name)}\" size={width}x{height}");
+        return readableCopy;
+      } catch (Exception exception) {
+        FireTelemetry.LogWarning($"event=visual_surface_texture_load_failed reason=derive_exception original=\"{FireResetRegistry.EscapeToken(originalTexture.name)}\" detail=\"{FireResetRegistry.EscapeToken(exception.GetType().Name)}\"");
+        return null;
+      } finally {
+        RenderTexture.active = previousRenderTexture;
+        RenderTexture.ReleaseTemporary(renderTexture);
       }
     }
 
-    private static Color ComputeCharredPinePixel(int x, int y) {
-      var verticalGrain = Mathf.PerlinNoise(x * 0.075f, y * 0.015f);
-      var barkGrooves = Mathf.PerlinNoise(x * 0.18f, y * 0.045f);
-      var ashNoise = Mathf.PerlinNoise((x + 97) * 0.42f, (y + 31) * 0.42f);
-      var exposedBark = Mathf.PerlinNoise((x + 211) * 0.12f, y * 0.035f);
+    private static Color CharOriginalPinePixel(Color source, int x, int y, int width, int height) {
+      var u = width <= 1 ? 0f : x / (float)(width - 1);
+      var v = height <= 1 ? 0f : y / (float)(height - 1);
+      var luminance = source.grayscale;
+      var verticalGrain = Mathf.PerlinNoise(u * 24f, v * 5f);
+      var barkGrooves = Mathf.PerlinNoise(u * 72f, v * 16f);
+      var ashNoise = Mathf.PerlinNoise((u + 17.13f) * 180f, (v + 3.91f) * 180f);
+      var exposedNoise = Mathf.PerlinNoise((u + 41.7f) * 42f, (v + 9.25f) * 9f);
 
-      var charcoal = Mathf.Clamp01(0.055f + verticalGrain * 0.055f - barkGrooves * 0.04f);
-      var color = new Color(charcoal, charcoal * 0.92f, charcoal * 0.78f, 1f);
-      if (exposedBark > 0.72f && barkGrooves > 0.45f) {
-        var exposed = Mathf.InverseLerp(0.72f, 1f, exposedBark);
-        color = Color.Lerp(color, new Color(0.34f, 0.17f, 0.07f, 1f), exposed * 0.55f);
+      var charcoal = Mathf.Clamp01(0.035f + luminance * 0.11f + verticalGrain * 0.045f - barkGrooves * 0.035f);
+      var color = new Color(charcoal, charcoal * 0.92f, charcoal * 0.78f, source.a);
+      if (exposedNoise > 0.78f && luminance > 0.18f) {
+        var exposed = Mathf.InverseLerp(0.78f, 1f, exposedNoise) * Mathf.InverseLerp(0.18f, 0.55f, luminance);
+        color = Color.Lerp(color, new Color(0.32f, 0.14f, 0.055f, source.a), exposed * 0.42f);
       }
 
-      if (ashNoise > 0.86f) {
-        var ash = Mathf.InverseLerp(0.86f, 1f, ashNoise);
-        color = Color.Lerp(color, new Color(0.36f, 0.35f, 0.32f, 1f), ash * 0.45f);
+      if (ashNoise > 0.9f) {
+        var ash = Mathf.InverseLerp(0.9f, 1f, ashNoise);
+        color = Color.Lerp(color, new Color(0.28f, 0.27f, 0.25f, source.a), ash * 0.32f);
       }
 
       return color;
@@ -433,8 +507,8 @@ namespace Mods.Prometheus.Scripts {
         return materialStates.Length == 0 ? null : new TreeSurfaceTextureState(materialStates);
       }
 
-      public void Apply(Texture targetTexture) =>
-        System.Array.ForEach(_materialStates, state => state.Apply(targetTexture));
+      public void Apply(bool useCharredTexture) =>
+        System.Array.ForEach(_materialStates, state => state.Apply(useCharredTexture));
 
     }
 
@@ -459,11 +533,14 @@ namespace Mods.Prometheus.Scripts {
         return new MaterialTextureState(material, material.GetTexture(MainTexturePropertyId));
       }
 
-      public void Apply(Texture targetTexture) {
+      public void Apply(bool useCharredTexture) {
         if (_material == null) {
           return;
         }
 
+        var targetTexture = useCharredTexture
+          ? GetOrCreateCharredTexture(_originalMainTexture)
+          : _originalMainTexture;
         _material.SetTexture(MainTexturePropertyId, targetTexture ?? _originalMainTexture);
       }
 
@@ -615,7 +692,7 @@ namespace Mods.Prometheus.Scripts {
           return null;
         }
 
-        var clone = Object.Instantiate(source);
+        var clone = UnityEngine.Object.Instantiate(source);
         clone.name = name;
         clone.transform.SetParent(parent, false);
         clone.transform.localPosition = localPosition;

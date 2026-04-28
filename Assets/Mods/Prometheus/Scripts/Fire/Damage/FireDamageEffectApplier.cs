@@ -27,10 +27,41 @@ namespace Mods.Prometheus.Scripts {
     private MethodInfo _resumeGrowingMethod;
     private MethodInfo _removeMethod;
 
+    private object _naturalResourceModelComponent;
+    private MethodInfo _hideModelsMethod;
+    private MethodInfo _showCurrentModelMethod;
+
+    private object _cuttableComponent;
+    private MethodInfo _showLeftoverModelMethod;
+
     private object _livingNaturalResourceComponent;
     private PropertyInfo _isDyingProperty;
     private PropertyInfo _isDeadProperty;
+    private MethodInfo _dieMethod;
+    private MethodInfo _reverseDeathMethod;
+
+    private object _yielderComponent;
+    private PropertyInfo _yielderSpecProperty;
+    private PropertyInfo _isYieldRemovedProperty;
+    private PropertyInfo _isYieldingProperty;
+    private PropertyInfo _yieldProperty;
+    private MethodInfo _removeRemainingYieldMethod;
+    private MethodInfo _resetYieldMethod;
+    private FieldInfo _yielderYieldField;
+    private FieldInfo _yielderInitialYieldField;
+    private FieldInfo _yielderSpecYieldField;
+    private object _originalYield;
+    private object _originalInitialYield;
+    private object _originalYielderSpecYield;
+    private bool _capturedOriginalYield;
+
+    private object _emptyDeadNaturalResourceOverriderComponent;
+    private MethodInfo _makeOverridableMethod;
+
     private TreeModelStateSwitcher _treeModelStateSwitcher;
+    private bool _treeReachedStumpVisualStage;
+    private bool _treeReachedDeadVisualStage;
+    private bool _treeAshYieldApplied;
 
     [Inject]
     public void InjectDependencies(
@@ -58,8 +89,10 @@ namespace Mods.Prometheus.Scripts {
       }
 
       var snapshot = projection.DamageState;
-      var treeVisualStage = FireNaturalResourceVisualRules.DetermineTreeStage(snapshot, projection.VisualExposure);
-      if (snapshot.State == _lastAppliedState && treeVisualStage == _lastAppliedTreeVisualStage) {
+      var treeVisualStage = DetermineEffectiveTreeVisualStage(snapshot, projection.VisualExposure);
+      if (snapshot.State == _lastAppliedState
+          && treeVisualStage == _lastAppliedTreeVisualStage
+          && treeVisualStage != FireNaturalResourceVisualStage.StumpAndCharred) {
         return;
       }
 
@@ -72,6 +105,11 @@ namespace Mods.Prometheus.Scripts {
       EnsureInitialized();
 
       var healthySnapshot = new FireDamageStateSnapshot(FireDamageCategory.Unknown, FireDamageState.Healthy, 0f, 0f, 0);
+      _treeReachedDeadVisualStage = false;
+      _treeReachedStumpVisualStage = false;
+      _treeAshYieldApplied = false;
+      InvokeIfAvailable(_reverseDeathMethod, _livingNaturalResourceComponent);
+      RestoreOriginalTreeYield();
       ApplyState(healthySnapshot, FireNaturalResourceVisualStage.Healthy);
       _lastAppliedState = FireDamageState.Healthy;
       _lastAppliedTreeVisualStage = FireNaturalResourceVisualStage.Healthy;
@@ -132,10 +170,26 @@ namespace Mods.Prometheus.Scripts {
     }
 
     private void ApplyTreeNaturalResourceState(FireNaturalResourceVisualStage visualStage) {
+      visualStage = FireNaturalResourceVisualRules.ClampToLatchedTreeStage(
+        visualStage,
+        _treeReachedDeadVisualStage,
+        _treeReachedStumpVisualStage);
+
       if (visualStage == FireNaturalResourceVisualStage.Healthy) {
         InvokeIfAvailable(_resumeGrowingMethod, _growableComponent);
       } else {
         InvokeIfAvailable(_pauseGrowingMethod, _growableComponent);
+      }
+
+      if (visualStage is FireNaturalResourceVisualStage.DeadAndCharred
+          or FireNaturalResourceVisualStage.StumpAndCharred) {
+        _treeReachedDeadVisualStage = true;
+      }
+
+      var usesStumpVisual = FireNaturalResourceVisualRules.UsesStumpVisual(visualStage);
+      if (usesStumpVisual) {
+        _treeReachedStumpVisualStage = true;
+        InvokeIfAvailable(_dieMethod, _livingNaturalResourceComponent);
       }
 
       SetBoolIfAvailable(
@@ -145,8 +199,26 @@ namespace Mods.Prometheus.Scripts {
       SetBoolIfAvailable(
         _isDeadProperty,
         _livingNaturalResourceComponent,
-        FireNaturalResourceVisualRules.UsesStumpVisual(visualStage));
+        FireNaturalResourceVisualRules.UsesDeadVisual(visualStage));
       _treeModelStateSwitcher?.Apply(visualStage);
+      if (usesStumpVisual) {
+        ForceNativeLeftoverModel();
+        ApplyTreeAshYieldOnce();
+      }
+    }
+
+    private FireNaturalResourceVisualStage DetermineEffectiveTreeVisualStage(
+      FireDamageStateSnapshot snapshot,
+      FireExposureSnapshot exposure) {
+      var stage = FireNaturalResourceVisualRules.DetermineTreeStage(snapshot, exposure);
+      if (snapshot.Category != FireDamageCategory.Tree) {
+        return stage;
+      }
+
+      return FireNaturalResourceVisualRules.ClampToLatchedTreeStage(
+        stage,
+        _treeReachedDeadVisualStage,
+        _treeReachedStumpVisualStage);
     }
 
     private void BindTargetComponents() {
@@ -181,16 +253,81 @@ namespace Mods.Prometheus.Scripts {
 
       if (TimberbornComponentCacheLookup.TryGetCachedOrDirectComponentByTypeName(
         GameObject,
+        TimberbornCompatibility.NaturalResourceModelTypeName,
+        out var naturalResourceModelComponent)) {
+        _naturalResourceModelComponent = naturalResourceModelComponent;
+        var type = naturalResourceModelComponent.GetType();
+        _hideModelsMethod = TimberbornCompatibility.FindMethod(type, "HideModels");
+        _showCurrentModelMethod = TimberbornCompatibility.FindMethod(type, "ShowCurrentModel");
+        TimberbornCompatibility.RecordProbe(
+          TimberbornCompatibilityArea.Damage,
+          _hideModelsMethod is not null,
+          "NaturalResourceModel.HideModels");
+      }
+
+      if (TimberbornComponentCacheLookup.TryGetCachedOrDirectComponentByTypeName(
+        GameObject,
+        TimberbornCompatibility.CuttableTypeName,
+        out var cuttableComponent)) {
+        _cuttableComponent = cuttableComponent;
+        var type = cuttableComponent.GetType();
+        _showLeftoverModelMethod = TimberbornCompatibility.FindMethod(type, "ShowLeftoverModel");
+        TimberbornCompatibility.RecordProbe(
+          TimberbornCompatibilityArea.Damage,
+          _showLeftoverModelMethod is not null,
+          "Cuttable.ShowLeftoverModel");
+      }
+
+      if (TimberbornComponentCacheLookup.TryGetCachedOrDirectComponentByTypeName(
+        GameObject,
         TimberbornCompatibility.LivingNaturalResourceTypeName,
         out var livingNaturalResourceComponent)) {
         _livingNaturalResourceComponent = livingNaturalResourceComponent;
         var type = livingNaturalResourceComponent.GetType();
         _isDyingProperty = TimberbornCompatibility.FindProperty(type, "IsDying");
         _isDeadProperty = TimberbornCompatibility.FindProperty(type, "IsDead");
+        _dieMethod = TimberbornCompatibility.FindMethod(type, "Die");
+        _reverseDeathMethod = TimberbornCompatibility.FindMethod(type, "ReverseDeath");
         TimberbornCompatibility.RecordProbe(
           TimberbornCompatibilityArea.Damage,
-          _isDyingProperty is not null && _isDeadProperty is not null,
-          "LivingNaturalResource.IsDying/IsDead");
+          _isDeadProperty is not null && _dieMethod is not null,
+          "LivingNaturalResource.IsDead/Die");
+      }
+
+      if (TimberbornComponentCacheLookup.TryGetCachedOrDirectComponentByTypeName(
+        GameObject,
+        TimberbornCompatibility.YielderTypeName,
+        out var yielderComponent)) {
+        _yielderComponent = yielderComponent;
+        var type = yielderComponent.GetType();
+        _yielderSpecProperty = TimberbornCompatibility.FindProperty(type, "YielderSpec");
+        _isYieldRemovedProperty = TimberbornCompatibility.FindProperty(type, "IsYieldRemoved");
+        _isYieldingProperty = TimberbornCompatibility.FindProperty(type, "IsYielding");
+        _yieldProperty = TimberbornCompatibility.FindProperty(type, "Yield");
+        _removeRemainingYieldMethod = TimberbornCompatibility.FindMethod(type, "RemoveRemainingYield");
+        _resetYieldMethod = TimberbornCompatibility.FindMethod(type, "ResetYield");
+        _yielderYieldField = type.GetField("_yield", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        _yielderInitialYieldField = type.GetField("_initialYield", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        var yielderSpec = _yielderSpecProperty?.GetValue(yielderComponent);
+        _yielderSpecYieldField = yielderSpec?.GetType().GetField("<Yield>k__BackingField", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        CaptureOriginalTreeYield();
+        TimberbornCompatibility.RecordProbe(
+          TimberbornCompatibilityArea.Damage,
+          _resetYieldMethod is not null && _yielderYieldField is not null && _yielderSpecYieldField is not null,
+          "Yielder.ResetYield/_yield/YielderSpec.Yield");
+      }
+
+      if (TimberbornComponentCacheLookup.TryGetCachedOrDirectComponentByTypeName(
+        GameObject,
+        TimberbornCompatibility.EmptyDeadNaturalResourceOverriderTypeName,
+        out var emptyDeadNaturalResourceOverriderComponent)) {
+        _emptyDeadNaturalResourceOverriderComponent = emptyDeadNaturalResourceOverriderComponent;
+        var type = emptyDeadNaturalResourceOverriderComponent.GetType();
+        _makeOverridableMethod = TimberbornCompatibility.FindMethod(type, "MakeOverridable");
+        TimberbornCompatibility.RecordProbe(
+          TimberbornCompatibilityArea.Damage,
+          _makeOverridableMethod is not null,
+          "EmptyDeadNaturalResourceOverrider.MakeOverridable");
       }
 
       _treeModelStateSwitcher = TreeModelStateSwitcher.TryCreate(GameObject);
@@ -204,6 +341,180 @@ namespace Mods.Prometheus.Scripts {
       method.Invoke(target, null);
       return true;
     }
+
+    private void CaptureOriginalTreeYield() {
+      if (_capturedOriginalYield || _yielderComponent is null) {
+        return;
+      }
+
+      _originalYield = _yielderYieldField?.GetValue(_yielderComponent);
+      _originalInitialYield = _yielderInitialYieldField?.GetValue(_yielderComponent);
+      var yielderSpec = _yielderSpecProperty?.GetValue(_yielderComponent);
+      _originalYielderSpecYield = _yielderSpecYieldField?.GetValue(yielderSpec);
+      _capturedOriginalYield = true;
+    }
+
+    private void RestoreOriginalTreeYield() {
+      if (!_capturedOriginalYield || _yielderComponent is null) {
+        return;
+      }
+
+      if (_yielderInitialYieldField is not null && _originalInitialYield is not null) {
+        _yielderInitialYieldField.SetValue(_yielderComponent, _originalInitialYield);
+      }
+
+      var yielderSpec = _yielderSpecProperty?.GetValue(_yielderComponent);
+      if (_yielderSpecYieldField is not null && yielderSpec is not null && _originalYielderSpecYield is not null) {
+        _yielderSpecYieldField.SetValue(yielderSpec, _originalYielderSpecYield);
+      }
+
+      if (_resetYieldMethod is not null) {
+        _resetYieldMethod.Invoke(_yielderComponent, null);
+        return;
+      }
+
+      if (_yielderYieldField is not null && _originalYield is not null) {
+        _yielderYieldField.SetValue(_yielderComponent, _originalYield);
+      }
+    }
+
+    private void ForceNativeLeftoverModel() {
+      InvokeIfAvailable(_hideModelsMethod, _naturalResourceModelComponent);
+      InvokeIfAvailable(_showLeftoverModelMethod, _cuttableComponent);
+    }
+
+    private bool TryApplyTreeAshYield(out string reason) {
+      reason = "unknown";
+      if (_yielderComponent is null) {
+        reason = "yielder_missing";
+        return false;
+      }
+
+      var yielderSpec = _yielderSpecProperty?.GetValue(_yielderComponent);
+      var appliedSpecYield = TryApplyTreeAshSpecYield(yielderSpec);
+      var goodAmountType = _yielderInitialYieldField?.FieldType ?? _yielderYieldField?.FieldType;
+      if (goodAmountType is null) {
+        reason = "good_amount_type_missing";
+        return false;
+      }
+
+      var constructor = goodAmountType.GetConstructor(new[] { typeof(string), typeof(int) });
+      if (constructor is null) {
+        reason = "good_amount_constructor_missing";
+        return false;
+      }
+
+      var ashYield = constructor.Invoke(new object[] {
+        FertileAshRecoveredGoodStackRules.FertileAshGoodId,
+        FertileAshSpawnPolicy.CharredTreeAmount,
+      });
+
+      if (_yielderInitialYieldField is not null) {
+        _yielderInitialYieldField.SetValue(_yielderComponent, ashYield);
+      }
+
+      if (_resetYieldMethod is not null) {
+        _resetYieldMethod.Invoke(_yielderComponent, null);
+        reason = appliedSpecYield ? "reset_spec_and_yield_to_stump_ash" : "reset_yield_to_stump_ash";
+        return true;
+      }
+
+      if (_yielderYieldField is null) {
+        reason = "yield_field_missing";
+        return false;
+      }
+
+      _yielderYieldField.SetValue(_yielderComponent, ashYield);
+      reason = appliedSpecYield ? "set_spec_and_yield_field_to_stump_ash" : "set_yield_field_to_stump_ash";
+      return true;
+    }
+
+    private void ApplyTreeAshYieldOnce() {
+      if (_treeAshYieldApplied) {
+        return;
+      }
+
+      _treeAshYieldApplied = true;
+      if (TryApplyTreeAshYield(out var reason)) {
+        FireTelemetry.Log(
+          $"event={FireTelemetryEvents.FertileAshTreeRemnantYieldApplied} entity={GameObject.name} id={GameObject.GetInstanceID()} good={FertileAshRecoveredGoodStackRules.FertileAshGoodId} amount={FertileAshSpawnPolicy.CharredTreeAmount} reason={reason} {DescribeYielderForTelemetry()}");
+        return;
+      }
+
+      FireTelemetry.LogWarning(
+        $"event={FireTelemetryEvents.FertileAshTreeRemnantYieldFailed} entity={GameObject.name} id={GameObject.GetInstanceID()} good={FertileAshRecoveredGoodStackRules.FertileAshGoodId} amount={FertileAshSpawnPolicy.CharredTreeAmount} reason={reason} {DescribeYielderForTelemetry()}");
+    }
+
+    private bool TryApplyTreeAshSpecYield(object yielderSpec) {
+      if (yielderSpec is null || _yielderSpecYieldField is null) {
+        return false;
+      }
+
+      var goodAmountSpecType = _yielderSpecYieldField.FieldType;
+      var ashSpec = System.Activator.CreateInstance(goodAmountSpecType);
+      if (ashSpec is null) {
+        return false;
+      }
+
+      var idProperty = TimberbornCompatibility.FindProperty(goodAmountSpecType, "Id");
+      var amountProperty = TimberbornCompatibility.FindProperty(goodAmountSpecType, "Amount");
+      if (idProperty?.CanWrite == true) {
+        idProperty.SetValue(ashSpec, FertileAshRecoveredGoodStackRules.FertileAshGoodId);
+      } else {
+        goodAmountSpecType.GetField("<Id>k__BackingField", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+          ?.SetValue(ashSpec, FertileAshRecoveredGoodStackRules.FertileAshGoodId);
+      }
+
+      if (amountProperty?.CanWrite == true) {
+        amountProperty.SetValue(ashSpec, FertileAshSpawnPolicy.CharredTreeAmount);
+      } else {
+        goodAmountSpecType.GetField("<Amount>k__BackingField", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+          ?.SetValue(ashSpec, FertileAshSpawnPolicy.CharredTreeAmount);
+      }
+
+      _yielderSpecYieldField.SetValue(yielderSpec, ashSpec);
+      return true;
+    }
+
+    private string DescribeYielderForTelemetry() {
+      var yield = _yieldProperty?.GetValue(_yielderComponent) ?? _yielderYieldField?.GetValue(_yielderComponent);
+      var yielderSpec = _yielderSpecProperty?.GetValue(_yielderComponent);
+      var specYield = _yielderSpecYieldField?.GetValue(yielderSpec);
+      return $"yield={DescribeGoodAmountForTelemetry(yield)} specYield={DescribeGoodAmountSpecForTelemetry(specYield)} component={DescribePropertyForTelemetry(yielderSpec, "YielderComponentName")} resourceGroup={DescribePropertyForTelemetry(yielderSpec, "ResourceGroup")} isYielding={GetBoolIfAvailable(_isYieldingProperty, _yielderComponent).ToString().ToLowerInvariant()}";
+    }
+
+    private static string DescribeGoodAmountForTelemetry(object goodAmount) =>
+      goodAmount is null
+        ? "none"
+        : $"{FireResetRegistry.EscapeToken(GetPropertyString(goodAmount, "GoodId"))}:{GetPropertyInt(goodAmount, "Amount")}";
+
+    private static string DescribeGoodAmountSpecForTelemetry(object goodAmountSpec) =>
+      goodAmountSpec is null
+        ? "none"
+        : $"{FireResetRegistry.EscapeToken(GetPropertyString(goodAmountSpec, "Id"))}:{GetPropertyInt(goodAmountSpec, "Amount")}";
+
+    private static string DescribePropertyForTelemetry(object target, string propertyName) =>
+      FireResetRegistry.EscapeToken(GetPropertyString(target, propertyName));
+
+    private static string GetPropertyString(object target, string propertyName) =>
+      target is null
+        ? "none"
+        : target.GetType().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(target)?.ToString() ?? "none";
+
+    private static int GetPropertyInt(object target, string propertyName) {
+      if (target is null) {
+        return 0;
+      }
+
+      var value = target.GetType().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(target);
+      return value is int intValue ? intValue : 0;
+    }
+
+    private static bool GetBoolIfAvailable(PropertyInfo property, object target) =>
+      property is not null
+      && target is not null
+      && property.PropertyType == typeof(bool)
+      && property.GetValue(target) is true;
 
     private static void SetBoolIfAvailable(PropertyInfo property, object target, bool value) {
       if (property is null || target is null || !property.CanWrite || property.PropertyType != typeof(bool)) {
@@ -248,7 +559,7 @@ namespace Mods.Prometheus.Scripts {
       }
 
       public void Apply(FireNaturalResourceVisualStage stage) {
-        if (stage == _lastAppliedStage) {
+        if (stage == _lastAppliedStage && stage != FireNaturalResourceVisualStage.StumpAndCharred) {
           return;
         }
 
