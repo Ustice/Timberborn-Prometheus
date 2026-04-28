@@ -118,10 +118,18 @@ namespace Mods.Prometheus.Scripts {
       var desiccation = 1f - Mathf.Clamp01(exposure.MoistureDampening);
 
       var embers = ComputeEmberFieldIntensity(exposure, damageState, tuning);
+      var deadTreeSmokeTail = damageState.Category == FireDamageCategory.Tree
+                               && damageState.State == FireDamageState.Dead
+        ? Mathf.Clamp01(Mathf.InverseLerp(
+          FireNaturalResourceVisualRules.StumpFuelConsumedThreshold + 0.16f,
+          FireNaturalResourceVisualRules.StumpFuelConsumedThreshold,
+          fuelConsumed))
+        : 1f;
       var smokeBase = damageState.State switch {
         _ when damageState.Category == FireDamageCategory.Crop => 0f,
         FireDamageState.Scorched => Mathf.Max(0.25f, severity),
         FireDamageState.Burning => Mathf.Max(0.45f, Mathf.Max(exposure.Intensity, exposure.Smoke)),
+        FireDamageState.Dead when damageState.Category == FireDamageCategory.Tree => 0.35f * deadTreeSmokeTail,
         FireDamageState.Dead => 0.15f,
         _ when fuelConsumed >= 0.95f => 0.12f,
         _ => 0f,

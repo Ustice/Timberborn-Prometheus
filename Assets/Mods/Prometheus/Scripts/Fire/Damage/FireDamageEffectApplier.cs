@@ -1,6 +1,8 @@
+using System.Linq;
 using System.Reflection;
 using Bindito.Core;
 using Timberborn.BaseComponentSystem;
+using UnityEngine;
 
 namespace Mods.Prometheus.Scripts {
   internal class FireDamageEffectApplier : BaseComponent,
@@ -28,6 +30,7 @@ namespace Mods.Prometheus.Scripts {
     private object _livingNaturalResourceComponent;
     private PropertyInfo _isDyingProperty;
     private PropertyInfo _isDeadProperty;
+    private TreeModelStateSwitcher _treeModelStateSwitcher;
 
     [Inject]
     public void InjectDependencies(
@@ -97,7 +100,7 @@ namespace Mods.Prometheus.Scripts {
     private void ApplyState(
       FireDamageStateSnapshot snapshot,
       FireNaturalResourceVisualStage treeVisualStage) {
-      if (snapshot.Category == FireDamageCategory.Tree && _livingNaturalResourceComponent is not null) {
+      if (snapshot.Category == FireDamageCategory.Tree) {
         ApplyTreeNaturalResourceState(treeVisualStage);
         return;
       }
@@ -143,6 +146,7 @@ namespace Mods.Prometheus.Scripts {
         _isDeadProperty,
         _livingNaturalResourceComponent,
         FireNaturalResourceVisualRules.UsesStumpVisual(visualStage));
+      _treeModelStateSwitcher?.Apply(visualStage);
     }
 
     private void BindTargetComponents() {
@@ -188,6 +192,8 @@ namespace Mods.Prometheus.Scripts {
           _isDyingProperty is not null && _isDeadProperty is not null,
           "LivingNaturalResource.IsDying/IsDead");
       }
+
+      _treeModelStateSwitcher = TreeModelStateSwitcher.TryCreate(GameObject);
     }
 
     private static bool InvokeIfAvailable(MethodInfo method, object target) {
@@ -205,6 +211,144 @@ namespace Mods.Prometheus.Scripts {
       }
 
       property.SetValue(target, value);
+    }
+
+    private sealed class TreeModelStateSwitcher {
+
+      private const string SeedlingRootName = "Seedling";
+      private const string MatureRootName = "Mature";
+      private const string LeftoverRootName = "#Leftover";
+
+      private readonly TreeAgeModelState[] _ageStates;
+      private readonly Transform _leftoverRoot;
+      private readonly bool _hasAgeLocalLeftover;
+      private FireNaturalResourceVisualStage _lastAppliedStage = FireNaturalResourceVisualStage.Healthy;
+
+      private TreeModelStateSwitcher(
+        TreeAgeModelState[] ageStates,
+        Transform leftoverRoot) {
+        _ageStates = ageStates;
+        _leftoverRoot = leftoverRoot;
+        _hasAgeLocalLeftover = ageStates.Any(state => state.HasLeftoverRoot);
+      }
+
+      public static TreeModelStateSwitcher TryCreate(GameObject target) {
+        var ageStates = new[] {
+            TreeAgeModelState.TryCreate(FindChildRecursive(target.transform, SeedlingRootName)),
+            TreeAgeModelState.TryCreate(FindChildRecursive(target.transform, MatureRootName)),
+          }
+          .Where(state => state is not null)
+          .ToArray();
+        var leftoverRoot = FindChildRecursive(target.transform, LeftoverRootName);
+        if (ageStates.Length == 0 && leftoverRoot == null) {
+          return null;
+        }
+
+        return new TreeModelStateSwitcher(ageStates, leftoverRoot);
+      }
+
+      public void Apply(FireNaturalResourceVisualStage stage) {
+        if (stage == _lastAppliedStage) {
+          return;
+        }
+
+        _lastAppliedStage = stage;
+        var showLeftover = FireNaturalResourceVisualRules.UsesStumpVisual(stage);
+        if (_leftoverRoot != null && !_hasAgeLocalLeftover) {
+          _leftoverRoot.gameObject.SetActive(showLeftover);
+        }
+
+        for (var i = 0; i < _ageStates.Length; i++) {
+          _ageStates[i].Apply(stage, showLeftover, _hasAgeLocalLeftover);
+        }
+      }
+
+      private static Transform FindChildRecursive(Transform root, string childName) {
+        if (root == null) {
+          return null;
+        }
+
+        if (root.name == childName) {
+          return root;
+        }
+
+        for (var i = 0; i < root.childCount; i++) {
+          var result = FindChildRecursive(root.GetChild(i), childName);
+          if (result != null) {
+            return result;
+          }
+        }
+
+        return null;
+      }
+
+      private sealed class TreeAgeModelState {
+
+        private readonly Transform _ageRoot;
+        private readonly Transform _aliveRoot;
+        private readonly Transform _dyingRoot;
+        private readonly Transform _deadRoot;
+        private readonly Transform _leftoverRoot;
+        private readonly bool _ageRootOriginalActive;
+
+        public bool HasLeftoverRoot => _leftoverRoot != null;
+
+        private TreeAgeModelState(
+          Transform ageRoot,
+          Transform aliveRoot,
+          Transform dyingRoot,
+          Transform deadRoot,
+          Transform leftoverRoot) {
+          _ageRoot = ageRoot;
+          _aliveRoot = aliveRoot;
+          _dyingRoot = dyingRoot;
+          _deadRoot = deadRoot;
+          _leftoverRoot = leftoverRoot;
+          _ageRootOriginalActive = ageRoot.gameObject.activeSelf;
+        }
+
+        public static TreeAgeModelState TryCreate(Transform ageRoot) {
+          if (ageRoot == null) {
+            return null;
+          }
+
+          var aliveRoot = FindChildRecursive(ageRoot, FireNaturalResourceVisualRules.ModelStateName(FireNaturalResourceVisualStage.Healthy));
+          var dyingRoot = FindChildRecursive(ageRoot, FireNaturalResourceVisualRules.ModelStateName(FireNaturalResourceVisualStage.Dried));
+          var deadRoot = FindChildRecursive(ageRoot, FireNaturalResourceVisualRules.ModelStateName(FireNaturalResourceVisualStage.DeadAndCharred));
+          var leftoverRoot = FindChildRecursive(ageRoot, FireNaturalResourceVisualRules.ModelStateName(FireNaturalResourceVisualStage.StumpAndCharred));
+          if (aliveRoot == null && dyingRoot == null && deadRoot == null && leftoverRoot == null) {
+            return null;
+          }
+
+          return new TreeAgeModelState(ageRoot, aliveRoot, dyingRoot, deadRoot, leftoverRoot);
+        }
+
+        public void Apply(
+          FireNaturalResourceVisualStage stage,
+          bool showLeftover,
+          bool useAgeLocalLeftover) {
+          _ageRoot.gameObject.SetActive((!showLeftover || useAgeLocalLeftover) && _ageRootOriginalActive);
+          if (!_ageRootOriginalActive) {
+            return;
+          }
+
+          var targetName = FireNaturalResourceVisualRules.ModelStateName(stage);
+          SetActiveIfPresent(_aliveRoot, targetName == FireNaturalResourceVisualRules.ModelStateName(FireNaturalResourceVisualStage.Healthy));
+          SetActiveIfPresent(_dyingRoot, targetName == FireNaturalResourceVisualRules.ModelStateName(FireNaturalResourceVisualStage.Dried));
+          SetActiveIfPresent(_deadRoot, targetName == FireNaturalResourceVisualRules.ModelStateName(FireNaturalResourceVisualStage.DeadAndCharred));
+          SetActiveIfPresent(_leftoverRoot, showLeftover && useAgeLocalLeftover);
+        }
+
+        private static void SetActiveIfPresent(Transform transform, bool active) {
+          if (transform == null) {
+            return;
+          }
+
+          transform.gameObject.SetActive(active);
+        }
+
+      }
+
     }
 
   }

@@ -13,31 +13,19 @@ namespace Mods.Prometheus.Scripts {
     private const float VisualTelemetryIntervalInSeconds = 2f;
     private const int MaxEmissionRate = 48;
     private const int VisualTelemetryBudget = 180;
-    private const int SurfaceTintTelemetryBudget = 24;
-
-    private static readonly int ColorPropertyId = Shader.PropertyToID("_Color");
-    private static readonly int BaseColorPropertyId = Shader.PropertyToID("_BaseColor");
-    private static readonly int TintColorPropertyId = Shader.PropertyToID("_TintColor");
-    private static readonly Color DesiccatedTintColor = new(0.45f, 0.30f, 0.14f, 1f);
-    private static readonly Color CharTintColor = new(0.10f, 0.09f, 0.08f, 1f);
     private static int _visualTelemetryCount;
-    private static int _surfaceTintTelemetryCount;
 
     private FireRuntimeProjectionRuntimeState _fireRuntimeProjectionRuntimeState;
     private FireVisualEffectRuntimeState _fireVisualEffectRuntimeState;
     private PrometheusWorldLoadState _prometheusWorldLoadState;
 
-    private readonly List<RendererPropertyBlockState> _rendererStates = new();
     private ParticleEffectGroup _emberEffect;
     private ParticleEffectGroup _smokeEffect;
     private ParticleEffectGroup _fireEffect;
     private ParticleEffectGroup _steamEffect;
-    private MaterialPropertyBlock _propertyBlock;
     private float _timeSinceLastUpdate;
     private float _lastVisualTelemetryTime = -999f;
     private float _effectBaseHeight = 1.25f;
-    private float _lastDesiccationIntensity;
-    private float _lastCharIntensity;
     private bool _initializedRenderers;
     private bool _isCropProfile;
 
@@ -82,15 +70,6 @@ namespace Mods.Prometheus.Scripts {
       _smokeEffect.ApplyIntensity(_isCropProfile ? 0f : intensity.Smoke, 1.2f, 2.6f, tuning.EffectSize);
       _fireEffect.ApplyIntensity(intensity.Fire, 0.45f, 1.0f, tuning.EffectSize);
       _steamEffect.ApplyIntensity(intensity.Steam, 0.9f, 2.0f, tuning.EffectSize);
-      ApplySurfaceTint(intensity.Desiccation, intensity.Char);
-    }
-
-    public void LateUpdate() {
-      if (_propertyBlock is null || _rendererStates.Count == 0) {
-        return;
-      }
-
-      ApplySurfaceTint(_lastDesiccationIntensity, _lastCharIntensity);
     }
 
     private void LogVisualIntensity(
@@ -125,7 +104,6 @@ namespace Mods.Prometheus.Scripts {
       _smokeEffect?.ApplyIntensity(0f, 1.2f, 2.6f, tuning.EffectSize);
       _fireEffect?.ApplyIntensity(0f, 0.45f, 1.0f, tuning.EffectSize);
       _steamEffect?.ApplyIntensity(0f, 0.9f, 2.0f, tuning.EffectSize);
-      ApplySurfaceTint(0f, 0f);
     }
 
     private bool EnsureWorldReadyAndInitialized() {
@@ -133,11 +111,10 @@ namespace Mods.Prometheus.Scripts {
         return false;
       }
 
-      if (_propertyBlock is not null && _emberEffect is not null) {
+      if (_emberEffect is not null) {
         return true;
       }
 
-      _propertyBlock = new MaterialPropertyBlock();
       CaptureRenderers();
       CreateParticleSystems();
       return true;
@@ -157,7 +134,6 @@ namespace Mods.Prometheus.Scripts {
           continue;
         }
 
-        _rendererStates.Add(new RendererPropertyBlockState(renderer));
         maxY = Mathf.Max(maxY, renderer.bounds.max.y);
       }
 
@@ -264,158 +240,6 @@ namespace Mods.Prometheus.Scripts {
         };
         return _particleMaterial;
       }
-    }
-
-    private void ApplySurfaceTint(float desiccationIntensity, float charIntensity) {
-      var clampedDesiccation = Mathf.Clamp01(desiccationIntensity);
-      var clampedIntensity = Mathf.Clamp01(charIntensity);
-      _lastDesiccationIntensity = clampedDesiccation;
-      _lastCharIntensity = clampedIntensity;
-      for (var i = 0; i < _rendererStates.Count; i++) {
-        var rendererState = _rendererStates[i];
-        if (rendererState.Renderer == null) {
-          continue;
-        }
-
-        if (clampedDesiccation <= 0.01f && clampedIntensity <= 0.01f) {
-          rendererState.Renderer.SetPropertyBlock(rendererState.OriginalPropertyBlock);
-          rendererState.RestoreOriginalMaterialColors();
-          continue;
-        }
-
-        rendererState.Renderer.GetPropertyBlock(_propertyBlock);
-        var baseColor = rendererState.BaseColor;
-        var dryColor = Color.Lerp(baseColor, DesiccatedTintColor, clampedDesiccation * 0.7f);
-        var tintedColor = Color.Lerp(dryColor, CharTintColor, clampedIntensity * 0.9f);
-        _propertyBlock.SetColor(ColorPropertyId, tintedColor);
-        _propertyBlock.SetColor(BaseColorPropertyId, tintedColor);
-        _propertyBlock.SetColor(TintColorPropertyId, tintedColor);
-        rendererState.Renderer.SetPropertyBlock(_propertyBlock);
-        rendererState.ApplyMaterialTint(tintedColor);
-        LogSurfaceTint(rendererState, clampedDesiccation, clampedIntensity);
-      }
-    }
-
-    private void LogSurfaceTint(RendererPropertyBlockState rendererState, float desiccationIntensity, float charIntensity) {
-      if (_surfaceTintTelemetryCount >= SurfaceTintTelemetryBudget) {
-        return;
-      }
-
-      _surfaceTintTelemetryCount++;
-      FireTelemetry.Log($"event=visual_surface_tint_applied entity={GameObject.name} renderer=\"{rendererState.Renderer.name}\" materials={rendererState.MaterialCount} colorProperties={rendererState.ColorPropertyCount} desiccation={desiccationIntensity:0.000} char={charIntensity:0.000}");
-    }
-
-    private sealed class RendererPropertyBlockState {
-
-      public Renderer Renderer { get; }
-      public Color BaseColor { get; }
-      public MaterialPropertyBlock OriginalPropertyBlock { get; }
-      public int MaterialCount => _materialStates.Count;
-      public int ColorPropertyCount => _materialStates.Sum(state => state.ColorPropertyCount);
-
-      private readonly List<MaterialTintState> _materialStates = new();
-
-      public RendererPropertyBlockState(Renderer renderer) {
-        Renderer = renderer;
-        BaseColor = TryGetRendererBaseColor(renderer, out var color) ? color : Color.white;
-        OriginalPropertyBlock = new MaterialPropertyBlock();
-        renderer.GetPropertyBlock(OriginalPropertyBlock);
-        CaptureMaterialStates(renderer);
-      }
-
-      public void ApplyMaterialTint(Color color) {
-        for (var i = 0; i < _materialStates.Count; i++) {
-          _materialStates[i].ApplyTint(color);
-        }
-      }
-
-      public void RestoreOriginalMaterialColors() {
-        for (var i = 0; i < _materialStates.Count; i++) {
-          _materialStates[i].Restore();
-        }
-      }
-
-      private void CaptureMaterialStates(Renderer renderer) {
-        var materials = renderer.materials;
-        for (var i = 0; i < materials.Length; i++) {
-          var material = materials[i];
-          if (material == null) {
-            continue;
-          }
-
-          _materialStates.Add(new MaterialTintState(material));
-        }
-      }
-
-      private static bool TryGetRendererBaseColor(Renderer renderer, out Color color) {
-        color = Color.white;
-        var sharedMaterial = renderer.sharedMaterial;
-        if (sharedMaterial == null) {
-          return false;
-        }
-
-        if (sharedMaterial.HasProperty(BaseColorPropertyId)) {
-          color = sharedMaterial.GetColor(BaseColorPropertyId);
-          return true;
-        }
-
-        if (sharedMaterial.HasProperty(ColorPropertyId)) {
-          color = sharedMaterial.GetColor(ColorPropertyId);
-          return true;
-        }
-
-        return false;
-      }
-
-    }
-
-    private sealed class MaterialTintState {
-
-      private readonly Material _material;
-      private readonly List<ColorPropertyState> _colorProperties = new();
-
-      public int ColorPropertyCount => _colorProperties.Count;
-
-      public MaterialTintState(Material material) {
-        _material = material;
-        CaptureProperty(ColorPropertyId);
-        CaptureProperty(BaseColorPropertyId);
-        CaptureProperty(TintColorPropertyId);
-      }
-
-      public void ApplyTint(Color color) {
-        for (var i = 0; i < _colorProperties.Count; i++) {
-          _material.SetColor(_colorProperties[i].PropertyId, color);
-        }
-      }
-
-      public void Restore() {
-        for (var i = 0; i < _colorProperties.Count; i++) {
-          var property = _colorProperties[i];
-          _material.SetColor(property.PropertyId, property.OriginalColor);
-        }
-      }
-
-      private void CaptureProperty(int propertyId) {
-        if (!_material.HasProperty(propertyId)) {
-          return;
-        }
-
-        _colorProperties.Add(new ColorPropertyState(propertyId, _material.GetColor(propertyId)));
-      }
-
-    }
-
-    private readonly struct ColorPropertyState {
-
-      public int PropertyId { get; }
-      public Color OriginalColor { get; }
-
-      public ColorPropertyState(int propertyId, Color originalColor) {
-        PropertyId = propertyId;
-        OriginalColor = originalColor;
-      }
-
     }
 
     private enum NativeParticleEffectKind {

@@ -71,7 +71,8 @@ namespace Mods.Prometheus.Scripts {
 
     private const float DriedMoistureDampeningThreshold = 0.35f;
     private const float CharredFuelConsumedThreshold = 0.08f;
-    private const float StumpFuelConsumedThreshold = 0.95f;
+    private const float DeadFuelConsumedThreshold = 0.18f;
+    internal const float StumpFuelConsumedThreshold = 0.45f;
 
     internal static FireNaturalResourceVisualStage DetermineTreeStage(
       FireDamageStateSnapshot damageState,
@@ -84,7 +85,8 @@ namespace Mods.Prometheus.Scripts {
         return FireNaturalResourceVisualStage.StumpAndCharred;
       }
 
-      if (damageState.State == FireDamageState.Dead) {
+      if (damageState.State == FireDamageState.Dead
+          || exposure.FuelConsumed >= DeadFuelConsumedThreshold) {
         return FireNaturalResourceVisualStage.DeadAndCharred;
       }
 
@@ -106,6 +108,15 @@ namespace Mods.Prometheus.Scripts {
 
     internal static bool UsesStumpVisual(FireNaturalResourceVisualStage stage) =>
       stage == FireNaturalResourceVisualStage.StumpAndCharred;
+
+    internal static string ModelStateName(FireNaturalResourceVisualStage stage) =>
+      stage switch {
+        FireNaturalResourceVisualStage.Dried => "#Dying",
+        FireNaturalResourceVisualStage.DriedAndCharred => "#Dying",
+        FireNaturalResourceVisualStage.DeadAndCharred => "#Dead",
+        FireNaturalResourceVisualStage.StumpAndCharred => "#Leftover",
+        _ => "#Alive",
+      };
 
     private static bool IsBurnedOut(FireExposureSnapshot exposure) =>
       exposure.FuelConsumed >= StumpFuelConsumedThreshold

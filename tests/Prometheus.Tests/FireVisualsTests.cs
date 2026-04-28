@@ -105,6 +105,30 @@ namespace Prometheus.Tests
         }
 
         [Fact]
+        public void FireVisualEffectRules_DeadTreeStopsFlameButKeepsTemporarySmoke_Test()
+        {
+            var deadTree = FireVisualEffectRules.ComputeIntensity(
+              new FireExposureSnapshot(true, 1f, 0.7f, 0.4f, 0.5f, 1f, 0.32f, 0f, 1f, "Grid"),
+              new FireDamageStateSnapshot(FireDamageCategory.Tree, FireDamageState.Dead, 1f, 1f, 12),
+              FireVisualEffectTuning.Default);
+            var stumpStage = FireVisualEffectRules.ComputeIntensity(
+              new FireExposureSnapshot(true, 1f, 0.7f, 0.4f, 0.5f, 1f, 0.45f, 0f, 1f, "Grid"),
+              new FireDamageStateSnapshot(FireDamageCategory.Tree, FireDamageState.Dead, 1f, 1f, 12),
+              FireVisualEffectTuning.Default);
+            var lateStump = FireVisualEffectRules.ComputeIntensity(
+              new FireExposureSnapshot(true, 1f, 0.7f, 0.4f, 0.5f, 1f, 0.62f, 0f, 1f, "Grid"),
+              new FireDamageStateSnapshot(FireDamageCategory.Tree, FireDamageState.Dead, 1f, 1f, 12),
+              FireVisualEffectTuning.Default);
+
+            TestSupport.NearlyEqual(0f, deadTree.Fire);
+            TestSupport.NearlyEqual(0f, stumpStage.Fire);
+            TestSupport.True(deadTree.Smoke > 0.25f);
+            TestSupport.True(stumpStage.Smoke > 0f);
+            TestSupport.NearlyEqual(0f, lateStump.Smoke);
+            TestSupport.True(deadTree.Char > 0.95f);
+        }
+
+        [Fact]
         public void FireVisualEffectRules_EvaporatedMoistureBrownsVegetation_Test()
         {
             var intensity = FireVisualEffectRules.ComputeIntensity(
@@ -143,7 +167,10 @@ namespace Prometheus.Tests
               new FireDamageStateSnapshot(FireDamageCategory.Tree, FireDamageState.Scorched, 0.35f, 0.2f, 1),
               new FireExposureSnapshot(true, 0.5f, 0.45f, 0.25f, 0.2f, 0.8f, 0.12f, 0f, 1f, "Grid"));
             var deadAndCharred = FireNaturalResourceVisualRules.DetermineTreeStage(
-              new FireDamageStateSnapshot(FireDamageCategory.Tree, FireDamageState.Dead, 1f, 1f, 4),
+              new FireDamageStateSnapshot(FireDamageCategory.Tree, FireDamageState.Burning, 0.7f, 0.6f, 3),
+              new FireExposureSnapshot(true, 0.75f, 0.6f, 0.5f, 0.25f, 1f, 0.2f, 0f, 1f, "Grid"));
+            var stumpByVisualFuel = FireNaturalResourceVisualRules.DetermineTreeStage(
+              new FireDamageStateSnapshot(FireDamageCategory.Tree, FireDamageState.Burning, 0.7f, 0.6f, 3),
               new FireExposureSnapshot(true, 0.75f, 0.6f, 0.5f, 0.25f, 1f, 0.45f, 0f, 1f, "Grid"));
             var stumpAndCharred = FireNaturalResourceVisualRules.DetermineTreeStage(
               new FireDamageStateSnapshot(FireDamageCategory.Tree, FireDamageState.Dead, 1f, 1f, 4),
@@ -153,10 +180,21 @@ namespace Prometheus.Tests
             TestSupport.Equal(FireNaturalResourceVisualStage.Dried, dried);
             TestSupport.Equal(FireNaturalResourceVisualStage.DriedAndCharred, driedAndCharred);
             TestSupport.Equal(FireNaturalResourceVisualStage.DeadAndCharred, deadAndCharred);
+            TestSupport.Equal(FireNaturalResourceVisualStage.StumpAndCharred, stumpByVisualFuel);
             TestSupport.Equal(FireNaturalResourceVisualStage.StumpAndCharred, stumpAndCharred);
             TestSupport.True(FireNaturalResourceVisualRules.UsesDriedVisual(deadAndCharred));
             TestSupport.False(FireNaturalResourceVisualRules.UsesStumpVisual(deadAndCharred));
             TestSupport.True(FireNaturalResourceVisualRules.UsesStumpVisual(stumpAndCharred));
+        }
+
+        [Fact]
+        public void FireNaturalResourceVisualRules_MapTreeStagesToNativeModelChildren_Test()
+        {
+            TestSupport.Equal("#Alive", FireNaturalResourceVisualRules.ModelStateName(FireNaturalResourceVisualStage.Healthy));
+            TestSupport.Equal("#Dying", FireNaturalResourceVisualRules.ModelStateName(FireNaturalResourceVisualStage.Dried));
+            TestSupport.Equal("#Dying", FireNaturalResourceVisualRules.ModelStateName(FireNaturalResourceVisualStage.DriedAndCharred));
+            TestSupport.Equal("#Dead", FireNaturalResourceVisualRules.ModelStateName(FireNaturalResourceVisualStage.DeadAndCharred));
+            TestSupport.Equal("#Leftover", FireNaturalResourceVisualRules.ModelStateName(FireNaturalResourceVisualStage.StumpAndCharred));
         }
 
         [Fact]
