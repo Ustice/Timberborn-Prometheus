@@ -7,7 +7,6 @@ Use these instructions for every Prometheus ticket worker unless the ticket says
 - Work in your assigned ticket worktree only.
 - Use a worktree name that includes the ticket number, for example `/Users/jasonkleinberg/repos/Timberborn-Prometheus-TKT-001`.
 - Do not touch ticket board status files unless the orchestrator explicitly assigns that as part of your scope.
-- You are not alone in the codebase. Do not revert edits made by others, and adjust your implementation to accommodate already-integrated changes.
 
 ## Inputs
 
@@ -24,18 +23,12 @@ Use these instructions for every Prometheus ticket worker unless the ticket says
 - Do not overlap another worker's write scope unless the orchestrator approves it.
 - Keep behavior unchanged for split/refactor tickets unless the ticket explicitly asks for behavior changes.
 - Prefer small reconciliation edits over broad refactors when compile or integration requires support outside the nominal scope.
-- For Phase 3 tickets, treat controlled burns as emergent containment from existing fire-system inputs and player preparation. Do not add controlled-burn zones, permits, schedules, labor paths, source types, or buildings unless a future ticket explicitly changes that product decision.
-- Keep farmhouse Fertile Ash application deferred to TKT-001 until the required fresh live fixture evidence exists.
 
 ## Verification
 
 - Run `git diff --check`.
 - Run `bash scripts/test.sh` for code, content, script, or behavior changes.
-- Run `bash scripts/build.sh --qa` only when the ticket or board requires live QA.
-- Use `scripts/build.sh` for build/deploy/launch/QA work. It owns the shared lock that prevents two worktrees from deploying, clearing logs, stopping Timberborn, or launching QA at the same time.
-- After `bash scripts/build.sh --qa`, keep the lock while Computer Use or manual QA captures evidence. Run `bash scripts/build.sh --release-qa-lock` when QA is complete.
 - Skip runtime verification for documentation-only tickets marked `doc_only: true` when the diff only changes documentation.
-- Capture log or QA evidence when behavior, runtime integration, or live-game state changes.
 - Follow `AGENTS.md` Markdown style for documentation changes.
 
 ## Submission

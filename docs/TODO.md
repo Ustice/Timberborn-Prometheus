@@ -101,6 +101,10 @@
 
 - [x] Create the Phase 3 ticket set under [tickets/](tickets/).
 - [x] Document controlled burns as emergent containment, not a separate runtime mechanic.
+- [ ] Convert burned-ground ash from black cylinder markers into resettable ground-state overlays with phased transparency and blended neighboring-cell shapes.
+- [ ] Model passive ash growth bonuses for crops and cultivated trees, consuming one ash level at each plant phase advancement.
+- [ ] Design log-equivalent structure fuel, repair replacement costs, and scaled ash-yield rules before replacing the current smooth fuel model.
+- [ ] Design stochastic moisture packets for evaporation, suppression, steam readability, and containment tuning before replacing the current smooth moisture model.
 - [ ] Add a player-facing `Ignite Selected` action that reuses the forced-ignition/grid-seeding path.
 - [ ] Reject invalid selected targets without fire profiles and report UI feedback plus telemetry.
 - [ ] Extend aftermath eligibility so valid burned crops can produce Fertile Ash.
@@ -120,6 +124,8 @@
 - [x] Add the first suppression slice under [tickets/verify/TKT-011-fire-suppression-first-slice.md](tickets/verify/TKT-011-fire-suppression-first-slice.md).
 - [x] Slow suppression-era fire response at the heartbeat or pacing layer rather than undoing accepted tree and crop tuning.
 - [x] Capture a live suppressed-vs-unsuppressed comparison.
+- [ ] Keep Fire Wardens as the long-term player-facing suppression and ash-cleanup owner, but do not make them a dependency for ground ash overlays or passive ash effects.
+- [ ] Explore future smoke hazards only after the smoke field is readable: beaver avoidance/sickness, plant death from prolonged exposure, and stronger contaminated-smoke effects near badwater contamination.
 
 ## 11. Standing Project Habit
 

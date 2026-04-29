@@ -10,6 +10,8 @@ Start a Prometheus orchestration run in /Users/jasonkleinberg/repos/Timberborn-P
 Read AGENTS.md, docs/INDEX.md, docs/HANDOFF.md, docs/tickets/README.md, docs/tickets/WORKER_INSTRUCTIONS.md, and active ticket files under docs/tickets/.
 
 Use docs/tickets as the source of truth. Clear merged worktrees, respect the build/QA lock, then assign the next dependency-ready ticket. Keep the run boring, traceable, and evidence-first.
+
+Create a QA sub-agent. Their job is to verify worker output after worker checks pass, own build/deploy/launch/QA runs, capture logs and live-game evidence, and report pass/fail evidence back to the orchestrator.
 ```
 
 ## Full Kickoff Prompt
@@ -41,11 +43,15 @@ Assign tickets in dependency order:
 - Give each worker explicit write scope, dependencies, and required verification.
 - Do not overlap write scopes unless unavoidable.
 - Require changed files, commit SHA, checks run, unresolved unknowns, and QA/log evidence when applicable.
+- Require `git diff --check` and `bash scripts/test.sh` for code, content, script, or behavior tickets.
+- Require that workers should commit all of their work in a state ready to be merged into main.
+- Keep `docs/HANDOFF.md` and `docs/DESIGN.md` updates under orchestrator ownership unless a ticket explicitly assigns them.
+- Keep `docs/TEST_PLAN.md` evidence updates under QA ownership unless a ticket explicitly assigns them.
 
 Verification:
 - Documentation-only tickets do not need runtime verification.
-- Code/content/script/behavior tickets require git diff --check and bash scripts/test.sh.
-- Runtime/live-game tickets require bash scripts/build.sh --qa.
+- Only the QA sub-agent runs `bash scripts/build.sh` for build, deploy, launch, or QA during orchestrated validation.
+- Runtime/live-game tickets require `bash scripts/build.sh --qa`.
 - After --qa, keep the QA lock until evidence capture is complete, then release with bash scripts/build.sh --release-qa-lock.
 
 Integration:
@@ -55,6 +61,8 @@ Integration:
 - Move tickets to done only after integration.
 - Tear down merged worktrees.
 - Keep README.md, docs/HANDOFF.md, docs/DESIGN.md, and docs/TEST_PLAN.md current when status, verified behavior, design, or validation state changes.
+- Implementation workers should not touch docs/HANDOFF.md, docs/DESIGN.md, or docs/TEST_PLAN.md unless a ticket explicitly assigns those files.
+- The orchestrator owns docs/HANDOFF.md and docs/DESIGN.md updates; QA owns docs/TEST_PLAN.md validation evidence.
 
 Keep the run boring, traceable, and evidence-first.
 ```
@@ -78,16 +86,18 @@ Keep the run boring, traceable, and evidence-first.
 3. Move assigned tickets to `in-progress/`.
 4. Wait for worker reports with changed files, commit SHA, checks run, unresolved unknowns, and QA/log evidence when applicable.
 5. Move completed worker tickets to `verify/`.
-6. Review diffs and required evidence.
-7. Move accepted tickets to `integration/`.
-8. Merge in dependency order and rerun required checks.
-9. Move integrated tickets to `done/`.
-10. Tear down merged worktrees.
-11. Update `README.md`, [HANDOFF.md](HANDOFF.md), [DESIGN.md](DESIGN.md), and [TEST_PLAN.md](TEST_PLAN.md) when status, verified behavior, design, or validation state changes.
+6. Review diffs and required worker evidence.
+7. Send runtime/live-game tickets to QA for required validation and evidence capture.
+8. Review the QA pass/fail report before integration.
+9. Move accepted tickets to `integration/`.
+10. Merge in dependency order and rerun required checks.
+11. Move integrated tickets to `done/`.
+12. Tear down merged worktrees.
+13. Update `README.md`, [HANDOFF.md](HANDOFF.md), [DESIGN.md](DESIGN.md), and [TEST_PLAN.md](TEST_PLAN.md) when status, verified behavior, design, or validation state changes. The orchestrator owns `HANDOFF.md` and `DESIGN.md`; QA owns `TEST_PLAN.md` validation evidence unless a ticket explicitly says otherwise.
 
 ## Lock Rules
 
-- Use `scripts/build.sh` for build, deploy, launch, and QA flows.
+- QA controls `scripts/build.sh` for build, deploy, launch, and QA flows.
 - Do not deploy, clear logs, stop Timberborn, or launch QA outside the shared lock.
 - If `scripts/build.sh` reports another lock owner, wait.
 - `bash scripts/build.sh --qa` keeps the QA lock after launch so evidence capture is protected.
